@@ -1,0 +1,409 @@
+{
+  "units": {
+    "durations": "seconds"
+  },
+  "filters": {
+    "include": null,
+    "exclude": null,
+    "ranks": [
+      0
+    ]
+  },
+  "common_regions": [
+    "model.integrate",
+    "prop: PoissonSolve",
+    "kernel: gc_density_0form",
+    "prop: PushGuidingCenterBxEstar",
+    "kernel: push_gc_bxEstar_explicit_multistage"
+  ],
+  "files": [
+    {
+      "label": "diocotron_poisson_scaling-ranks1-fortran",
+      "file_path": "/home/maxlinadmin/git_repos/struphy-hub/profiling-data/20260707T131013Z-1237062c-diocotron_poisson_scaling-fortran/diocotron_poisson_scaling-ranks1-fortran.h5",
+      "num_ranks": 1,
+      "region_statistics": {
+        "model.integrate": {
+          "count": 104,
+          "average_duration_seconds": 2.0563062811250004,
+          "min_duration_seconds": 1.670592497,
+          "max_duration_seconds": 2.859276403,
+          "std_duration_seconds": 0.2576981171569864,
+          "total_duration_seconds": 213.85585323700002,
+          "per_rank": {
+            "0": {
+              "count": 104,
+              "average_duration_seconds": 2.0563062811250004,
+              "min_duration_seconds": 1.670592497,
+              "max_duration_seconds": 2.859276403,
+              "std_duration_seconds": 0.2576981171569864,
+              "total_duration_seconds": 213.85585323700002
+            }
+          }
+        },
+        "prop: PoissonSolve": {
+          "count": 104,
+          "average_duration_seconds": 1.7977618549038463,
+          "min_duration_seconds": 1.440414865,
+          "max_duration_seconds": 2.553282223,
+          "std_duration_seconds": 0.24404450140955503,
+          "total_duration_seconds": 186.96723291,
+          "per_rank": {
+            "0": {
+              "count": 104,
+              "average_duration_seconds": 1.7977618549038463,
+              "min_duration_seconds": 1.440414865,
+              "max_duration_seconds": 2.553282223,
+              "std_duration_seconds": 0.24404450140955503,
+              "total_duration_seconds": 186.96723291
+            }
+          }
+        },
+        "kernel: gc_density_0form": {
+          "count": 104,
+          "average_duration_seconds": 0.006105605865384616,
+          "min_duration_seconds": 0.005394592,
+          "max_duration_seconds": 0.008005812,
+          "std_duration_seconds": 0.0006501655877755749,
+          "total_duration_seconds": 0.63498301,
+          "per_rank": {
+            "0": {
+              "count": 104,
+              "average_duration_seconds": 0.006105605865384616,
+              "min_duration_seconds": 0.005394592,
+              "max_duration_seconds": 0.008005812,
+              "std_duration_seconds": 0.0006501655877755749,
+              "total_duration_seconds": 0.63498301
+            }
+          }
+        },
+        "prop: PushGuidingCenterBxEstar": {
+          "count": 104,
+          "average_duration_seconds": 0.25849671775,
+          "min_duration_seconds": 0.222946246,
+          "max_duration_seconds": 0.415768348,
+          "std_duration_seconds": 0.03803082887755201,
+          "total_duration_seconds": 26.883658646,
+          "per_rank": {
+            "0": {
+              "count": 104,
+              "average_duration_seconds": 0.25849671775,
+              "min_duration_seconds": 0.222946246,
+              "max_duration_seconds": 0.415768348,
+              "std_duration_seconds": 0.03803082887755201,
+              "total_duration_seconds": 26.883658646
+            }
+          }
+        },
+        "kernel: push_gc_bxEstar_explicit_multistage": {
+          "count": 416,
+          "average_duration_seconds": 0.015368400343750001,
+          "min_duration_seconds": 0.012842394,
+          "max_duration_seconds": 0.024642405,
+          "std_duration_seconds": 0.001330715932714384,
+          "total_duration_seconds": 6.393254543,
+          "per_rank": {
+            "0": {
+              "count": 416,
+              "average_duration_seconds": 0.015368400343750001,
+              "min_duration_seconds": 0.012842394,
+              "max_duration_seconds": 0.024642405,
+              "std_duration_seconds": 0.001330715932714384,
+              "total_duration_seconds": 6.393254543
+            }
+          }
+        }
+      }
+    },
+    {
+      "label": "diocotron_poisson_scaling-ranks2-fortran",
+      "file_path": "/home/maxlinadmin/git_repos/struphy-hub/profiling-data/20260707T131013Z-1237062c-diocotron_poisson_scaling-fortran/diocotron_poisson_scaling-ranks2-fortran.h5",
+      "num_ranks": 2,
+      "region_statistics": {
+        "model.integrate": {
+          "count": 104,
+          "average_duration_seconds": 1.362692216942308,
+          "min_duration_seconds": 1.104364807,
+          "max_duration_seconds": 1.861439216,
+          "std_duration_seconds": 0.17470406649373801,
+          "total_duration_seconds": 141.71999056200002,
+          "per_rank": {
+            "0": {
+              "count": 104,
+              "average_duration_seconds": 1.362692216942308,
+              "min_duration_seconds": 1.104364807,
+              "max_duration_seconds": 1.861439216,
+              "std_duration_seconds": 0.17470406649373801,
+              "total_duration_seconds": 141.71999056200002
+            }
+          }
+        },
+        "prop: PoissonSolve": {
+          "count": 104,
+          "average_duration_seconds": 0.9625593913653846,
+          "min_duration_seconds": 0.761796937,
+          "max_duration_seconds": 1.395777518,
+          "std_duration_seconds": 0.1476538307899709,
+          "total_duration_seconds": 100.106176702,
+          "per_rank": {
+            "0": {
+              "count": 104,
+              "average_duration_seconds": 0.9625593913653846,
+              "min_duration_seconds": 0.761796937,
+              "max_duration_seconds": 1.395777518,
+              "std_duration_seconds": 0.1476538307899709,
+              "total_duration_seconds": 100.106176702
+            }
+          }
+        },
+        "kernel: gc_density_0form": {
+          "count": 104,
+          "average_duration_seconds": 0.003111755701923077,
+          "min_duration_seconds": 0.00272835,
+          "max_duration_seconds": 0.004204507,
+          "std_duration_seconds": 0.0003163794258129445,
+          "total_duration_seconds": 0.323622593,
+          "per_rank": {
+            "0": {
+              "count": 104,
+              "average_duration_seconds": 0.003111755701923077,
+              "min_duration_seconds": 0.00272835,
+              "max_duration_seconds": 0.004204507,
+              "std_duration_seconds": 0.0003163794258129445,
+              "total_duration_seconds": 0.323622593
+            }
+          }
+        },
+        "prop: PushGuidingCenterBxEstar": {
+          "count": 104,
+          "average_duration_seconds": 0.40008730793269226,
+          "min_duration_seconds": 0.340263062,
+          "max_duration_seconds": 0.594931549,
+          "std_duration_seconds": 0.05782168568140903,
+          "total_duration_seconds": 41.609080025,
+          "per_rank": {
+            "0": {
+              "count": 104,
+              "average_duration_seconds": 0.40008730793269226,
+              "min_duration_seconds": 0.340263062,
+              "max_duration_seconds": 0.594931549,
+              "std_duration_seconds": 0.05782168568140903,
+              "total_duration_seconds": 41.609080025
+            }
+          }
+        },
+        "kernel: push_gc_bxEstar_explicit_multistage": {
+          "count": 416,
+          "average_duration_seconds": 0.007745343850961538,
+          "min_duration_seconds": 0.006835635,
+          "max_duration_seconds": 0.009986399,
+          "std_duration_seconds": 0.0006529753121835641,
+          "total_duration_seconds": 3.222063042,
+          "per_rank": {
+            "0": {
+              "count": 416,
+              "average_duration_seconds": 0.007745343850961538,
+              "min_duration_seconds": 0.006835635,
+              "max_duration_seconds": 0.009986399,
+              "std_duration_seconds": 0.0006529753121835641,
+              "total_duration_seconds": 3.222063042
+            }
+          }
+        }
+      }
+    },
+    {
+      "label": "diocotron_poisson_scaling-ranks4-fortran",
+      "file_path": "/home/maxlinadmin/git_repos/struphy-hub/profiling-data/20260707T131013Z-1237062c-diocotron_poisson_scaling-fortran/diocotron_poisson_scaling-ranks4-fortran.h5",
+      "num_ranks": 4,
+      "region_statistics": {
+        "model.integrate": {
+          "count": 104,
+          "average_duration_seconds": 0.69189450925,
+          "min_duration_seconds": 0.588125256,
+          "max_duration_seconds": 0.992707051,
+          "std_duration_seconds": 0.06795595346773457,
+          "total_duration_seconds": 71.957028962,
+          "per_rank": {
+            "0": {
+              "count": 104,
+              "average_duration_seconds": 0.69189450925,
+              "min_duration_seconds": 0.588125256,
+              "max_duration_seconds": 0.992707051,
+              "std_duration_seconds": 0.06795595346773457,
+              "total_duration_seconds": 71.957028962
+            }
+          }
+        },
+        "prop: PoissonSolve": {
+          "count": 104,
+          "average_duration_seconds": 0.5034815630288462,
+          "min_duration_seconds": 0.418076718,
+          "max_duration_seconds": 0.740141578,
+          "std_duration_seconds": 0.05679648949661148,
+          "total_duration_seconds": 52.362082555,
+          "per_rank": {
+            "0": {
+              "count": 104,
+              "average_duration_seconds": 0.5034815630288462,
+              "min_duration_seconds": 0.418076718,
+              "max_duration_seconds": 0.740141578,
+              "std_duration_seconds": 0.05679648949661148,
+              "total_duration_seconds": 52.362082555
+            }
+          }
+        },
+        "kernel: gc_density_0form": {
+          "count": 104,
+          "average_duration_seconds": 0.0016068664615384613,
+          "min_duration_seconds": 0.001391915,
+          "max_duration_seconds": 0.002067593,
+          "std_duration_seconds": 0.0001656292926935099,
+          "total_duration_seconds": 0.16711411199999998,
+          "per_rank": {
+            "0": {
+              "count": 104,
+              "average_duration_seconds": 0.0016068664615384613,
+              "min_duration_seconds": 0.001391915,
+              "max_duration_seconds": 0.002067593,
+              "std_duration_seconds": 0.0001656292926935099,
+              "total_duration_seconds": 0.16711411199999998
+            }
+          }
+        },
+        "prop: PushGuidingCenterBxEstar": {
+          "count": 104,
+          "average_duration_seconds": 0.18836950836538457,
+          "min_duration_seconds": 0.167714327,
+          "max_duration_seconds": 0.263986205,
+          "std_duration_seconds": 0.020950537769264536,
+          "total_duration_seconds": 19.590428869999997,
+          "per_rank": {
+            "0": {
+              "count": 104,
+              "average_duration_seconds": 0.18836950836538457,
+              "min_duration_seconds": 0.167714327,
+              "max_duration_seconds": 0.263986205,
+              "std_duration_seconds": 0.020950537769264536,
+              "total_duration_seconds": 19.590428869999997
+            }
+          }
+        },
+        "kernel: push_gc_bxEstar_explicit_multistage": {
+          "count": 416,
+          "average_duration_seconds": 0.003819110074519231,
+          "min_duration_seconds": 0.003387358,
+          "max_duration_seconds": 0.004891544,
+          "std_duration_seconds": 0.000326515289131308,
+          "total_duration_seconds": 1.5887497910000001,
+          "per_rank": {
+            "0": {
+              "count": 416,
+              "average_duration_seconds": 0.003819110074519231,
+              "min_duration_seconds": 0.003387358,
+              "max_duration_seconds": 0.004891544,
+              "std_duration_seconds": 0.000326515289131308,
+              "total_duration_seconds": 1.5887497910000001
+            }
+          }
+        }
+      }
+    },
+    {
+      "label": "diocotron_poisson_scaling-ranks8-fortran",
+      "file_path": "/home/maxlinadmin/git_repos/struphy-hub/profiling-data/20260707T131013Z-1237062c-diocotron_poisson_scaling-fortran/diocotron_poisson_scaling-ranks8-fortran.h5",
+      "num_ranks": 8,
+      "region_statistics": {
+        "model.integrate": {
+          "count": 104,
+          "average_duration_seconds": 0.45323154621153844,
+          "min_duration_seconds": 0.35972516,
+          "max_duration_seconds": 0.698895971,
+          "std_duration_seconds": 0.07845407832136811,
+          "total_duration_seconds": 47.136080805999995,
+          "per_rank": {
+            "0": {
+              "count": 104,
+              "average_duration_seconds": 0.45323154621153844,
+              "min_duration_seconds": 0.35972516,
+              "max_duration_seconds": 0.698895971,
+              "std_duration_seconds": 0.07845407832136811,
+              "total_duration_seconds": 47.136080805999995
+            }
+          }
+        },
+        "prop: PoissonSolve": {
+          "count": 104,
+          "average_duration_seconds": 0.34868366217307695,
+          "min_duration_seconds": 0.27137975,
+          "max_duration_seconds": 0.585290126,
+          "std_duration_seconds": 0.06531591262959993,
+          "total_duration_seconds": 36.263100866,
+          "per_rank": {
+            "0": {
+              "count": 104,
+              "average_duration_seconds": 0.34868366217307695,
+              "min_duration_seconds": 0.27137975,
+              "max_duration_seconds": 0.585290126,
+              "std_duration_seconds": 0.06531591262959993,
+              "total_duration_seconds": 36.263100866
+            }
+          }
+        },
+        "kernel: gc_density_0form": {
+          "count": 104,
+          "average_duration_seconds": 0.000902786326923077,
+          "min_duration_seconds": 0.000768597,
+          "max_duration_seconds": 0.001177706,
+          "std_duration_seconds": 9.91907289459828e-05,
+          "total_duration_seconds": 0.09388977800000001,
+          "per_rank": {
+            "0": {
+              "count": 104,
+              "average_duration_seconds": 0.000902786326923077,
+              "min_duration_seconds": 0.000768597,
+              "max_duration_seconds": 0.001177706,
+              "std_duration_seconds": 9.91907289459828e-05,
+              "total_duration_seconds": 0.09388977800000001
+            }
+          }
+        },
+        "prop: PushGuidingCenterBxEstar": {
+          "count": 104,
+          "average_duration_seconds": 0.10450448102884616,
+          "min_duration_seconds": 0.087224645,
+          "max_duration_seconds": 0.164878681,
+          "std_duration_seconds": 0.01863413477502494,
+          "total_duration_seconds": 10.868466027,
+          "per_rank": {
+            "0": {
+              "count": 104,
+              "average_duration_seconds": 0.10450448102884616,
+              "min_duration_seconds": 0.087224645,
+              "max_duration_seconds": 0.164878681,
+              "std_duration_seconds": 0.01863413477502494,
+              "total_duration_seconds": 10.868466027
+            }
+          }
+        },
+        "kernel: push_gc_bxEstar_explicit_multistage": {
+          "count": 416,
+          "average_duration_seconds": 0.001983057088942308,
+          "min_duration_seconds": 0.001649884,
+          "max_duration_seconds": 0.002486571,
+          "std_duration_seconds": 0.00016589128978835365,
+          "total_duration_seconds": 0.824951749,
+          "per_rank": {
+            "0": {
+              "count": 416,
+              "average_duration_seconds": 0.001983057088942308,
+              "min_duration_seconds": 0.001649884,
+              "max_duration_seconds": 0.002486571,
+              "std_duration_seconds": 0.00016589128978835365,
+              "total_duration_seconds": 0.824951749
+            }
+          }
+        }
+      }
+    }
+  ]
+}

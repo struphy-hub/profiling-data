@@ -1,1 +1,1 @@
-scope-profiler
+scope-profiler @ git+https://github.com/max-models/scope-profiler.git
