@@ -1,0 +1,42 @@
+{
+  "datetime_utc": "2026-07-07T13:10:13.994438+00:00",
+  "datetime_token": "20260707T131013Z",
+  "commit": "1237062c6e259afc1aeac744bd3aca82fe1ab8e1",
+  "commit_short": "1237062c",
+  "testcase": "diocotron_poisson_scaling",
+  "language": "fortran",
+  "source_results_root": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/profiling/results",
+  "files": [
+    {
+      "source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/profiling/results/diocotron_poisson_scaling/sim_ranks1/profiling_data.h5",
+      "relative_source": "sim_ranks1/profiling_data.h5",
+      "ranks": "1",
+      "destination": "diocotron_poisson_scaling-ranks1-fortran.h5"
+    },
+    {
+      "source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/profiling/results/diocotron_poisson_scaling/sim_ranks2/profiling_data.h5",
+      "relative_source": "sim_ranks2/profiling_data.h5",
+      "ranks": "2",
+      "destination": "diocotron_poisson_scaling-ranks2-fortran.h5"
+    },
+    {
+      "source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/profiling/results/diocotron_poisson_scaling/sim_ranks4/profiling_data.h5",
+      "relative_source": "sim_ranks4/profiling_data.h5",
+      "ranks": "4",
+      "destination": "diocotron_poisson_scaling-ranks4-fortran.h5"
+    },
+    {
+      "source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/profiling/results/diocotron_poisson_scaling/sim_ranks8/profiling_data.h5",
+      "relative_source": "sim_ranks8/profiling_data.h5",
+      "ranks": "8",
+      "destination": "diocotron_poisson_scaling-ranks8-fortran.h5"
+    }
+  ],
+  "github": {
+    "repository": null,
+    "run_id": null,
+    "run_attempt": null,
+    "workflow": null,
+    "job": null
+  }
+}
