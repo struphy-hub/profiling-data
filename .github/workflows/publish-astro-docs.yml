@@ -23,26 +23,39 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install dependencies (docs)
+        run: |
+          # Prefer npm ci when a lockfile exists, otherwise fall back to npm install
+          if [ -f docs/package-lock.json ] || [ -f docs/npm-shrinkwrap.json ] || [ -f docs/yarn.lock ]; then
+            npm ci --prefix docs
+          else
+            npm install --prefix docs
+          fi
 
-      - name: Build site
-        run: npm run build --if-present
+      - name: Build site (docs)
+        run: npm run build --prefix docs --if-present
 
       - name: Copy build to docs/
         run: |
-          rm -rf docs
-          mkdir -p docs
-          if [ -d dist ]; then
-            cp -a dist/. docs/
-          elif [ -d build ]; then
-            cp -a build/. docs/
+          # Copy built site from docs/dist or docs/build into a temporary folder,
+          # then replace top-level docs/ with the built output. This avoids deleting
+          # the source before the build artifacts are safely copied.
+          if [ -d docs/dist ]; then
+            mkdir -p _site
+            cp -a docs/dist/. _site/
+          elif [ -d docs/build ]; then
+            mkdir -p _site
+            cp -a docs/build/. _site/
           else
             echo "No dist or build directory found"
             exit 1
           fi
+
+          rm -rf docs
+          mkdir -p docs
+          cp -a _site/. docs/
+          rm -rf _site
 
       - name: Commit and push docs/
         env:
