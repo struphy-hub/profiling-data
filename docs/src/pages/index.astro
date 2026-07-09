@@ -1,0 +1,127 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Struphy Profiling Dashboard" description="Professional overview of profiling cases and generated plots.">
+  <section class="hero">
+    <h1>Struphy profiling dashboard</h1>
+    <p>
+      Overview of available profiling cases. Open a case to inspect detailed metadata and view the generated
+      durations/speedup plots.
+    </p>
+  </section>
+
+  <section class="card" style="margin-top: 1rem;">
+    <h2>Cases</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Case title</th>
+            <th>Description</th>
+            <th>Runs</th>
+            <th>Ranks</th>
+            <th>Open</th>
+          </tr>
+        </thead>
+        <tbody id="home-cases-table-body"></tbody>
+      </table>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  const totalCasesEl = document.getElementById("total-cases");
+  const tableBody = document.getElementById("home-cases-table-body");
+
+  const esc = (value) =>
+    String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;");
+
+  const basename = (path) => {
+    if (!path) return "";
+    const parts = String(path).split("/");
+    return parts[parts.length - 1];
+  };
+
+  const getCaseTitle = (entry) => {
+    if (entry.title) return entry.title;
+    return String(entry.label ?? "Unnamed case").replaceAll("-", " ");
+  };
+
+  const getCaseDescription = (entry) => {
+    if (entry.description) return entry.description;
+    const source = basename(entry.file_path);
+    if (source) return `Source file: ${source}`;
+    return "Profiling case from generated statistics.";
+  };
+
+  const getCaseFolder = (entry) => {
+    const path = String(entry?.file_path ?? "");
+    if (!path) return "unknown-case";
+    const parts = path.split("/").filter(Boolean);
+    if (parts.length < 2) return parts[0] || "unknown-case";
+    return parts[parts.length - 2];
+  };
+
+  const formatCaseTitle = (folderName) =>
+    String(folderName).replaceAll("-", " ");
+
+  const render = async () => {
+    try {
+      const res = await fetch("/figures/region_statistics.json");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const files = Array.isArray(data.files) ? data.files.slice() : [];
+      files.sort((a, b) => (a.num_ranks ?? Number.MAX_SAFE_INTEGER) - (b.num_ranks ?? Number.MAX_SAFE_INTEGER));
+
+      const groupedCases = new Map();
+      files.forEach((entry) => {
+        const folder = getCaseFolder(entry);
+        const current = groupedCases.get(folder) ?? {
+          folder,
+          title: formatCaseTitle(folder),
+          description: `Profiling dataset folder: ${folder}`,
+          labels: [],
+          ranks: new Set(),
+        };
+        if (entry.label) current.labels.push(entry.label);
+        if (Number.isFinite(entry.num_ranks)) current.ranks.add(entry.num_ranks);
+        groupedCases.set(folder, current);
+      });
+
+      const groupedList = Array.from(groupedCases.values()).sort((a, b) => a.title.localeCompare(b.title));
+      totalCasesEl.textContent = String(groupedList.length);
+
+      if (!groupedList.length) {
+        tableBody.innerHTML = '<tr><td colspan="5" class="muted">No cases found in region_statistics.json.</td></tr>';
+        return;
+      }
+
+      tableBody.innerHTML = groupedList
+        .map((group) => {
+          const firstLabel = encodeURIComponent(group.labels[0] ?? "");
+          const ranks = Array.from(group.ranks).sort((a, b) => a - b);
+          const rankSummary = ranks.length ? ranks.join(", ") : "-";
+          return `
+            <tr>
+              <td><strong>${esc(group.title)}</strong></td>
+              <td class="muted">${esc(group.description)}</td>
+              <td>${group.labels.length}</td>
+              <td>${esc(rankSummary)}</td>
+              <td><a href="/figures?case=${firstLabel}#cases">View details</a></td>
+            </tr>
+          `;
+        })
+        .join("");
+    } catch (error) {
+      totalCasesEl.textContent = "0";
+      tableBody.innerHTML = `<tr><td colspan="5" class="muted">Could not load case table: ${esc(error)}</td></tr>`;
+    }
+  };
+
+  render();
+</script>
