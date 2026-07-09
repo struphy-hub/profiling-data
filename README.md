@@ -5,7 +5,7 @@ Repo for storing profiling data
 
 The docs publish workflow is in `.github/workflows/publish-astro-docs.yml`.
 
-Docs are always built from the Astro project in `docs/` and then published from the built output.
+Docs are always built from the Astro project in `docs/` and deployed to GitHub Pages from the Actions artifact (no commit/push back to the repository).
 
 - Install dependencies: `npm ci` (in `docs/`)
 - Build docs: `npm run build --if-present` (in `docs/`)
