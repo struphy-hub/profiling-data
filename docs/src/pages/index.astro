@@ -68,8 +68,23 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     return parts[parts.length - 2];
   };
 
-  const formatCaseTitle = (folderName) =>
-    String(folderName).replaceAll("-", " ");
+  const shouldClampDescription = (value) => {
+    const text = String(value ?? "");
+    return text.length > 180 || text.includes("\n");
+  };
+
+  const bindDescriptionToggles = () => {
+    tableBody.querySelectorAll(".desc-toggle").forEach((button) => {
+      button.addEventListener("click", () => {
+        const description = button.parentElement?.querySelector(".case-description");
+        if (!description) return;
+
+        const isExpanded = description.classList.toggle("case-description--expanded");
+        button.setAttribute("aria-expanded", isExpanded ? "true" : "false");
+        button.textContent = isExpanded ? "Collapse" : "Expand";
+      });
+    });
+  };
 
   const render = async () => {
     try {
@@ -84,8 +99,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         const folder = getCaseFolder(entry);
         const current = groupedCases.get(folder) ?? {
           folder,
-          title: formatCaseTitle(folder),
-          description: `Profiling dataset folder: ${folder}`,
+          title: getCaseTitle(entry),
+          description: getCaseDescription(entry),
           labels: [],
           ranks: new Set(),
         };
@@ -105,10 +120,17 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           const firstLabel = encodeURIComponent(group.labels[0] ?? "");
           const ranks = Array.from(group.ranks).sort((a, b) => a - b);
           const rankSummary = ranks.length ? ranks.join(", ") : "-";
+          const clampDescription = shouldClampDescription(group.description);
+          const descriptionClass = clampDescription
+            ? "case-description case-description--clamped"
+            : "case-description";
           return `
             <tr>
               <td><strong>${esc(group.title)}</strong></td>
-              <td class="muted">${esc(group.description)}</td>
+              <td class="muted">
+                <div class="${descriptionClass}">${esc(group.description)}</div>
+                ${clampDescription ? '<button type="button" class="desc-toggle" aria-expanded="false">Expand</button>' : ""}
+              </td>
               <td>${group.labels.length}</td>
               <td>${esc(rankSummary)}</td>
               <td><a href="${baseUrl}figures?case=${firstLabel}#cases">View details</a></td>
@@ -116,6 +138,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           `;
         })
         .join("");
+      bindDescriptionToggles();
     } catch (error) {
       tableBody.innerHTML = `<tr><td colspan="5" class="muted">Could not load case table: ${esc(error)}</td></tr>`;
     }

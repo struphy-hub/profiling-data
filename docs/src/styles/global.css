@@ -157,3 +157,38 @@ th {
   color: #374151;
   font-weight: 600;
 }
+
+.case-description {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.case-description--clamped {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+
+.case-description--expanded {
+  display: block;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  overflow: visible;
+}
+
+.desc-toggle {
+  margin-top: 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #f9fafb;
+  color: #374151;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.desc-toggle:hover {
+  background: #f3f4f6;
+}
