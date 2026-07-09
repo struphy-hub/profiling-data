@@ -2,7 +2,7 @@ name: Build and publish Astro docs
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, fix-docs-build ]
   workflow_dispatch:
 
 permissions:
