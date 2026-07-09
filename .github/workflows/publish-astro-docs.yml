@@ -24,23 +24,17 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install scope-profiler
-        run: |
-          python -m pip install --upgrade pip
-          pip install scope-profiler
+      # - name: Install scope-profiler
+      #   run: |
+      #     python -m pip install --upgrade pip
+      #     pip install scope-profiler
 
       - name: Generate figures
         run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
           mkdir -p docs/public/figures
-          # Fail early if no input files found
-          shopt -s nullglob
-          files=(20260707T131013Z-1237062c-diocotron_poisson_scaling-fortran/*.h5)
-          if [ ${#files[@]} -eq 0 ]; then
-            echo "No .h5 input files found in the repository"
-            exit 1
-          fi
-          python -m scope_profiler.pproc 20260707T131013Z-1237062c-diocotron_poisson_scaling-fortran/*.h5 --ranks 0 -o docs/public/figures
-
+          scope-profiler-pproc 20260707T131013Z-1237062c-diocotron_poisson_scaling-fortran/*.h5 --ranks 0 -o docs/public/figures
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
