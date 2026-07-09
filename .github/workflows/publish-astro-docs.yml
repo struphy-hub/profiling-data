@@ -33,26 +33,33 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          mkdir -p docs/public/figures
-          scope-profiler-pproc 20260707T131013Z-1237062c-diocotron_poisson_scaling-fortran/*.h5 --ranks 0 -o docs/public/figures
+          mkdir -p _generated_figures docs/figures
+          scope-profiler-pproc 20260707T131013Z-1237062c-diocotron_poisson_scaling-fortran/*.h5 --ranks 0 -o _generated_figures
+          cp -a _generated_figures/. docs/figures/
+          if [ -d docs/public ] || [ -f docs/package.json ]; then
+            mkdir -p docs/public/figures
+            cp -a _generated_figures/. docs/public/figures/
+          fi
+          rm -rf _generated_figures
+
       - name: Setup Node.js
+        if: ${{ hashFiles('docs/package.json') != '' }}
         uses: actions/setup-node@v4
         with:
           node-version: '24'
 
       - name: Install dependencies (docs)
-        run: |
-          # Prefer npm ci when a lockfile exists, otherwise fall back to npm install
-          if [ -f docs/package-lock.json ] || [ -f docs/npm-shrinkwrap.json ] || [ -f docs/yarn.lock ]; then
-            npm ci --prefix docs
-          else
-            npm install --prefix docs
-          fi
+        if: ${{ hashFiles('docs/package.json') != '' }}
+        working-directory: docs
+        run: npm ci
 
       - name: Build site (docs)
-        run: npm run build --prefix docs --if-present
+        if: ${{ hashFiles('docs/package.json') != '' }}
+        working-directory: docs
+        run: npm run build --if-present
 
       - name: Copy build to docs/
+        if: ${{ hashFiles('docs/package.json') != '' }}
         run: |
           # Copy built site from docs/dist or docs/build into a temporary folder,
           # then replace top-level docs/ with the built output. This avoids deleting
