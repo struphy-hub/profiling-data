@@ -12,3 +12,9 @@ Docs are always built from the Astro project in `docs/` and deployed to GitHub P
 - Build docs: `npm run build --if-present` (in `docs/`)
 
 Figures are always generated from profiling data into `docs/public/figures` before the docs build.
+
+The generation command is automated via:
+
+`python scripts/generate_diocotron_figures.py`
+
+It scans all diocotron profiling directories in the repository root and includes every `.h5` case automatically.
