@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+const baseUrl = import.meta.env.BASE_URL;
 ---
 
 <BaseLayout title="Struphy Profiling Dashboard" description="Professional overview of profiling cases and generated plots.">
@@ -31,7 +32,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 </BaseLayout>
 
 <script>
-  const totalCasesEl = document.getElementById("total-cases");
+  const baseUrl = import.meta.env.BASE_URL;
   const tableBody = document.getElementById("home-cases-table-body");
 
   const esc = (value) =>
@@ -72,7 +73,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
   const render = async () => {
     try {
-      const res = await fetch("/figures/region_statistics.json");
+      const res = await fetch(`${baseUrl}figures/region_statistics.json`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const files = Array.isArray(data.files) ? data.files.slice() : [];
@@ -94,8 +95,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       });
 
       const groupedList = Array.from(groupedCases.values()).sort((a, b) => a.title.localeCompare(b.title));
-      totalCasesEl.textContent = String(groupedList.length);
-
       if (!groupedList.length) {
         tableBody.innerHTML = '<tr><td colspan="5" class="muted">No cases found in region_statistics.json.</td></tr>';
         return;
@@ -112,13 +111,12 @@ import BaseLayout from "../layouts/BaseLayout.astro";
               <td class="muted">${esc(group.description)}</td>
               <td>${group.labels.length}</td>
               <td>${esc(rankSummary)}</td>
-              <td><a href="/figures?case=${firstLabel}#cases">View details</a></td>
+              <td><a href="${baseUrl}figures?case=${firstLabel}#cases">View details</a></td>
             </tr>
           `;
         })
         .join("");
     } catch (error) {
-      totalCasesEl.textContent = "0";
       tableBody.innerHTML = `<tr><td colspan="5" class="muted">Could not load case table: ${esc(error)}</td></tr>`;
     }
   };

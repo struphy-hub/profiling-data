@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+const baseUrl = import.meta.env.BASE_URL;
 ---
 
 <BaseLayout title="Profiling Figures" description="Durations and speedup plots plus case metadata explorer.">
@@ -11,14 +12,14 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   <section class="grid cards-2">
     <article class="card figure-tile">
       <h3>Durations</h3>
-      <a href="/figures/durations_plot.png" target="_blank" rel="noreferrer">
-        <img src="/figures/durations_plot.png" alt="Durations plot" loading="lazy" />
+      <a href={`${baseUrl}figures/durations_plot.png`} target="_blank" rel="noreferrer">
+        <img src={`${baseUrl}figures/durations_plot.png`} alt="Durations plot" loading="lazy" />
       </a>
     </article>
     <article class="card figure-tile">
       <h3>Speedup</h3>
-      <a href="/figures/speedup_plot.png" target="_blank" rel="noreferrer">
-        <img src="/figures/speedup_plot.png" alt="Speedup plot" loading="lazy" />
+      <a href={`${baseUrl}figures/speedup_plot.png`} target="_blank" rel="noreferrer">
+        <img src={`${baseUrl}figures/speedup_plot.png`} alt="Speedup plot" loading="lazy" />
       </a>
     </article>
   </section>
@@ -44,6 +45,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 </BaseLayout>
 
 <script>
+  const baseUrl = import.meta.env.BASE_URL;
   const casesTableBody = document.getElementById("cases-table-body");
   const casePanel = document.getElementById("case-panel");
 
@@ -125,7 +127,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   const render = async () => {
     try {
       const requestedCase = new URLSearchParams(window.location.search).get("case");
-      const res = await fetch("/figures/region_statistics.json");
+      const res = await fetch(`${baseUrl}figures/region_statistics.json`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const files = Array.isArray(data.files) ? data.files.slice() : [];
