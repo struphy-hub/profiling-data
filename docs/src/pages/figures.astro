@@ -1,0 +1,183 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Profiling Figures" description="Durations and speedup plots plus case metadata explorer.">
+  <section class="hero">
+    <h1>Profiling figures</h1>
+    <p>Matplotlib plots from the latest profiling run, with case metadata details below.</p>
+  </section>
+
+  <section class="grid cards-2">
+    <article class="card figure-tile">
+      <h3>Durations</h3>
+      <a href="/figures/durations_plot.png" target="_blank" rel="noreferrer">
+        <img src="/figures/durations_plot.png" alt="Durations plot" loading="lazy" />
+      </a>
+    </article>
+    <article class="card figure-tile">
+      <h3>Speedup</h3>
+      <a href="/figures/speedup_plot.png" target="_blank" rel="noreferrer">
+        <img src="/figures/speedup_plot.png" alt="Speedup plot" loading="lazy" />
+      </a>
+    </article>
+  </section>
+
+  <section id="cases" class="card" style="margin-top: 1rem;">
+    <h2>Case metadata explorer</h2>
+    <p class="muted">Select a case row to open detailed metadata and region-level timing statistics.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Case title</th>
+            <th>Description</th>
+            <th>Ranks</th>
+            <th>Regions</th>
+          </tr>
+        </thead>
+        <tbody id="cases-table-body"></tbody>
+      </table>
+    </div>
+    <div id="case-panel" class="card" style="margin-top: 1rem;"></div>
+  </section>
+</BaseLayout>
+
+<script>
+  const casesTableBody = document.getElementById("cases-table-body");
+  const casePanel = document.getElementById("case-panel");
+
+  const fmt = (value) => {
+    if (typeof value !== "number" || Number.isNaN(value)) return "-";
+    if (Math.abs(value) >= 1) return value.toFixed(4);
+    return value.toExponential(3);
+  };
+
+  const esc = (value) =>
+    String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;");
+
+  const basename = (path) => {
+    if (!path) return "";
+    const parts = String(path).split("/");
+    return parts[parts.length - 1];
+  };
+
+  const getCaseTitle = (entry) => {
+    if (entry.title) return entry.title;
+    return String(entry.label ?? "Unnamed case").replaceAll("-", " ");
+  };
+
+  const getCaseDescription = (entry) => {
+    if (entry.description) return entry.description;
+    const source = basename(entry.file_path);
+    if (source) return `Source file: ${source}`;
+    return "Profiling case from generated statistics.";
+  };
+
+  const renderCase = (entry, regions) => {
+    const stats = entry.region_statistics || {};
+    const displayRegions = regions.length ? regions : Object.keys(stats);
+    const rows = displayRegions
+      .map((region) => {
+        const s = stats[region];
+        if (!s) return "";
+        return `
+          <tr>
+            <td>${esc(region)}</td>
+            <td>${s.count ?? "-"}</td>
+            <td>${fmt(s.average_duration_seconds)}</td>
+            <td>${fmt(s.min_duration_seconds)}</td>
+            <td>${fmt(s.max_duration_seconds)}</td>
+            <td>${fmt(s.total_duration_seconds)}</td>
+          </tr>
+        `;
+      })
+      .join("");
+
+    casePanel.innerHTML = `
+      <h3 style="margin-top:0;">${esc(getCaseTitle(entry))}</h3>
+      <p class="muted" style="margin-top:0;">
+        <strong>Ranks:</strong> ${entry.num_ranks ?? "-"}<br />
+        <strong>Description:</strong> ${esc(getCaseDescription(entry))}
+      </p>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Region</th>
+              <th>Count</th>
+              <th>Avg (s)</th>
+              <th>Min (s)</th>
+              <th>Max (s)</th>
+              <th>Total (s)</th>
+            </tr>
+          </thead>
+          <tbody>${rows || '<tr><td colspan="6">No region statistics available.</td></tr>'}</tbody>
+        </table>
+      </div>
+    `;
+  };
+
+  const render = async () => {
+    try {
+      const requestedCase = new URLSearchParams(window.location.search).get("case");
+      const res = await fetch("/figures/region_statistics.json");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const files = Array.isArray(data.files) ? data.files.slice() : [];
+      files.sort((a, b) => (a.num_ranks ?? Number.MAX_SAFE_INTEGER) - (b.num_ranks ?? Number.MAX_SAFE_INTEGER));
+      const commonRegions = Array.isArray(data.common_regions) ? data.common_regions : [];
+
+      if (!files.length) {
+        casePanel.innerHTML = "<p class='muted'>No cases found in region_statistics.json.</p>";
+        return;
+      }
+
+      const selectedIndex = Math.max(
+        0,
+        files.findIndex((entry) => entry.label === requestedCase),
+      );
+
+      let activeRow = null;
+      files.forEach((entry, index) => {
+        const row = document.createElement("tr");
+        row.className = `case-row${index === selectedIndex ? " active" : ""}`;
+        row.tabIndex = 0;
+        row.innerHTML = `
+          <td><strong>${esc(getCaseTitle(entry))}</strong></td>
+          <td class="muted">${esc(getCaseDescription(entry))}</td>
+          <td>${entry.num_ranks ?? "-"}</td>
+          <td>${Object.keys(entry.region_statistics || {}).length}</td>
+        `;
+
+        const select = () => {
+          if (activeRow) activeRow.classList.remove("active");
+          row.classList.add("active");
+          activeRow = row;
+          renderCase(entry, commonRegions);
+        };
+
+        row.addEventListener("click", select);
+        row.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            select();
+          }
+        });
+
+        casesTableBody.appendChild(row);
+      });
+
+      renderCase(files[selectedIndex], commonRegions);
+      activeRow = casesTableBody.querySelector(".case-row.active");
+    } catch (error) {
+      casePanel.innerHTML = `<p class='muted'>Could not load metadata: ${error}</p>`;
+    }
+  };
+
+  render();
+</script>
