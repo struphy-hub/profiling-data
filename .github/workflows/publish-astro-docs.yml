@@ -33,52 +33,27 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          mkdir -p _generated_figures docs/figures
-          scope-profiler-pproc 20260707T131013Z-1237062c-diocotron_poisson_scaling-fortran/*.h5 --ranks 0 -o _generated_figures
-          cp -a _generated_figures/. docs/figures/
-          if [ -d docs/public ] || [ -f docs/package.json ]; then
-            mkdir -p docs/public/figures
-            cp -a _generated_figures/. docs/public/figures/
-          fi
-          rm -rf _generated_figures
+          mkdir -p docs/public/figures
+          scope-profiler-pproc 20260707T131013Z-1237062c-diocotron_poisson_scaling-fortran/*.h5 --ranks 0 -o docs/public/figures
 
       - name: Setup Node.js
-        if: ${{ hashFiles('docs/package.json') != '' }}
         uses: actions/setup-node@v4
         with:
           node-version: '24'
 
       - name: Install dependencies (docs)
-        if: ${{ hashFiles('docs/package.json') != '' }}
         working-directory: docs
         run: npm ci
 
       - name: Build site (docs)
-        if: ${{ hashFiles('docs/package.json') != '' }}
         working-directory: docs
         run: npm run build --if-present
 
       - name: Copy build to docs/
-        if: ${{ hashFiles('docs/package.json') != '' }}
         run: |
-          # Copy built site from docs/dist or docs/build into a temporary folder,
-          # then replace top-level docs/ with the built output. This avoids deleting
-          # the source before the build artifacts are safely copied.
-          if [ -d docs/dist ]; then
-            mkdir -p _site
-            cp -a docs/dist/. _site/
-          elif [ -d docs/build ]; then
-            mkdir -p _site
-            cp -a docs/build/. _site/
-          else
-            echo "No dist or build directory found"
-            exit 1
-          fi
-
-          rm -rf docs
-          mkdir -p docs
-          cp -a _site/. docs/
-          rm -rf _site
+          # Keep docs sources/tooling and copy compiled output on top for publishing.
+          cp -a docs/dist/. docs/
+          rm -rf docs/dist
 
       - name: Commit and push docs/
         env:

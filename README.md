@@ -5,9 +5,9 @@ Repo for storing profiling data
 
 The docs publish workflow is in `.github/workflows/publish-astro-docs.yml`.
 
-- If `docs/package.json` exists, docs are treated as a Node/Astro project and the workflow runs:
-  - `npm ci` (in `docs/`)
-  - `npm run build --if-present` (in `docs/`)
-- If `docs/package.json` does not exist, the workflow publishes the existing static `docs/` content directly.
+Docs are always built from the Astro project in `docs/` and then published from the built output.
 
-Figures are always generated from profiling data and copied into `docs/figures` (and `docs/public/figures` when applicable).
+- Install dependencies: `npm ci` (in `docs/`)
+- Build docs: `npm run build --if-present` (in `docs/`)
+
+Figures are always generated from profiling data into `docs/public/figures` before the docs build.
