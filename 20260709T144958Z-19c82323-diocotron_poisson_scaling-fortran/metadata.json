@@ -1,0 +1,45 @@
+{
+  "name": "Diocotron instability",
+  "description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n",
+  "datetime_utc": "2026-07-09T14:49:58.192412+00:00",
+  "datetime_token": "20260709T144958Z",
+  "commit": "19c82323312d9f83e995f2bdd8dcec2df18820c7",
+  "commit_short": "19c82323",
+  "testcase": "diocotron_poisson_scaling",
+  "language": "fortran",
+  "source_results_root": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260709T143540Z-267e6a6d",
+  "source_parameters_file": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260709T143540Z-267e6a6d/diocotron_poisson_scaling/parameters.py",
+  "files": [
+    {
+      "source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260709T143540Z-267e6a6d/diocotron_poisson_scaling/sim_ranks1/profiling_data.h5",
+      "relative_source": "sim_ranks1/profiling_data.h5",
+      "ranks": "1",
+      "destination": "diocotron_poisson_scaling-ranks1-fortran.h5"
+    },
+    {
+      "source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260709T143540Z-267e6a6d/diocotron_poisson_scaling/sim_ranks2/profiling_data.h5",
+      "relative_source": "sim_ranks2/profiling_data.h5",
+      "ranks": "2",
+      "destination": "diocotron_poisson_scaling-ranks2-fortran.h5"
+    },
+    {
+      "source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260709T143540Z-267e6a6d/diocotron_poisson_scaling/sim_ranks4/profiling_data.h5",
+      "relative_source": "sim_ranks4/profiling_data.h5",
+      "ranks": "4",
+      "destination": "diocotron_poisson_scaling-ranks4-fortran.h5"
+    },
+    {
+      "source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260709T143540Z-267e6a6d/diocotron_poisson_scaling/sim_ranks8/profiling_data.h5",
+      "relative_source": "sim_ranks8/profiling_data.h5",
+      "ranks": "8",
+      "destination": "diocotron_poisson_scaling-ranks8-fortran.h5"
+    }
+  ],
+  "github": {
+    "repository": null,
+    "run_id": null,
+    "run_attempt": null,
+    "workflow": null,
+    "job": null
+  }
+}
