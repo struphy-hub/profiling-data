@@ -28,13 +28,12 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
 
   <section id="cases" class="card" style="margin-top: 1rem;">
     <h2>Case metadata explorer</h2>
-    <p class="muted">Select a case row to open detailed metadata and region-level timing statistics.</p>
+    <p class="muted">Select a run to inspect rank-specific region-level timing statistics.</p>
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
-            <th>Case title</th>
-            <th>Description</th>
+            <th>Run label</th>
             <th>Ranks</th>
             <th>Regions</th>
           </tr>
@@ -65,24 +64,6 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;");
 
-  const basename = (path) => {
-    if (!path) return "";
-    const parts = String(path).split("/");
-    return parts[parts.length - 1];
-  };
-
-  const getCaseTitle = (entry) => {
-    if (Object.hasOwn(entry, "title")) return String(entry.title ?? "");
-    return String(entry.label ?? "Unnamed case").replaceAll("-", " ");
-  };
-
-  const getCaseDescription = (entry) => {
-    if (Object.hasOwn(entry, "description")) return String(entry.description ?? "");
-    const source = basename(entry.file_path);
-    if (source) return `Source file: ${source}`;
-    return "Profiling case from generated statistics.";
-  };
-
   const renderCase = (entry, regions) => {
     const stats = entry.region_statistics || {};
     const displayRegions = regions.length ? regions : Object.keys(stats);
@@ -104,10 +85,9 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
       .join("");
 
     casePanel.innerHTML = `
-      <h3 style="margin-top:0;">${esc(getCaseTitle(entry))}</h3>
+      <h3 style="margin-top:0;">${esc(entry.label ?? "Unnamed run")}</h3>
       <p class="muted" style="margin-top:0;">
-        <strong>Ranks:</strong> ${entry.num_ranks ?? "-"}<br />
-        <strong>Description:</strong> ${esc(getCaseDescription(entry))}
+        <strong>Ranks:</strong> ${entry.num_ranks ?? "-"}
       </p>
       <div style="overflow-x:auto;">
         <table>
@@ -153,8 +133,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
         row.className = `case-row${index === selectedIndex ? " active" : ""}`;
         row.tabIndex = 0;
         row.innerHTML = `
-          <td><strong>${esc(getCaseTitle(entry))}</strong></td>
-          <td class="muted">${esc(getCaseDescription(entry))}</td>
+          <td><strong>${esc(entry.label ?? "Unnamed run")}</strong></td>
           <td>${entry.num_ranks ?? "-"}</td>
           <td>${Object.keys(entry.region_statistics || {}).length}</td>
         `;
