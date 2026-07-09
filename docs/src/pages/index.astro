@@ -49,12 +49,12 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   };
 
   const getCaseTitle = (entry) => {
-    if (entry.title) return entry.title;
+    if (Object.hasOwn(entry, "title")) return String(entry.title ?? "");
     return String(entry.label ?? "Unnamed case").replaceAll("-", " ");
   };
 
   const getCaseDescription = (entry) => {
-    if (entry.description) return entry.description;
+    if (Object.hasOwn(entry, "description")) return String(entry.description ?? "");
     const source = basename(entry.file_path);
     if (source) return `Source file: ${source}`;
     return "Profiling case from generated statistics.";

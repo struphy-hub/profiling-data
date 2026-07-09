@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import subprocess
 import shutil
 from pathlib import Path
@@ -28,6 +29,51 @@ def parse_args() -> argparse.Namespace:
         help="Print the command and selected files without running scope-profiler-pproc.",
     )
     return parser.parse_args()
+
+
+def load_case_metadata(metadata_path: Path) -> tuple[str, str]:
+    if not metadata_path.exists():
+        raise SystemExit(f"Missing metadata file: {metadata_path}")
+
+    with metadata_path.open("r", encoding="utf-8") as file:
+        metadata = json.load(file)
+
+    if "name" not in metadata or "description" not in metadata:
+        raise SystemExit(
+            f"Metadata file must contain both 'name' and 'description': {metadata_path}"
+        )
+
+    title = str(metadata["name"])
+    description = str(metadata["description"])
+    return title, description
+
+
+def enrich_region_statistics_with_metadata(region_stats_path: Path) -> None:
+    with region_stats_path.open("r", encoding="utf-8") as file:
+        region_stats = json.load(file)
+
+    files = region_stats.get("files")
+    if not isinstance(files, list):
+        raise SystemExit(f"Unexpected region statistics format in {region_stats_path}")
+
+    metadata_cache: dict[Path, tuple[str, str]] = {}
+    for entry in files:
+        file_path_value = entry.get("file_path")
+        if not file_path_value:
+            raise SystemExit(f"Missing file_path in {region_stats_path}")
+
+        file_path = Path(str(file_path_value))
+        metadata_path = file_path.parent / "metadata.json"
+        if metadata_path not in metadata_cache:
+            metadata_cache[metadata_path] = load_case_metadata(metadata_path)
+
+        title, description = metadata_cache[metadata_path]
+        entry["title"] = title
+        entry["description"] = description
+
+    with region_stats_path.open("w", encoding="utf-8") as file:
+        json.dump(region_stats, file, indent=2)
+        file.write("\n")
 
 
 def main() -> int:
@@ -71,6 +117,8 @@ def main() -> int:
         return 0
 
     subprocess.run(command, check=True)
+    region_stats_path = output_dir / "region_statistics.json"
+    enrich_region_statistics_with_metadata(region_stats_path)
     return 0
 
 
