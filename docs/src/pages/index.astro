@@ -1,6 +1,5 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-const baseUrl = import.meta.env.BASE_URL;
 ---
 
 <BaseLayout title="Struphy Profiling Dashboard" description="Professional overview of profiling cases and generated plots.">
@@ -32,7 +31,8 @@ const baseUrl = import.meta.env.BASE_URL;
 </BaseLayout>
 
 <script>
-  const baseUrl = import.meta.env.BASE_URL;
+  const rawBaseUrl = import.meta.env.BASE_URL;
+  const baseUrl = rawBaseUrl.endsWith("/") ? rawBaseUrl : `${rawBaseUrl}/`;
   const tableBody = document.getElementById("home-cases-table-body");
 
   const esc = (value) =>
