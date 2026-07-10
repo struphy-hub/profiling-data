@@ -30,3 +30,6 @@ pnpm-debug.log*
 
 # OS
 Thumbs.db
+
+# Built files
+docs/public/figures/
