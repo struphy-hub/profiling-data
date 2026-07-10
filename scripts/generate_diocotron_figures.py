@@ -60,7 +60,31 @@ def extract_description(metadata: dict) -> str:
     )
 
 
-def load_case_metadata(case_dir: Path) -> tuple[str, str, dict]:
+def extract_case_details(metadata: dict) -> dict:
+    profiling_info = metadata.get("profiling_case_info", {})
+    general_info = metadata.get("general_information", {})
+    hardware_info = metadata.get("hardware_information", {})
+    return {
+        "datetime_utc": str(
+            metadata.get("datetime_utc")
+            or general_info.get("time_date_utc")
+            or ""
+        ),
+        "struphy_model_used": str(
+            profiling_info.get("struphy_model_used")
+            or general_info.get("struphy_model_used")
+            or ""
+        ),
+        "physics_problem": str(
+            profiling_info.get("physics_problem")
+            or general_info.get("physics_problem")
+            or ""
+        ),
+        "cluster_name": str(hardware_info.get("cluster_name") or ""),
+    }
+
+
+def load_case_metadata(case_dir: Path) -> tuple[str, str, dict, dict, Path]:
     metadata_path = resolve_case_metadata_path(case_dir)
 
     with metadata_path.open("r", encoding="utf-8") as file:
@@ -80,7 +104,8 @@ def load_case_metadata(case_dir: Path) -> tuple[str, str, dict]:
         if destination:
             file_metadata_by_destination[str(destination)] = file_entry
 
-    return title, description, file_metadata_by_destination
+    case_details = extract_case_details(metadata)
+    return title, description, file_metadata_by_destination, case_details, metadata_path
 
 
 def run_scope_profiler(
@@ -120,6 +145,7 @@ def build_case_summary(
     description: str,
     case_stats: dict,
     metadata_file: str,
+    case_details: dict,
 ) -> dict:
     files = case_stats["files"]
     ranks = sorted(
@@ -134,6 +160,10 @@ def build_case_summary(
         "title": title,
         "description": description,
         "metadata_file": metadata_file,
+        "datetime_utc": case_details["datetime_utc"],
+        "struphy_model_used": case_details["struphy_model_used"],
+        "physics_problem": case_details["physics_problem"],
+        "cluster_name": case_details["cluster_name"],
         "runs": len(files),
         "ranks": ranks,
         "common_regions": case_stats.get("common_regions", []),
@@ -179,7 +209,13 @@ def main() -> int:
         if not h5_files:
             continue
         total_files += len(h5_files)
-        title, description, file_metadata_by_destination = load_case_metadata(case_dir)
+        (
+            title,
+            description,
+            file_metadata_by_destination,
+            case_details,
+            metadata_path,
+        ) = load_case_metadata(case_dir)
 
         case_output_dir = cases_output_dir / case_dir.name
         case_output_dir.mkdir(parents=True, exist_ok=True)
@@ -195,7 +231,8 @@ def main() -> int:
                 title,
                 description,
                 case_stats,
-                str(resolve_case_metadata_path(case_dir).relative_to(repo_root)),
+                str(metadata_path.relative_to(repo_root)),
+                case_details,
             )
         )
 
