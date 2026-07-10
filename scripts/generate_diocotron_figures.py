@@ -84,7 +84,54 @@ def extract_case_details(metadata: dict) -> dict:
     }
 
 
-def load_case_metadata(case_dir: Path) -> tuple[str, str, dict, dict, Path]:
+def extract_case_metadata_summary(metadata: dict) -> dict:
+    general_info = metadata.get("general_information", {})
+    hardware_info = metadata.get("hardware_information", {})
+    software_info = metadata.get("software_information", {})
+    profiling_info = metadata.get("profiling_case_info", {})
+    return {
+        "datetime_utc": metadata.get("datetime_utc") or general_info.get("time_date_utc") or "",
+        "datetime_token": metadata.get("datetime_token") or "",
+        "commit": metadata.get("commit") or "",
+        "commit_short": metadata.get("commit_short") or "",
+        "testcase": metadata.get("testcase") or "",
+        "language": metadata.get("language") or "",
+        "source_results_root": metadata.get("source_results_root") or "",
+        "source_parameters_file": metadata.get("source_parameters_file") or "",
+        "cluster_name": hardware_info.get("cluster_name") or "",
+        "struphy_model_used": profiling_info.get("struphy_model_used")
+        or general_info.get("struphy_model_used")
+        or "",
+        "physics_problem": profiling_info.get("physics_problem")
+        or general_info.get("physics_problem")
+        or "",
+        "test_case_identifier": profiling_info.get("test_case_identifier") or "",
+        "test_case_name": profiling_info.get("test_case_name")
+        or general_info.get("test_case_name")
+        or "",
+        "test_case_description": profiling_info.get("test_case_description")
+        or general_info.get("test_case_description")
+        or "",
+        "pyccel_language": profiling_info.get("pyccel_language")
+        or software_info.get("pyccel_language")
+        or "",
+        "pyccel_compiler_family": profiling_info.get("pyccel_compiler_family")
+        or software_info.get("pyccel_compiler_family")
+        or "",
+        "struphy_commit": software_info.get("struphy_commit") or "",
+        "slurm_script": general_info.get("slurm_script")
+        or profiling_info.get("slurm_script")
+        or "",
+        "slurm_variables": general_info.get("slurm_variables")
+        or profiling_info.get("slurm_variables")
+        or {},
+        "github": metadata.get("github") or {},
+    }
+
+
+def load_case_metadata(
+    case_dir: Path,
+) -> tuple[str, str, dict, dict, dict, Path]:
     metadata_path = resolve_case_metadata_path(case_dir)
 
     with metadata_path.open("r", encoding="utf-8") as file:
@@ -105,7 +152,15 @@ def load_case_metadata(case_dir: Path) -> tuple[str, str, dict, dict, Path]:
             file_metadata_by_destination[str(destination)] = file_entry
 
     case_details = extract_case_details(metadata)
-    return title, description, file_metadata_by_destination, case_details, metadata_path
+    case_metadata_summary = extract_case_metadata_summary(metadata)
+    return (
+        title,
+        description,
+        file_metadata_by_destination,
+        case_details,
+        case_metadata_summary,
+        metadata_path,
+    )
 
 
 def run_scope_profiler(
@@ -146,6 +201,7 @@ def build_case_summary(
     case_stats: dict,
     metadata_file: str,
     case_details: dict,
+    case_metadata_summary: dict,
 ) -> dict:
     files = case_stats["files"]
     ranks = sorted(
@@ -164,6 +220,7 @@ def build_case_summary(
         "struphy_model_used": case_details["struphy_model_used"],
         "physics_problem": case_details["physics_problem"],
         "cluster_name": case_details["cluster_name"],
+        "case_metadata": case_metadata_summary,
         "runs": len(files),
         "ranks": ranks,
         "common_regions": case_stats.get("common_regions", []),
@@ -214,6 +271,7 @@ def main() -> int:
             description,
             file_metadata_by_destination,
             case_details,
+            case_metadata_summary,
             metadata_path,
         ) = load_case_metadata(case_dir)
 
@@ -233,6 +291,7 @@ def main() -> int:
                 case_stats,
                 str(metadata_path.relative_to(repo_root)),
                 case_details,
+                case_metadata_summary,
             )
         )
 

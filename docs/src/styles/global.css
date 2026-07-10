@@ -192,3 +192,10 @@ th {
 .desc-toggle:hover {
   background: #f3f4f6;
 }
+
+.metadata-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.45rem 1rem;
+  margin-bottom: 0.8rem;
+}

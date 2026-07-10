@@ -1,0 +1,154 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+const baseUrl = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+---
+
+<BaseLayout title="Run metadata" description="Detailed metadata and timings for an individual profiling run.">
+  <section class="hero">
+    <h1>Run metadata</h1>
+    <p class="muted">Detailed metadata for a single profiling run.</p>
+  </section>
+
+  <section class="card">
+    <p id="run-breadcrumb" class="muted" style="margin-top: 0;"></p>
+    <div id="run-meta-panel"></div>
+  </section>
+
+  <section class="card" style="margin-top: 1rem;">
+    <h2 style="margin-top: 0;">Region statistics</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Region</th>
+            <th>Count</th>
+            <th>Avg (s)</th>
+            <th>Min (s)</th>
+            <th>Max (s)</th>
+            <th>Total (s)</th>
+          </tr>
+        </thead>
+        <tbody id="run-regions-body"></tbody>
+      </table>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  const rawBaseUrl = import.meta.env.BASE_URL;
+  const baseUrl = rawBaseUrl.endsWith("/") ? rawBaseUrl : `${rawBaseUrl}/`;
+  const runMetaPanel = document.getElementById("run-meta-panel");
+  const runRegionsBody = document.getElementById("run-regions-body");
+  const runBreadcrumb = document.getElementById("run-breadcrumb");
+
+  const esc = (value) =>
+    String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;");
+
+  const fmt = (value) => {
+    if (typeof value !== "number" || Number.isNaN(value)) return "-";
+    if (Math.abs(value) >= 1) return value.toFixed(4);
+    return value.toExponential(3);
+  };
+
+  const formatDatetime = (value) => {
+    const text = String(value ?? "");
+    if (!text) return "-";
+    const parsed = new Date(text);
+    if (Number.isNaN(parsed.getTime())) return text;
+    return parsed.toLocaleString();
+  };
+
+  const metadataRows = (runEntry, selectedCase) => {
+    const fileMetadata = runEntry.file_metadata || {};
+    const caseMeta = selectedCase.case_metadata || {};
+    return [
+      ["Case", selectedCase.title ?? "-"],
+      ["Run label", runEntry.label ?? "-"],
+      ["Datetime", formatDatetime(selectedCase.datetime_utc ?? caseMeta.datetime_utc)],
+      ["Ranks", runEntry.num_ranks ?? "-"],
+      ["Model", selectedCase.struphy_model_used ?? caseMeta.struphy_model_used ?? "-"],
+      ["Physics problem", selectedCase.physics_problem ?? caseMeta.physics_problem ?? "-"],
+      ["Cluster name", selectedCase.cluster_name ?? caseMeta.cluster_name ?? "-"],
+      ["Source file", runEntry.file_path ?? "-"],
+      ["Relative source", fileMetadata.relative_source ?? "-"],
+      ["Destination", fileMetadata.destination ?? "-"],
+      ["Run metadata", JSON.stringify(fileMetadata)],
+    ];
+  };
+
+  const render = async () => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const requestedCase = params.get("case");
+      const requestedRun = params.get("run");
+      const res = await fetch(`${baseUrl}figures/region_statistics.json`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const cases = Array.isArray(data.cases) ? data.cases.slice() : [];
+      const files = Array.isArray(data.files) ? data.files.slice() : [];
+      if (!cases.length || !files.length) throw new Error("No case/run data found");
+
+      const selectedCase = cases.find((entry) => entry.id === requestedCase) ?? cases[0];
+      const caseRuns = files
+        .filter((entry) => entry.case_id === selectedCase.id)
+        .sort((a, b) => (a.num_ranks ?? Number.MAX_SAFE_INTEGER) - (b.num_ranks ?? Number.MAX_SAFE_INTEGER));
+      if (!caseRuns.length) throw new Error("No runs found for selected case");
+
+      const runEntry =
+        caseRuns.find((entry) => entry.label === requestedRun) ??
+        caseRuns.find((entry) => String(entry.num_ranks) === String(requestedRun)) ??
+        caseRuns[0];
+
+      runBreadcrumb.innerHTML = `
+        <a href="${baseUrl}figures?case=${encodeURIComponent(selectedCase.id)}#cases">Back to case explorer</a>
+      `;
+
+      runMetaPanel.innerHTML = `
+        <h2 style="margin-top: 0;">${esc(runEntry.label ?? "Run details")}</h2>
+        <div class="table-wrap">
+          <table>
+            <tbody>
+              ${metadataRows(runEntry, selectedCase)
+                .map(([key, value]) => `<tr><th>${esc(key)}</th><td style="white-space: pre-wrap;">${esc(value)}</td></tr>`)
+                .join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      const stats = runEntry.region_statistics || {};
+      const commonRegions = Array.isArray(selectedCase.common_regions) ? selectedCase.common_regions : [];
+      const displayRegions = commonRegions.length ? commonRegions : Object.keys(stats);
+      runRegionsBody.innerHTML = displayRegions
+        .map((region) => {
+          const s = stats[region];
+          if (!s) return "";
+          return `
+            <tr>
+              <td>${esc(region)}</td>
+              <td>${s.count ?? "-"}</td>
+              <td>${fmt(s.average_duration_seconds)}</td>
+              <td>${fmt(s.min_duration_seconds)}</td>
+              <td>${fmt(s.max_duration_seconds)}</td>
+              <td>${fmt(s.total_duration_seconds)}</td>
+            </tr>
+          `;
+        })
+        .join("");
+      if (!runRegionsBody.innerHTML) {
+        runRegionsBody.innerHTML = '<tr><td colspan="6">No region statistics available.</td></tr>';
+      }
+    } catch (error) {
+      runMetaPanel.innerHTML = `<p class="muted">Could not load run metadata: ${esc(error)}</p>`;
+      runRegionsBody.innerHTML = "";
+    }
+  };
+
+  render();
+</script>

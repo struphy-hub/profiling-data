@@ -29,6 +29,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
   <section id="cases" class="card" style="margin-top: 1rem;">
     <h2>Case metadata explorer</h2>
     <p class="muted">Select a run to inspect rank-specific region-level timing statistics.</p>
+    <div id="case-meta-panel" class="card" style="margin-bottom: 1rem;"></div>
     <div class="table-wrap">
       <table>
         <thead>
@@ -36,6 +37,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
             <th>Run label</th>
             <th>Ranks</th>
             <th>Regions</th>
+            <th>Open</th>
           </tr>
         </thead>
         <tbody id="cases-table-body"></tbody>
@@ -50,6 +52,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
   const baseUrl = rawBaseUrl.endsWith("/") ? rawBaseUrl : `${rawBaseUrl}/`;
   const casesTableBody = document.getElementById("cases-table-body");
   const casePanel = document.getElementById("case-panel");
+  const caseMetaPanel = document.getElementById("case-meta-panel");
   const durationsTitle = document.getElementById("durations-title");
   const speedupTitle = document.getElementById("speedup-title");
   const durationsLink = document.getElementById("durations-link");
@@ -69,6 +72,20 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
       .replaceAll("<", "&lt;")
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;");
+
+  const fmtValue = (value) => {
+    if (value === null || value === undefined || value === "") return "-";
+    if (typeof value === "object") return esc(JSON.stringify(value));
+    return esc(String(value));
+  };
+
+  const formatDatetime = (value) => {
+    const text = String(value ?? "");
+    if (!text) return "-";
+    const parsed = new Date(text);
+    if (Number.isNaN(parsed.getTime())) return text;
+    return parsed.toLocaleString();
+  };
 
   const renderCase = (entry, regions) => {
     const stats = entry.region_statistics || {};
@@ -128,6 +145,28 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
     speedupImage.src = speedupUrl;
   };
 
+  const renderCaseMetadata = (selectedCase) => {
+    const metadata = selectedCase?.case_metadata ?? {};
+    caseMetaPanel.innerHTML = `
+      <h3 style="margin-top:0;">${esc(selectedCase?.title ?? "Case metadata")}</h3>
+      <div class="metadata-grid">
+        <div><strong>Datetime:</strong> ${esc(formatDatetime(selectedCase?.datetime_utc ?? metadata.datetime_utc))}</div>
+        <div><strong>Model:</strong> ${fmtValue(selectedCase?.struphy_model_used ?? metadata.struphy_model_used)}</div>
+        <div><strong>Physics problem:</strong> ${fmtValue(selectedCase?.physics_problem ?? metadata.physics_problem)}</div>
+        <div><strong>Cluster:</strong> ${fmtValue(selectedCase?.cluster_name ?? metadata.cluster_name)}</div>
+        <div><strong>Test case:</strong> ${fmtValue(metadata.test_case_identifier || metadata.testcase)}</div>
+        <div><strong>Language:</strong> ${fmtValue(metadata.language)}</div>
+        <div><strong>Commit:</strong> ${fmtValue(metadata.commit_short || metadata.commit)}</div>
+        <div><strong>Pyccel:</strong> ${fmtValue(
+          [metadata.pyccel_language, metadata.pyccel_compiler_family].filter(Boolean).join(" / "),
+        )}</div>
+      </div>
+      <p class="muted" style="white-space: pre-wrap; margin-bottom: 0;">
+        ${esc(selectedCase?.description ?? metadata.test_case_description ?? "")}
+      </p>
+    `;
+  };
+
   const render = async () => {
     try {
       const requestedCase = new URLSearchParams(window.location.search).get("case");
@@ -159,6 +198,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
       if (!files.length) {
         casePanel.innerHTML = "<p class='muted'>No runs found for the selected case.</p>";
         renderPlots(selectedCase);
+        renderCaseMetadata(selectedCase);
         return;
       }
 
@@ -168,6 +208,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
       );
 
       renderPlots(selectedCase);
+      renderCaseMetadata(selectedCase);
       let activeRow = null;
       files.forEach((entry, index) => {
         const row = document.createElement("tr");
@@ -177,6 +218,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
           <td><strong>${esc(entry.label ?? "Unnamed run")}</strong></td>
           <td>${entry.num_ranks ?? "-"}</td>
           <td>${Object.keys(entry.region_statistics || {}).length}</td>
+          <td><a href="${baseUrl}run?case=${encodeURIComponent(selectedCase.id)}&run=${encodeURIComponent(entry.label ?? "")}">Run details</a></td>
         `;
 
         const select = () => {
