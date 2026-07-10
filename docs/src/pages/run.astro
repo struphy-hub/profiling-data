@@ -17,6 +17,11 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
   </section>
 
   <section class="card" style="margin-top: 1rem;">
+    <h2 style="margin-top: 0;">Run figures</h2>
+    <div id="run-figures" class="grid cards-2"></div>
+  </section>
+
+  <section class="card" style="margin-top: 1rem;">
     <h2 style="margin-top: 0;">Region statistics</h2>
     <div class="table-wrap">
       <table>
@@ -42,6 +47,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
   const runMetaPanel = document.getElementById("run-meta-panel");
   const runRegionsBody = document.getElementById("run-regions-body");
   const runBreadcrumb = document.getElementById("run-breadcrumb");
+  const runFigures = document.getElementById("run-figures");
 
   const esc = (value) =>
     String(value ?? "")
@@ -122,6 +128,26 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
         </div>
       `;
 
+      const outputs = runEntry.run_outputs || {};
+      const figureTiles = [
+        ["Durations", outputs.durations],
+        ["Speedup", outputs.speedup],
+        ["Gantt", outputs.gantt],
+      ]
+        .filter(([, path]) => path)
+        .map(
+          ([title, path]) => `
+            <article class="card figure-tile">
+              <h3 style="margin-top: 0;">${esc(title)}</h3>
+              <a href="${baseUrl}figures/${encodeURI(path)}" target="_blank" rel="noreferrer">
+                <img src="${baseUrl}figures/${encodeURI(path)}" alt="${esc(title)} plot" loading="lazy" />
+              </a>
+            </article>
+          `,
+        )
+        .join("");
+      runFigures.innerHTML = figureTiles || "<p class='muted'>No run-level figures available.</p>";
+
       const stats = runEntry.region_statistics || {};
       const commonRegions = Array.isArray(selectedCase.common_regions) ? selectedCase.common_regions : [];
       const displayRegions = commonRegions.length ? commonRegions : Object.keys(stats);
@@ -146,6 +172,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
       }
     } catch (error) {
       runMetaPanel.innerHTML = `<p class="muted">Could not load run metadata: ${esc(error)}</p>`;
+      runFigures.innerHTML = "";
       runRegionsBody.innerHTML = "";
     }
   };

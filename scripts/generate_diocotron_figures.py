@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -186,6 +187,11 @@ def run_scope_profiler(
     subprocess.run(command, check=True)
 
 
+def slugify(value: str) -> str:
+    slug = re.sub(r"[^A-Za-z0-9._-]+", "-", value).strip("-")
+    return slug or "run"
+
+
 def load_region_stats(path: Path) -> dict:
     with path.open("r", encoding="utf-8") as file:
         data = json.load(file)
@@ -303,6 +309,36 @@ def main() -> int:
             file_metadata = file_metadata_by_destination.get(file_name)
             if file_metadata is not None:
                 entry["file_metadata"] = file_metadata
+            run_label = str(entry.get("label") or file_name)
+            run_id = slugify(run_label)
+            run_output_dir = case_output_dir / "runs" / run_id
+            run_output_dir.mkdir(parents=True, exist_ok=True)
+            for stale_file in (
+                "durations_plot.png",
+                "speedup_plot.png",
+                "gantt_plot.png",
+                "region_statistics.json",
+            ):
+                stale_path = run_output_dir / stale_file
+                if stale_path.exists():
+                    stale_path.unlink()
+            run_scope_profiler(
+                pproc_executable,
+                [Path(str(entry["file_path"]))],
+                run_output_dir,
+                args.dry_run,
+            )
+            run_outputs = {"id": run_id}
+            output_files = {
+                "durations": "durations_plot.png",
+                "speedup": "speedup_plot.png",
+                "gantt": "gantt_plot.png",
+                "region_statistics": "region_statistics.json",
+            }
+            for key, file_name in output_files.items():
+                if (run_output_dir / file_name).exists():
+                    run_outputs[key] = f"cases/{case_dir.name}/runs/{run_id}/{file_name}"
+            entry["run_outputs"] = run_outputs
             aggregated_files.append(entry)
 
     if total_files == 0:
