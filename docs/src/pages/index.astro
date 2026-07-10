@@ -17,9 +17,12 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       <table>
         <thead>
           <tr>
+            <th>Datetime</th>
             <th>Case title</th>
             <th>Description</th>
-            <th>Runs</th>
+            <th>Struphy model used</th>
+            <th>Physics problem</th>
+            <th>Cluster name</th>
             <th>Ranks</th>
             <th>Open</th>
           </tr>
@@ -42,30 +45,12 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;");
 
-  const basename = (path) => {
-    if (!path) return "";
-    const parts = String(path).split("/");
-    return parts[parts.length - 1];
-  };
-
-  const getCaseTitle = (entry) => {
-    if (Object.hasOwn(entry, "title")) return String(entry.title ?? "");
-    return String(entry.label ?? "Unnamed case").replaceAll("-", " ");
-  };
-
-  const getCaseDescription = (entry) => {
-    if (Object.hasOwn(entry, "description")) return String(entry.description ?? "");
-    const source = basename(entry.file_path);
-    if (source) return `Source file: ${source}`;
-    return "Profiling case from generated statistics.";
-  };
-
-  const getCaseFolder = (entry) => {
-    const path = String(entry?.file_path ?? "");
-    if (!path) return "unknown-case";
-    const parts = path.split("/").filter(Boolean);
-    if (parts.length < 2) return parts[0] || "unknown-case";
-    return parts[parts.length - 2];
+  const formatDatetime = (value) => {
+    const text = String(value ?? "");
+    if (!text) return "-";
+    const parsed = new Date(text);
+    if (Number.isNaN(parsed.getTime())) return text;
+    return parsed.toLocaleString();
   };
 
   const shouldClampDescription = (value) => {
@@ -91,47 +76,34 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       const res = await fetch(`${baseUrl}figures/region_statistics.json`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      const files = Array.isArray(data.files) ? data.files.slice() : [];
-      files.sort((a, b) => (a.num_ranks ?? Number.MAX_SAFE_INTEGER) - (b.num_ranks ?? Number.MAX_SAFE_INTEGER));
-
-      const groupedCases = new Map();
-      files.forEach((entry) => {
-        const folder = getCaseFolder(entry);
-        const current = groupedCases.get(folder) ?? {
-          folder,
-          title: getCaseTitle(entry),
-          description: getCaseDescription(entry),
-          labels: [],
-          ranks: new Set(),
-        };
-        if (entry.label) current.labels.push(entry.label);
-        if (Number.isFinite(entry.num_ranks)) current.ranks.add(entry.num_ranks);
-        groupedCases.set(folder, current);
-      });
-
-      const groupedList = Array.from(groupedCases.values()).sort((a, b) => a.title.localeCompare(b.title));
-      if (!groupedList.length) {
-        tableBody.innerHTML = '<tr><td colspan="5" class="muted">No cases found in region_statistics.json.</td></tr>';
+      const cases = Array.isArray(data.cases) ? data.cases.slice() : [];
+      cases.sort((a, b) => String(b.datetime_utc ?? "").localeCompare(String(a.datetime_utc ?? "")));
+      if (!cases.length) {
+        tableBody.innerHTML = '<tr><td colspan="8" class="muted">No cases found in region_statistics.json.</td></tr>';
         return;
       }
 
-      tableBody.innerHTML = groupedList
-        .map((group) => {
-          const caseId = encodeURIComponent(group.folder);
-          const ranks = Array.from(group.ranks).sort((a, b) => a - b);
+      tableBody.innerHTML = cases
+        .map((entry) => {
+          const caseId = encodeURIComponent(entry.id ?? "");
+          const ranks = Array.isArray(entry.ranks) ? entry.ranks.slice().sort((a, b) => a - b) : [];
           const rankSummary = ranks.length ? ranks.join(", ") : "-";
-          const clampDescription = shouldClampDescription(group.description);
+          const description = String(entry.description ?? "");
+          const clampDescription = shouldClampDescription(description);
           const descriptionClass = clampDescription
             ? "case-description case-description--clamped"
             : "case-description";
           return `
             <tr>
-              <td><strong>${esc(group.title)}</strong></td>
+              <td>${esc(formatDatetime(entry.datetime_utc))}</td>
+              <td><strong>${esc(entry.title ?? "-")}</strong></td>
               <td class="muted">
-                <div class="${descriptionClass}">${esc(group.description)}</div>
+                <div class="${descriptionClass}">${esc(description || "-")}</div>
                 ${clampDescription ? '<button type="button" class="desc-toggle" aria-expanded="false">Expand</button>' : ""}
               </td>
-              <td>${group.labels.length}</td>
+              <td>${esc(entry.struphy_model_used ?? "-")}</td>
+              <td>${esc(entry.physics_problem ?? "-")}</td>
+              <td>${esc(entry.cluster_name ?? "-")}</td>
               <td>${esc(rankSummary)}</td>
               <td><a href="${baseUrl}figures?case=${caseId}#cases">View details</a></td>
             </tr>
@@ -140,7 +112,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         .join("");
       bindDescriptionToggles();
     } catch (error) {
-      tableBody.innerHTML = `<tr><td colspan="5" class="muted">Could not load case table: ${esc(error)}</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="8" class="muted">Could not load case table: ${esc(error)}</td></tr>`;
     }
   };
 
