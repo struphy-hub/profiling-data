@@ -31,21 +31,56 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def load_case_metadata(metadata_path: Path) -> tuple[str, str]:
-    if not metadata_path.exists():
-        raise SystemExit(f"Missing metadata file: {metadata_path}")
+def resolve_case_metadata_path(case_dir: Path) -> Path:
+    preferred = case_dir / "case_metadata.json"
+    legacy = case_dir / "metadata.json"
+    if preferred.exists():
+        return preferred
+    if legacy.exists():
+        return legacy
+    raise SystemExit(f"Missing case metadata in {case_dir}: expected case_metadata.json")
+
+
+def extract_title(metadata: dict, case_dir: Path) -> str:
+    return str(
+        metadata.get("label")
+        or metadata.get("name")
+        or metadata.get("profiling_case_info", {}).get("test_case_name")
+        or metadata.get("general_information", {}).get("test_case_name")
+        or case_dir.name
+    )
+
+
+def extract_description(metadata: dict) -> str:
+    return str(
+        metadata.get("description")
+        or metadata.get("profiling_case_info", {}).get("test_case_description")
+        or metadata.get("general_information", {}).get("test_case_description")
+        or ""
+    )
+
+
+def load_case_metadata(case_dir: Path) -> tuple[str, str, dict]:
+    metadata_path = resolve_case_metadata_path(case_dir)
 
     with metadata_path.open("r", encoding="utf-8") as file:
         metadata = json.load(file)
 
-    if "name" not in metadata or "description" not in metadata:
-        raise SystemExit(
-            f"Metadata file must contain both 'name' and 'description': {metadata_path}"
-        )
+    title = extract_title(metadata, case_dir)
+    description = extract_description(metadata)
+    files = metadata.get("files", [])
+    if not isinstance(files, list):
+        raise SystemExit(f"Invalid 'files' section in {metadata_path}")
 
-    title = str(metadata["name"])
-    description = str(metadata["description"])
-    return title, description
+    file_metadata_by_destination = {}
+    for file_entry in files:
+        if not isinstance(file_entry, dict):
+            continue
+        destination = file_entry.get("destination")
+        if destination:
+            file_metadata_by_destination[str(destination)] = file_entry
+
+    return title, description, file_metadata_by_destination
 
 
 def run_scope_profiler(
@@ -84,6 +119,7 @@ def build_case_summary(
     title: str,
     description: str,
     case_stats: dict,
+    metadata_file: str,
 ) -> dict:
     files = case_stats["files"]
     ranks = sorted(
@@ -97,6 +133,7 @@ def build_case_summary(
         "id": folder_name,
         "title": title,
         "description": description,
+        "metadata_file": metadata_file,
         "runs": len(files),
         "ranks": ranks,
         "common_regions": case_stats.get("common_regions", []),
@@ -142,7 +179,7 @@ def main() -> int:
         if not h5_files:
             continue
         total_files += len(h5_files)
-        title, description = load_case_metadata(case_dir / "metadata.json")
+        title, description, file_metadata_by_destination = load_case_metadata(case_dir)
 
         case_output_dir = cases_output_dir / case_dir.name
         case_output_dir.mkdir(parents=True, exist_ok=True)
@@ -152,12 +189,24 @@ def main() -> int:
 
         case_stats_path = case_output_dir / "region_statistics.json"
         case_stats = load_region_stats(case_stats_path)
-        case_summaries.append(build_case_summary(case_dir.name, title, description, case_stats))
+        case_summaries.append(
+            build_case_summary(
+                case_dir.name,
+                title,
+                description,
+                case_stats,
+                str(resolve_case_metadata_path(case_dir).relative_to(repo_root)),
+            )
+        )
 
         for entry in case_stats["files"]:
             entry["title"] = title
             entry["description"] = description
             entry["case_id"] = case_dir.name
+            file_name = Path(str(entry.get("file_path", ""))).name
+            file_metadata = file_metadata_by_destination.get(file_name)
+            if file_metadata is not None:
+                entry["file_metadata"] = file_metadata
             aggregated_files.append(entry)
 
     if total_files == 0:
