@@ -117,7 +117,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
       tableBody.innerHTML = groupedList
         .map((group) => {
-          const firstLabel = encodeURIComponent(group.labels[0] ?? "");
+          const caseId = encodeURIComponent(group.folder);
           const ranks = Array.from(group.ranks).sort((a, b) => a - b);
           const rankSummary = ranks.length ? ranks.join(", ") : "-";
           const clampDescription = shouldClampDescription(group.description);
@@ -133,7 +133,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
               </td>
               <td>${group.labels.length}</td>
               <td>${esc(rankSummary)}</td>
-              <td><a href="${baseUrl}figures?case=${firstLabel}#cases">View details</a></td>
+              <td><a href="${baseUrl}figures?case=${caseId}#cases">View details</a></td>
             </tr>
           `;
         })

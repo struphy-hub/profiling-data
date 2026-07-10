@@ -13,15 +13,15 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
 
   <section class="grid cards-2">
     <article class="card figure-tile">
-      <h3>Durations</h3>
-      <a href={`${baseUrl}figures/durations_plot.png`} target="_blank" rel="noreferrer">
-        <img src={`${baseUrl}figures/durations_plot.png`} alt="Durations plot" loading="lazy" />
+      <h3 id="durations-title">Durations</h3>
+      <a id="durations-link" href="#" target="_blank" rel="noreferrer">
+        <img id="durations-image" src="" alt="Durations plot" loading="lazy" />
       </a>
     </article>
     <article class="card figure-tile">
-      <h3>Speedup</h3>
-      <a href={`${baseUrl}figures/speedup_plot.png`} target="_blank" rel="noreferrer">
-        <img src={`${baseUrl}figures/speedup_plot.png`} alt="Speedup plot" loading="lazy" />
+      <h3 id="speedup-title">Speedup</h3>
+      <a id="speedup-link" href="#" target="_blank" rel="noreferrer">
+        <img id="speedup-image" src="" alt="Speedup plot" loading="lazy" />
       </a>
     </article>
   </section>
@@ -50,6 +50,12 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
   const baseUrl = rawBaseUrl.endsWith("/") ? rawBaseUrl : `${rawBaseUrl}/`;
   const casesTableBody = document.getElementById("cases-table-body");
   const casePanel = document.getElementById("case-panel");
+  const durationsTitle = document.getElementById("durations-title");
+  const speedupTitle = document.getElementById("speedup-title");
+  const durationsLink = document.getElementById("durations-link");
+  const speedupLink = document.getElementById("speedup-link");
+  const durationsImage = document.getElementById("durations-image");
+  const speedupImage = document.getElementById("speedup-image");
 
   const fmt = (value) => {
     if (typeof value !== "number" || Number.isNaN(value)) return "-";
@@ -107,18 +113,52 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
     `;
   };
 
+  const renderPlots = (selectedCase) => {
+    const caseId = selectedCase?.id ?? "unknown";
+    const durationsPath = selectedCase?.plots?.durations;
+    const speedupPath = selectedCase?.plots?.speedup;
+    const durationsUrl = durationsPath ? `${baseUrl}figures/${durationsPath}` : "";
+    const speedupUrl = speedupPath ? `${baseUrl}figures/${speedupPath}` : "";
+
+    durationsTitle.textContent = `Durations (${caseId})`;
+    speedupTitle.textContent = `Speedup (${caseId})`;
+    durationsLink.href = durationsUrl || "#";
+    speedupLink.href = speedupUrl || "#";
+    durationsImage.src = durationsUrl;
+    speedupImage.src = speedupUrl;
+  };
+
   const render = async () => {
     try {
       const requestedCase = new URLSearchParams(window.location.search).get("case");
       const res = await fetch(`${baseUrl}figures/region_statistics.json`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      const files = Array.isArray(data.files) ? data.files.slice() : [];
-      files.sort((a, b) => (a.num_ranks ?? Number.MAX_SAFE_INTEGER) - (b.num_ranks ?? Number.MAX_SAFE_INTEGER));
-      const commonRegions = Array.isArray(data.common_regions) ? data.common_regions : [];
+      const allFiles = Array.isArray(data.files) ? data.files.slice() : [];
+      const cases = Array.isArray(data.cases) ? data.cases.slice() : [];
+
+      if (!allFiles.length || !cases.length) {
+        casePanel.innerHTML = "<p class='muted'>No cases found in region_statistics.json.</p>";
+        return;
+      }
+
+      const selectedCase =
+        cases.find((entry) => entry.id === requestedCase) ??
+        cases.find((entry) =>
+          allFiles.some((file) => file.case_id === entry.id && file.label === requestedCase),
+        ) ??
+        cases[0];
+
+      const files = allFiles
+        .filter((entry) => entry.case_id === selectedCase.id)
+        .sort((a, b) => (a.num_ranks ?? Number.MAX_SAFE_INTEGER) - (b.num_ranks ?? Number.MAX_SAFE_INTEGER));
+      const commonRegions = Array.isArray(selectedCase.common_regions)
+        ? selectedCase.common_regions
+        : [];
 
       if (!files.length) {
-        casePanel.innerHTML = "<p class='muted'>No cases found in region_statistics.json.</p>";
+        casePanel.innerHTML = "<p class='muted'>No runs found for the selected case.</p>";
+        renderPlots(selectedCase);
         return;
       }
 
@@ -127,6 +167,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
         files.findIndex((entry) => entry.label === requestedCase),
       );
 
+      renderPlots(selectedCase);
       let activeRow = null;
       files.forEach((entry, index) => {
         const row = document.createElement("tr");

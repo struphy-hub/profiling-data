@@ -1,320 +1,57 @@
 {
-  "units": {
-    "durations": "seconds"
-  },
-  "filters": {
-    "include": null,
-    "exclude": null,
-    "ranks": [
-      0
-    ]
-  },
-  "common_regions": [
-    "model.integrate",
-    "prop: PoissonSolve",
-    "kernel: gc_density_0form",
-    "prop: PushGuidingCenterBxEstar"
+  "cases": [
+    {
+      "id": "20260709T144958Z-19c82323-diocotron_poisson_scaling-fortran",
+      "title": "Diocotron instability",
+      "description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n",
+      "runs": 4,
+      "ranks": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "common_regions": [
+        "model.integrate",
+        "prop: PoissonSolve",
+        "kernel: gc_density_0form",
+        "prop: PushGuidingCenterBxEstar",
+        "kernel: push_gc_bxEstar_explicit_multistage"
+      ],
+      "plots": {
+        "durations": "cases/20260709T144958Z-19c82323-diocotron_poisson_scaling-fortran/durations_plot.png",
+        "speedup": "cases/20260709T144958Z-19c82323-diocotron_poisson_scaling-fortran/speedup_plot.png",
+        "gantt": "cases/20260709T144958Z-19c82323-diocotron_poisson_scaling-fortran/gantt_plot.png"
+      }
+    },
+    {
+      "id": "20260709T151248Z-19c82323-diocotron_poisson_scaling-fortran",
+      "title": "Diocotron instability",
+      "description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n",
+      "runs": 4,
+      "ranks": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "common_regions": [
+        "model.integrate",
+        "prop: PoissonSolve",
+        "kernel: gc_density_0form",
+        "prop: PushGuidingCenterBxEstar",
+        "kernel: push_gc_bxEstar_explicit_multistage"
+      ],
+      "plots": {
+        "durations": "cases/20260709T151248Z-19c82323-diocotron_poisson_scaling-fortran/durations_plot.png",
+        "speedup": "cases/20260709T151248Z-19c82323-diocotron_poisson_scaling-fortran/speedup_plot.png",
+        "gantt": "cases/20260709T151248Z-19c82323-diocotron_poisson_scaling-fortran/gantt_plot.png"
+      }
+    }
   ],
   "files": [
     {
       "label": "diocotron_poisson_scaling-ranks1-fortran",
-      "file_path": "/home/maxlinadmin/git_repos/struphy-hub/profiling-data/20260709T141023Z-19c82323-diocotron_poisson_scaling-fortran/diocotron_poisson_scaling-ranks1-fortran.h5",
-      "num_ranks": 1,
-      "region_statistics": {
-        "model.integrate": {
-          "count": 1,
-          "average_duration_seconds": 2.948831143,
-          "min_duration_seconds": 2.948831143,
-          "max_duration_seconds": 2.948831143,
-          "std_duration_seconds": 0.0,
-          "total_duration_seconds": 2.948831143,
-          "per_rank": {
-            "0": {
-              "count": 1,
-              "average_duration_seconds": 2.948831143,
-              "min_duration_seconds": 2.948831143,
-              "max_duration_seconds": 2.948831143,
-              "std_duration_seconds": 0.0,
-              "total_duration_seconds": 2.948831143
-            }
-          }
-        },
-        "prop: PoissonSolve": {
-          "count": 1,
-          "average_duration_seconds": 1.592736676,
-          "min_duration_seconds": 1.592736676,
-          "max_duration_seconds": 1.592736676,
-          "std_duration_seconds": 0.0,
-          "total_duration_seconds": 1.592736676,
-          "per_rank": {
-            "0": {
-              "count": 1,
-              "average_duration_seconds": 1.592736676,
-              "min_duration_seconds": 1.592736676,
-              "max_duration_seconds": 1.592736676,
-              "std_duration_seconds": 0.0,
-              "total_duration_seconds": 1.592736676
-            }
-          }
-        },
-        "kernel: gc_density_0form": {
-          "count": 1,
-          "average_duration_seconds": 0.023150283,
-          "min_duration_seconds": 0.023150283,
-          "max_duration_seconds": 0.023150283,
-          "std_duration_seconds": 0.0,
-          "total_duration_seconds": 0.023150283,
-          "per_rank": {
-            "0": {
-              "count": 1,
-              "average_duration_seconds": 0.023150283,
-              "min_duration_seconds": 0.023150283,
-              "max_duration_seconds": 0.023150283,
-              "std_duration_seconds": 0.0,
-              "total_duration_seconds": 0.023150283
-            }
-          }
-        },
-        "prop: PushGuidingCenterBxEstar": {
-          "count": 1,
-          "average_duration_seconds": 1.356049567,
-          "min_duration_seconds": 1.356049567,
-          "max_duration_seconds": 1.356049567,
-          "std_duration_seconds": 0.0,
-          "total_duration_seconds": 1.356049567,
-          "per_rank": {
-            "0": {
-              "count": 1,
-              "average_duration_seconds": 1.356049567,
-              "min_duration_seconds": 1.356049567,
-              "max_duration_seconds": 1.356049567,
-              "std_duration_seconds": 0.0,
-              "total_duration_seconds": 1.356049567
-            }
-          }
-        },
-        "kernel: push_gc_bxEstar_discrete_gradient_1st_order_newton": {
-          "count": 4,
-          "average_duration_seconds": 0.031169211,
-          "min_duration_seconds": 0.00882474,
-          "max_duration_seconds": 0.060069567,
-          "std_duration_seconds": 0.022798789187016895,
-          "total_duration_seconds": 0.124676844,
-          "per_rank": {
-            "0": {
-              "count": 4,
-              "average_duration_seconds": 0.031169211,
-              "min_duration_seconds": 0.00882474,
-              "max_duration_seconds": 0.060069567,
-              "std_duration_seconds": 0.022798789187016895,
-              "total_duration_seconds": 0.124676844
-            }
-          }
-        }
-      },
-      "title": "Diocotron instability",
-      "description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n"
-    },
-    {
-      "label": "diocotron_poisson_scaling-ranks2-fortran",
-      "file_path": "/home/maxlinadmin/git_repos/struphy-hub/profiling-data/20260709T141023Z-19c82323-diocotron_poisson_scaling-fortran/diocotron_poisson_scaling-ranks2-fortran.h5",
-      "num_ranks": 2,
-      "region_statistics": {
-        "model.integrate": {
-          "count": 1,
-          "average_duration_seconds": 3.856650711,
-          "min_duration_seconds": 3.856650711,
-          "max_duration_seconds": 3.856650711,
-          "std_duration_seconds": 0.0,
-          "total_duration_seconds": 3.856650711,
-          "per_rank": {
-            "0": {
-              "count": 1,
-              "average_duration_seconds": 3.856650711,
-              "min_duration_seconds": 3.856650711,
-              "max_duration_seconds": 3.856650711,
-              "std_duration_seconds": 0.0,
-              "total_duration_seconds": 3.856650711
-            }
-          }
-        },
-        "prop: PoissonSolve": {
-          "count": 1,
-          "average_duration_seconds": 0.835383683,
-          "min_duration_seconds": 0.835383683,
-          "max_duration_seconds": 0.835383683,
-          "std_duration_seconds": 0.0,
-          "total_duration_seconds": 0.835383683,
-          "per_rank": {
-            "0": {
-              "count": 1,
-              "average_duration_seconds": 0.835383683,
-              "min_duration_seconds": 0.835383683,
-              "max_duration_seconds": 0.835383683,
-              "std_duration_seconds": 0.0,
-              "total_duration_seconds": 0.835383683
-            }
-          }
-        },
-        "kernel: gc_density_0form": {
-          "count": 1,
-          "average_duration_seconds": 0.010249456,
-          "min_duration_seconds": 0.010249456,
-          "max_duration_seconds": 0.010249456,
-          "std_duration_seconds": 0.0,
-          "total_duration_seconds": 0.010249456,
-          "per_rank": {
-            "0": {
-              "count": 1,
-              "average_duration_seconds": 0.010249456,
-              "min_duration_seconds": 0.010249456,
-              "max_duration_seconds": 0.010249456,
-              "std_duration_seconds": 0.0,
-              "total_duration_seconds": 0.010249456
-            }
-          }
-        },
-        "prop: PushGuidingCenterBxEstar": {
-          "count": 1,
-          "average_duration_seconds": 3.021218728,
-          "min_duration_seconds": 3.021218728,
-          "max_duration_seconds": 3.021218728,
-          "std_duration_seconds": 0.0,
-          "total_duration_seconds": 3.021218728,
-          "per_rank": {
-            "0": {
-              "count": 1,
-              "average_duration_seconds": 3.021218728,
-              "min_duration_seconds": 3.021218728,
-              "max_duration_seconds": 3.021218728,
-              "std_duration_seconds": 0.0,
-              "total_duration_seconds": 3.021218728
-            }
-          }
-        },
-        "kernel: push_gc_bxEstar_discrete_gradient_1st_order_newton": {
-          "count": 4,
-          "average_duration_seconds": 0.013724152750000001,
-          "min_duration_seconds": 0.004384561,
-          "max_duration_seconds": 0.02323176,
-          "std_duration_seconds": 0.009333205617991504,
-          "total_duration_seconds": 0.054896611000000005,
-          "per_rank": {
-            "0": {
-              "count": 4,
-              "average_duration_seconds": 0.013724152750000001,
-              "min_duration_seconds": 0.004384561,
-              "max_duration_seconds": 0.02323176,
-              "std_duration_seconds": 0.009333205617991504,
-              "total_duration_seconds": 0.054896611000000005
-            }
-          }
-        }
-      },
-      "title": "Diocotron instability",
-      "description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n"
-    },
-    {
-      "label": "diocotron_poisson_scaling-ranks4-fortran",
-      "file_path": "/home/maxlinadmin/git_repos/struphy-hub/profiling-data/20260709T141023Z-19c82323-diocotron_poisson_scaling-fortran/diocotron_poisson_scaling-ranks4-fortran.h5",
-      "num_ranks": 4,
-      "region_statistics": {
-        "model.integrate": {
-          "count": 1,
-          "average_duration_seconds": 2.033862578,
-          "min_duration_seconds": 2.033862578,
-          "max_duration_seconds": 2.033862578,
-          "std_duration_seconds": 0.0,
-          "total_duration_seconds": 2.033862578,
-          "per_rank": {
-            "0": {
-              "count": 1,
-              "average_duration_seconds": 2.033862578,
-              "min_duration_seconds": 2.033862578,
-              "max_duration_seconds": 2.033862578,
-              "std_duration_seconds": 0.0,
-              "total_duration_seconds": 2.033862578
-            }
-          }
-        },
-        "prop: PoissonSolve": {
-          "count": 1,
-          "average_duration_seconds": 0.485069093,
-          "min_duration_seconds": 0.485069093,
-          "max_duration_seconds": 0.485069093,
-          "std_duration_seconds": 0.0,
-          "total_duration_seconds": 0.485069093,
-          "per_rank": {
-            "0": {
-              "count": 1,
-              "average_duration_seconds": 0.485069093,
-              "min_duration_seconds": 0.485069093,
-              "max_duration_seconds": 0.485069093,
-              "std_duration_seconds": 0.0,
-              "total_duration_seconds": 0.485069093
-            }
-          }
-        },
-        "kernel: gc_density_0form": {
-          "count": 1,
-          "average_duration_seconds": 0.011535379,
-          "min_duration_seconds": 0.011535379,
-          "max_duration_seconds": 0.011535379,
-          "std_duration_seconds": 0.0,
-          "total_duration_seconds": 0.011535379,
-          "per_rank": {
-            "0": {
-              "count": 1,
-              "average_duration_seconds": 0.011535379,
-              "min_duration_seconds": 0.011535379,
-              "max_duration_seconds": 0.011535379,
-              "std_duration_seconds": 0.0,
-              "total_duration_seconds": 0.011535379
-            }
-          }
-        },
-        "prop: PushGuidingCenterBxEstar": {
-          "count": 1,
-          "average_duration_seconds": 1.548720485,
-          "min_duration_seconds": 1.548720485,
-          "max_duration_seconds": 1.548720485,
-          "std_duration_seconds": 0.0,
-          "total_duration_seconds": 1.548720485,
-          "per_rank": {
-            "0": {
-              "count": 1,
-              "average_duration_seconds": 1.548720485,
-              "min_duration_seconds": 1.548720485,
-              "max_duration_seconds": 1.548720485,
-              "std_duration_seconds": 0.0,
-              "total_duration_seconds": 1.548720485
-            }
-          }
-        },
-        "kernel: push_gc_bxEstar_discrete_gradient_1st_order_newton": {
-          "count": 4,
-          "average_duration_seconds": 0.00699903525,
-          "min_duration_seconds": 0.002219976,
-          "max_duration_seconds": 0.01186868,
-          "std_duration_seconds": 0.004773648641942103,
-          "total_duration_seconds": 0.027996141,
-          "per_rank": {
-            "0": {
-              "count": 4,
-              "average_duration_seconds": 0.00699903525,
-              "min_duration_seconds": 0.002219976,
-              "max_duration_seconds": 0.01186868,
-              "std_duration_seconds": 0.004773648641942103,
-              "total_duration_seconds": 0.027996141
-            }
-          }
-        }
-      },
-      "title": "Diocotron instability",
-      "description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n"
-    },
-    {
-      "label": "diocotron_poisson_scaling-ranks1-fortran (2)",
       "file_path": "/home/maxlinadmin/git_repos/struphy-hub/profiling-data/20260709T144958Z-19c82323-diocotron_poisson_scaling-fortran/diocotron_poisson_scaling-ranks1-fortran.h5",
       "num_ranks": 1,
       "region_statistics": {
@@ -410,10 +147,11 @@
         }
       },
       "title": "Diocotron instability",
-      "description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n"
+      "description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n",
+      "case_id": "20260709T144958Z-19c82323-diocotron_poisson_scaling-fortran"
     },
     {
-      "label": "diocotron_poisson_scaling-ranks2-fortran (2)",
+      "label": "diocotron_poisson_scaling-ranks2-fortran",
       "file_path": "/home/maxlinadmin/git_repos/struphy-hub/profiling-data/20260709T144958Z-19c82323-diocotron_poisson_scaling-fortran/diocotron_poisson_scaling-ranks2-fortran.h5",
       "num_ranks": 2,
       "region_statistics": {
@@ -509,10 +247,11 @@
         }
       },
       "title": "Diocotron instability",
-      "description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n"
+      "description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n",
+      "case_id": "20260709T144958Z-19c82323-diocotron_poisson_scaling-fortran"
     },
     {
-      "label": "diocotron_poisson_scaling-ranks4-fortran (2)",
+      "label": "diocotron_poisson_scaling-ranks4-fortran",
       "file_path": "/home/maxlinadmin/git_repos/struphy-hub/profiling-data/20260709T144958Z-19c82323-diocotron_poisson_scaling-fortran/diocotron_poisson_scaling-ranks4-fortran.h5",
       "num_ranks": 4,
       "region_statistics": {
@@ -608,7 +347,8 @@
         }
       },
       "title": "Diocotron instability",
-      "description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n"
+      "description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n",
+      "case_id": "20260709T144958Z-19c82323-diocotron_poisson_scaling-fortran"
     },
     {
       "label": "diocotron_poisson_scaling-ranks8-fortran",
@@ -707,307 +447,11 @@
         }
       },
       "title": "Diocotron instability",
-      "description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n"
+      "description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n",
+      "case_id": "20260709T144958Z-19c82323-diocotron_poisson_scaling-fortran"
     },
     {
-      "label": "diocotron_poisson_scaling-ranks1-fortran (3)",
-      "file_path": "/home/maxlinadmin/git_repos/struphy-hub/profiling-data/20260709T145432Z-abab99f7-diocotron_poisson_scaling-fortran/diocotron_poisson_scaling-ranks1-fortran.h5",
-      "num_ranks": 1,
-      "region_statistics": {
-        "model.integrate": {
-          "count": 1,
-          "average_duration_seconds": 3.166818348,
-          "min_duration_seconds": 3.166818348,
-          "max_duration_seconds": 3.166818348,
-          "std_duration_seconds": 0.0,
-          "total_duration_seconds": 3.166818348,
-          "per_rank": {
-            "0": {
-              "count": 1,
-              "average_duration_seconds": 3.166818348,
-              "min_duration_seconds": 3.166818348,
-              "max_duration_seconds": 3.166818348,
-              "std_duration_seconds": 0.0,
-              "total_duration_seconds": 3.166818348
-            }
-          }
-        },
-        "prop: PoissonSolve": {
-          "count": 1,
-          "average_duration_seconds": 1.750530892,
-          "min_duration_seconds": 1.750530892,
-          "max_duration_seconds": 1.750530892,
-          "std_duration_seconds": 0.0,
-          "total_duration_seconds": 1.750530892,
-          "per_rank": {
-            "0": {
-              "count": 1,
-              "average_duration_seconds": 1.750530892,
-              "min_duration_seconds": 1.750530892,
-              "max_duration_seconds": 1.750530892,
-              "std_duration_seconds": 0.0,
-              "total_duration_seconds": 1.750530892
-            }
-          }
-        },
-        "kernel: gc_density_0form": {
-          "count": 1,
-          "average_duration_seconds": 0.059718652,
-          "min_duration_seconds": 0.059718652,
-          "max_duration_seconds": 0.059718652,
-          "std_duration_seconds": 0.0,
-          "total_duration_seconds": 0.059718652,
-          "per_rank": {
-            "0": {
-              "count": 1,
-              "average_duration_seconds": 0.059718652,
-              "min_duration_seconds": 0.059718652,
-              "max_duration_seconds": 0.059718652,
-              "std_duration_seconds": 0.0,
-              "total_duration_seconds": 0.059718652
-            }
-          }
-        },
-        "prop: PushGuidingCenterBxEstar": {
-          "count": 1,
-          "average_duration_seconds": 1.416239286,
-          "min_duration_seconds": 1.416239286,
-          "max_duration_seconds": 1.416239286,
-          "std_duration_seconds": 0.0,
-          "total_duration_seconds": 1.416239286,
-          "per_rank": {
-            "0": {
-              "count": 1,
-              "average_duration_seconds": 1.416239286,
-              "min_duration_seconds": 1.416239286,
-              "max_duration_seconds": 1.416239286,
-              "std_duration_seconds": 0.0,
-              "total_duration_seconds": 1.416239286
-            }
-          }
-        },
-        "kernel: push_gc_bxEstar_discrete_gradient_1st_order_newton": {
-          "count": 4,
-          "average_duration_seconds": 0.031743933,
-          "min_duration_seconds": 0.008948701,
-          "max_duration_seconds": 0.057106036,
-          "std_duration_seconds": 0.022814283207123046,
-          "total_duration_seconds": 0.126975732,
-          "per_rank": {
-            "0": {
-              "count": 4,
-              "average_duration_seconds": 0.031743933,
-              "min_duration_seconds": 0.008948701,
-              "max_duration_seconds": 0.057106036,
-              "std_duration_seconds": 0.022814283207123046,
-              "total_duration_seconds": 0.126975732
-            }
-          }
-        }
-      },
-      "title": "Diocotron instability",
-      "description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n"
-    },
-    {
-      "label": "diocotron_poisson_scaling-ranks2-fortran (3)",
-      "file_path": "/home/maxlinadmin/git_repos/struphy-hub/profiling-data/20260709T145432Z-abab99f7-diocotron_poisson_scaling-fortran/diocotron_poisson_scaling-ranks2-fortran.h5",
-      "num_ranks": 2,
-      "region_statistics": {
-        "model.integrate": {
-          "count": 1,
-          "average_duration_seconds": 4.251050895,
-          "min_duration_seconds": 4.251050895,
-          "max_duration_seconds": 4.251050895,
-          "std_duration_seconds": 0.0,
-          "total_duration_seconds": 4.251050895,
-          "per_rank": {
-            "0": {
-              "count": 1,
-              "average_duration_seconds": 4.251050895,
-              "min_duration_seconds": 4.251050895,
-              "max_duration_seconds": 4.251050895,
-              "std_duration_seconds": 0.0,
-              "total_duration_seconds": 4.251050895
-            }
-          }
-        },
-        "prop: PoissonSolve": {
-          "count": 1,
-          "average_duration_seconds": 0.923082728,
-          "min_duration_seconds": 0.923082728,
-          "max_duration_seconds": 0.923082728,
-          "std_duration_seconds": 0.0,
-          "total_duration_seconds": 0.923082728,
-          "per_rank": {
-            "0": {
-              "count": 1,
-              "average_duration_seconds": 0.923082728,
-              "min_duration_seconds": 0.923082728,
-              "max_duration_seconds": 0.923082728,
-              "std_duration_seconds": 0.0,
-              "total_duration_seconds": 0.923082728
-            }
-          }
-        },
-        "kernel: gc_density_0form": {
-          "count": 1,
-          "average_duration_seconds": 0.012295756,
-          "min_duration_seconds": 0.012295756,
-          "max_duration_seconds": 0.012295756,
-          "std_duration_seconds": 0.0,
-          "total_duration_seconds": 0.012295756,
-          "per_rank": {
-            "0": {
-              "count": 1,
-              "average_duration_seconds": 0.012295756,
-              "min_duration_seconds": 0.012295756,
-              "max_duration_seconds": 0.012295756,
-              "std_duration_seconds": 0.0,
-              "total_duration_seconds": 0.012295756
-            }
-          }
-        },
-        "prop: PushGuidingCenterBxEstar": {
-          "count": 1,
-          "average_duration_seconds": 3.327913497,
-          "min_duration_seconds": 3.327913497,
-          "max_duration_seconds": 3.327913497,
-          "std_duration_seconds": 0.0,
-          "total_duration_seconds": 3.327913497,
-          "per_rank": {
-            "0": {
-              "count": 1,
-              "average_duration_seconds": 3.327913497,
-              "min_duration_seconds": 3.327913497,
-              "max_duration_seconds": 3.327913497,
-              "std_duration_seconds": 0.0,
-              "total_duration_seconds": 3.327913497
-            }
-          }
-        },
-        "kernel: push_gc_bxEstar_discrete_gradient_1st_order_newton": {
-          "count": 4,
-          "average_duration_seconds": 0.0153520665,
-          "min_duration_seconds": 0.004593037,
-          "max_duration_seconds": 0.026062756,
-          "std_duration_seconds": 0.010637928402773974,
-          "total_duration_seconds": 0.061408266,
-          "per_rank": {
-            "0": {
-              "count": 4,
-              "average_duration_seconds": 0.0153520665,
-              "min_duration_seconds": 0.004593037,
-              "max_duration_seconds": 0.026062756,
-              "std_duration_seconds": 0.010637928402773974,
-              "total_duration_seconds": 0.061408266
-            }
-          }
-        }
-      },
-      "title": "Diocotron instability",
-      "description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n"
-    },
-    {
-      "label": "diocotron_poisson_scaling-ranks4-fortran (3)",
-      "file_path": "/home/maxlinadmin/git_repos/struphy-hub/profiling-data/20260709T145432Z-abab99f7-diocotron_poisson_scaling-fortran/diocotron_poisson_scaling-ranks4-fortran.h5",
-      "num_ranks": 4,
-      "region_statistics": {
-        "model.integrate": {
-          "count": 1,
-          "average_duration_seconds": 2.191221569,
-          "min_duration_seconds": 2.191221569,
-          "max_duration_seconds": 2.191221569,
-          "std_duration_seconds": 0.0,
-          "total_duration_seconds": 2.191221569,
-          "per_rank": {
-            "0": {
-              "count": 1,
-              "average_duration_seconds": 2.191221569,
-              "min_duration_seconds": 2.191221569,
-              "max_duration_seconds": 2.191221569,
-              "std_duration_seconds": 0.0,
-              "total_duration_seconds": 2.191221569
-            }
-          }
-        },
-        "prop: PoissonSolve": {
-          "count": 1,
-          "average_duration_seconds": 0.514033053,
-          "min_duration_seconds": 0.514033053,
-          "max_duration_seconds": 0.514033053,
-          "std_duration_seconds": 0.0,
-          "total_duration_seconds": 0.514033053,
-          "per_rank": {
-            "0": {
-              "count": 1,
-              "average_duration_seconds": 0.514033053,
-              "min_duration_seconds": 0.514033053,
-              "max_duration_seconds": 0.514033053,
-              "std_duration_seconds": 0.0,
-              "total_duration_seconds": 0.514033053
-            }
-          }
-        },
-        "kernel: gc_density_0form": {
-          "count": 1,
-          "average_duration_seconds": 0.006058999,
-          "min_duration_seconds": 0.006058999,
-          "max_duration_seconds": 0.006058999,
-          "std_duration_seconds": 0.0,
-          "total_duration_seconds": 0.006058999,
-          "per_rank": {
-            "0": {
-              "count": 1,
-              "average_duration_seconds": 0.006058999,
-              "min_duration_seconds": 0.006058999,
-              "max_duration_seconds": 0.006058999,
-              "std_duration_seconds": 0.0,
-              "total_duration_seconds": 0.006058999
-            }
-          }
-        },
-        "prop: PushGuidingCenterBxEstar": {
-          "count": 1,
-          "average_duration_seconds": 1.677117916,
-          "min_duration_seconds": 1.677117916,
-          "max_duration_seconds": 1.677117916,
-          "std_duration_seconds": 0.0,
-          "total_duration_seconds": 1.677117916,
-          "per_rank": {
-            "0": {
-              "count": 1,
-              "average_duration_seconds": 1.677117916,
-              "min_duration_seconds": 1.677117916,
-              "max_duration_seconds": 1.677117916,
-              "std_duration_seconds": 0.0,
-              "total_duration_seconds": 1.677117916
-            }
-          }
-        },
-        "kernel: push_gc_bxEstar_discrete_gradient_1st_order_newton": {
-          "count": 4,
-          "average_duration_seconds": 0.007719497499999999,
-          "min_duration_seconds": 0.002301208,
-          "max_duration_seconds": 0.013174122,
-          "std_duration_seconds": 0.005415241816340499,
-          "total_duration_seconds": 0.030877989999999998,
-          "per_rank": {
-            "0": {
-              "count": 4,
-              "average_duration_seconds": 0.007719497499999999,
-              "min_duration_seconds": 0.002301208,
-              "max_duration_seconds": 0.013174122,
-              "std_duration_seconds": 0.005415241816340499,
-              "total_duration_seconds": 0.030877989999999998
-            }
-          }
-        }
-      },
-      "title": "Diocotron instability",
-      "description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n"
-    },
-    {
-      "label": "diocotron_poisson_scaling-ranks1-fortran (4)",
+      "label": "diocotron_poisson_scaling-ranks1-fortran",
       "file_path": "/home/maxlinadmin/git_repos/struphy-hub/profiling-data/20260709T151248Z-19c82323-diocotron_poisson_scaling-fortran/diocotron_poisson_scaling-ranks1-fortran.h5",
       "num_ranks": 1,
       "region_statistics": {
@@ -1103,10 +547,11 @@
         }
       },
       "title": "Diocotron instability",
-      "description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n"
+      "description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n",
+      "case_id": "20260709T151248Z-19c82323-diocotron_poisson_scaling-fortran"
     },
     {
-      "label": "diocotron_poisson_scaling-ranks2-fortran (4)",
+      "label": "diocotron_poisson_scaling-ranks2-fortran",
       "file_path": "/home/maxlinadmin/git_repos/struphy-hub/profiling-data/20260709T151248Z-19c82323-diocotron_poisson_scaling-fortran/diocotron_poisson_scaling-ranks2-fortran.h5",
       "num_ranks": 2,
       "region_statistics": {
@@ -1202,10 +647,11 @@
         }
       },
       "title": "Diocotron instability",
-      "description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n"
+      "description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n",
+      "case_id": "20260709T151248Z-19c82323-diocotron_poisson_scaling-fortran"
     },
     {
-      "label": "diocotron_poisson_scaling-ranks4-fortran (4)",
+      "label": "diocotron_poisson_scaling-ranks4-fortran",
       "file_path": "/home/maxlinadmin/git_repos/struphy-hub/profiling-data/20260709T151248Z-19c82323-diocotron_poisson_scaling-fortran/diocotron_poisson_scaling-ranks4-fortran.h5",
       "num_ranks": 4,
       "region_statistics": {
@@ -1301,10 +747,11 @@
         }
       },
       "title": "Diocotron instability",
-      "description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n"
+      "description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n",
+      "case_id": "20260709T151248Z-19c82323-diocotron_poisson_scaling-fortran"
     },
     {
-      "label": "diocotron_poisson_scaling-ranks8-fortran (2)",
+      "label": "diocotron_poisson_scaling-ranks8-fortran",
       "file_path": "/home/maxlinadmin/git_repos/struphy-hub/profiling-data/20260709T151248Z-19c82323-diocotron_poisson_scaling-fortran/diocotron_poisson_scaling-ranks8-fortran.h5",
       "num_ranks": 8,
       "region_statistics": {
@@ -1400,7 +847,8 @@
         }
       },
       "title": "Diocotron instability",
-      "description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n"
+      "description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n",
+      "case_id": "20260709T151248Z-19c82323-diocotron_poisson_scaling-fortran"
     }
   ]
 }

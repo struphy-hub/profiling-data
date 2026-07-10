@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import argparse
 import json
-import subprocess
 import shutil
+import subprocess
 from pathlib import Path
 
 
@@ -48,32 +48,64 @@ def load_case_metadata(metadata_path: Path) -> tuple[str, str]:
     return title, description
 
 
-def enrich_region_statistics_with_metadata(region_stats_path: Path) -> None:
-    with region_stats_path.open("r", encoding="utf-8") as file:
-        region_stats = json.load(file)
+def run_scope_profiler(
+    pproc_executable: str,
+    h5_files: list[Path],
+    output_dir: Path,
+    dry_run: bool,
+) -> None:
+    command = [
+        pproc_executable,
+        *(str(file) for file in h5_files),
+        "--ranks",
+        "0",
+        "-o",
+        str(output_dir),
+    ]
 
-    files = region_stats.get("files")
-    if not isinstance(files, list):
-        raise SystemExit(f"Unexpected region statistics format in {region_stats_path}")
+    if dry_run:
+        print("Dry run command:")
+        print(" ".join(command))
+        return
 
-    metadata_cache: dict[Path, tuple[str, str]] = {}
-    for entry in files:
-        file_path_value = entry.get("file_path")
-        if not file_path_value:
-            raise SystemExit(f"Missing file_path in {region_stats_path}")
+    subprocess.run(command, check=True)
 
-        file_path = Path(str(file_path_value))
-        metadata_path = file_path.parent / "metadata.json"
-        if metadata_path not in metadata_cache:
-            metadata_cache[metadata_path] = load_case_metadata(metadata_path)
 
-        title, description = metadata_cache[metadata_path]
-        entry["title"] = title
-        entry["description"] = description
+def load_region_stats(path: Path) -> dict:
+    with path.open("r", encoding="utf-8") as file:
+        data = json.load(file)
+    if not isinstance(data.get("files"), list):
+        raise SystemExit(f"Unexpected region statistics format in {path}")
+    return data
 
-    with region_stats_path.open("w", encoding="utf-8") as file:
-        json.dump(region_stats, file, indent=2)
-        file.write("\n")
+
+def build_case_summary(
+    folder_name: str,
+    title: str,
+    description: str,
+    case_stats: dict,
+) -> dict:
+    files = case_stats["files"]
+    ranks = sorted(
+        {
+            int(entry["num_ranks"])
+            for entry in files
+            if isinstance(entry.get("num_ranks"), (int, float))
+        }
+    )
+    return {
+        "id": folder_name,
+        "title": title,
+        "description": description,
+        "runs": len(files),
+        "ranks": ranks,
+        "common_regions": case_stats.get("common_regions", []),
+        "plots": {
+            "durations": f"cases/{folder_name}/durations_plot.png",
+            "speedup": f"cases/{folder_name}/speedup_plot.png",
+            "gantt": f"cases/{folder_name}/gantt_plot.png",
+        },
+    }
 
 
 def main() -> int:
@@ -86,12 +118,12 @@ def main() -> int:
         for directory in repo_root.glob(args.pattern)
         if directory.is_dir() and "diocotron" in directory.name
     )
-    h5_files = sorted(file for directory in diocotron_dirs for file in directory.glob("*.h5"))
-
-    if not h5_files:
+    if not diocotron_dirs:
         raise SystemExit(f"No .h5 files found in folders matching '{args.pattern}'.")
 
     output_dir.mkdir(parents=True, exist_ok=True)
+    cases_output_dir = output_dir / "cases"
+    cases_output_dir.mkdir(parents=True, exist_ok=True)
     local_pproc = repo_root / ".venv" / "bin" / "scope-profiler-pproc"
     pproc_executable = shutil.which("scope-profiler-pproc")
     if pproc_executable is None and local_pproc.exists():
@@ -101,24 +133,47 @@ def main() -> int:
             "scope-profiler-pproc was not found in PATH or .venv/bin. Install requirements first."
         )
 
-    command = [
-        pproc_executable,
-        *(str(file) for file in h5_files),
-        "--ranks",
-        "0",
-        "-o",
-        str(output_dir),
-    ]
+    aggregated_files: list[dict] = []
+    case_summaries: list[dict] = []
+    total_files = 0
 
-    print(f"Selected {len(h5_files)} files from {len(diocotron_dirs)} diocotron folders.")
+    for case_dir in diocotron_dirs:
+        h5_files = sorted(case_dir.glob("*.h5"))
+        if not h5_files:
+            continue
+        total_files += len(h5_files)
+        title, description = load_case_metadata(case_dir / "metadata.json")
+
+        case_output_dir = cases_output_dir / case_dir.name
+        case_output_dir.mkdir(parents=True, exist_ok=True)
+        run_scope_profiler(pproc_executable, h5_files, case_output_dir, args.dry_run)
+        if args.dry_run:
+            continue
+
+        case_stats_path = case_output_dir / "region_statistics.json"
+        case_stats = load_region_stats(case_stats_path)
+        case_summaries.append(build_case_summary(case_dir.name, title, description, case_stats))
+
+        for entry in case_stats["files"]:
+            entry["title"] = title
+            entry["description"] = description
+            entry["case_id"] = case_dir.name
+            aggregated_files.append(entry)
+
+    if total_files == 0:
+        raise SystemExit(f"No .h5 files found in folders matching '{args.pattern}'.")
+
+    print(f"Selected {total_files} files from {len(diocotron_dirs)} diocotron folders.")
     if args.dry_run:
-        print("Dry run command:")
-        print(" ".join(command))
         return 0
 
-    subprocess.run(command, check=True)
-    region_stats_path = output_dir / "region_statistics.json"
-    enrich_region_statistics_with_metadata(region_stats_path)
+    aggregated = {
+        "cases": case_summaries,
+        "files": aggregated_files,
+    }
+    with (output_dir / "region_statistics.json").open("w", encoding="utf-8") as file:
+        json.dump(aggregated, file, indent=2)
+        file.write("\n")
     return 0
 
 

@@ -19,3 +19,4 @@ The generation command is automated via:
 
 It scans all diocotron profiling directories in the repository root and includes every `.h5` case automatically.
 Case `title` and `description` fields in `docs/public/figures/region_statistics.json` are injected from each folder's `metadata.json`.
+Each profiling directory is processed independently, so plots are generated per-case under `docs/public/figures/cases/<case-id>/` and are never merged across different folders.
