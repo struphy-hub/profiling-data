@@ -178,6 +178,10 @@ def run_scope_profiler(
         "0",
         "-o",
         str(output_dir),
+        "--export-data",
+        "--export-data-format",
+        "json",
+        "--skip-plot-images",
     ]
 
     if dry_run:
@@ -231,11 +235,11 @@ def build_case_summary(
         "runs": len(files),
         "ranks": ranks,
         "common_regions": case_stats.get("common_regions", []),
-        "plots": {
-            "durations": f"cases/{folder_name}/durations_plot_total.png",
-            "speedup": f"cases/{folder_name}/speedup_plot.png",
-            "gantt": f"cases/{folder_name}/gantt_plot.png",
-            "flame": f"cases/{folder_name}/flame_plot.png",
+        "plot_data": {
+            "durations": f"cases/{folder_name}/durations_data.json",
+            "speedup": f"cases/{folder_name}/speedup_data.json",
+            "gantt": f"cases/{folder_name}/gantt_data.json",
+            "flame": f"cases/{folder_name}/flame_data.json",
         },
     }
 
@@ -316,10 +320,10 @@ def main() -> int:
             run_output_dir = case_output_dir / "runs" / run_id
             run_output_dir.mkdir(parents=True, exist_ok=True)
             for stale_file in (
-                "durations_plot_total.png",
-                "speedup_plot.png",
-                "gantt_plot.png",
-                "flame_plot.png",
+                "durations_data.json",
+                "speedup_data.json",
+                "gantt_data.json",
+                "flame_data.json",
                 "region_statistics.json",
             ):
                 stale_path = run_output_dir / stale_file
@@ -333,10 +337,10 @@ def main() -> int:
             )
             run_outputs = {"id": run_id}
             output_files = {
-                "durations": "durations_plot_total.png",
-                "speedup": "speedup_plot.png",
-                "gantt": "gantt_plot.png",
-                "flame": "flame_plot.png",
+                "durations": "durations_data.json",
+                "speedup": "speedup_data.json",
+                "gantt": "gantt_data.json",
+                "flame": "flame_data.json",
                 "region_statistics": "region_statistics.json",
             }
             for key, file_name in output_files.items():

@@ -18,7 +18,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
 
   <section class="card" style="margin-top: 1rem;">
     <h2 style="margin-top: 0;">Run figures</h2>
-    <div id="run-figures" class="grid cards-2"></div>
+    <div id="run-figures" class="grid"></div>
   </section>
 
   <section class="card" style="margin-top: 1rem;">
@@ -42,6 +42,9 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
 </BaseLayout>
 
 <script>
+  import Plotly from "plotly.js-dist-min";
+  import { renderFigure } from "../lib/charts.js";
+
   const rawBaseUrl = import.meta.env.BASE_URL;
   const baseUrl = rawBaseUrl.endsWith("/") ? rawBaseUrl : `${rawBaseUrl}/`;
   const runMetaPanel = document.getElementById("run-meta-panel");
@@ -129,25 +132,57 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
       `;
 
       const outputs = runEntry.run_outputs || {};
-      const figureTiles = [
-        ["Durations", outputs.durations],
-        ["Speedup", outputs.speedup],
-        ["Gantt", outputs.gantt],
-        ["Flame", outputs.flame],
-      ]
-        .filter(([, path]) => path)
-        .map(
-          ([title, path]) => `
-            <article class="card figure-tile">
-              <h3 style="margin-top: 0;">${esc(title)}</h3>
-              <a href="${baseUrl}figures/${encodeURI(path)}" target="_blank" rel="noreferrer">
-                <img src="${baseUrl}figures/${encodeURI(path)}" alt="${esc(title)} plot" loading="lazy" />
-              </a>
-            </article>
-          `,
-        )
-        .join("");
-      runFigures.innerHTML = figureTiles || "<p class='muted'>No run-level figures available.</p>";
+      const figureDefs = [
+        { key: "durations", title: "Durations", kind: "durations", hasMetric: true },
+        { key: "gantt", title: "Gantt", kind: "gantt" },
+        { key: "flame", title: "Flame", kind: "flame" },
+      ].filter((def) => outputs[def.key]);
+
+      runFigures.innerHTML =
+        figureDefs
+          .map(
+            (def) => `
+              <article class="card figure-tile">
+                <div class="figure-tile-header">
+                  <h3 style="margin-top: 0;">${esc(def.title)}</h3>
+                  ${
+                    def.hasMetric
+                      ? `<select id="metric-select-${def.key}" class="metric-select">
+                          <option value="avg">Average</option>
+                          <option value="min">Min</option>
+                          <option value="max">Max</option>
+                          <option value="total">Total</option>
+                        </select>`
+                      : ""
+                  }
+                </div>
+                <div id="plot-${def.key}" class="plot-container"></div>
+              </article>
+            `,
+          )
+          .join("") || "<p class='muted'>No run-level figures available.</p>";
+
+      await Promise.all(
+        figureDefs.map(async (def) => {
+          const container = document.getElementById(`plot-${def.key}`);
+          try {
+            const plotRes = await fetch(`${baseUrl}figures/${outputs[def.key]}`);
+            if (!plotRes.ok) throw new Error(`HTTP ${plotRes.status}`);
+            const payload = await plotRes.json();
+            if (def.hasMetric) {
+              const select = document.getElementById(`metric-select-${def.key}`);
+              await renderFigure(Plotly, container, def.kind, payload, { metric: select.value });
+              select.addEventListener("change", () => {
+                renderFigure(Plotly, container, def.kind, payload, { metric: select.value });
+              });
+            } else {
+              await renderFigure(Plotly, container, def.kind, payload);
+            }
+          } catch (error) {
+            container.innerHTML = `<p class="muted">Could not load ${esc(def.title)} data: ${esc(error)}</p>`;
+          }
+        }),
+      );
 
       const stats = runEntry.region_statistics || {};
       const commonRegions = Array.isArray(selectedCase.common_regions) ? selectedCase.common_regions : [];

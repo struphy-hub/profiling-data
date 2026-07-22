@@ -9,6 +9,7 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "astro": "^7.0.7"
+    "astro": "^7.0.7",
+    "plotly.js-dist-min": "^3.7.0"
   }
 }

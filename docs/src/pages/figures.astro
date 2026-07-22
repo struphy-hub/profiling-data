@@ -8,21 +8,25 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
 <BaseLayout title="Profiling Figures" description="Durations and speedup plots plus case metadata explorer.">
   <section class="hero">
     <h1>Profiling figures</h1>
-    <p>Matplotlib plots from the latest profiling run, with case metadata details below.</p>
+    <p>Interactive charts rendered from the latest profiling run's exported data, with case metadata details below.</p>
   </section>
 
-  <section class="grid cards-2">
+  <section class="grid">
     <article class="card figure-tile">
-      <h3 id="durations-title">Durations</h3>
-      <a id="durations-link" href="#" target="_blank" rel="noreferrer">
-        <img id="durations-image" src="" alt="Durations plot" loading="lazy" />
-      </a>
+      <div class="figure-tile-header">
+        <h3 id="durations-title" style="margin-top: 0;">Durations</h3>
+        <select id="durations-metric-select" class="metric-select">
+          <option value="avg">Average</option>
+          <option value="min">Min</option>
+          <option value="max">Max</option>
+          <option value="total">Total</option>
+        </select>
+      </div>
+      <div id="durations-plot" class="plot-container"></div>
     </article>
     <article class="card figure-tile">
-      <h3 id="speedup-title">Speedup</h3>
-      <a id="speedup-link" href="#" target="_blank" rel="noreferrer">
-        <img id="speedup-image" src="" alt="Speedup plot" loading="lazy" />
-      </a>
+      <h3 id="speedup-title" style="margin-top: 0;">Speedup</h3>
+      <div id="speedup-plot" class="plot-container"></div>
     </article>
   </section>
 
@@ -48,6 +52,9 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
 </BaseLayout>
 
 <script>
+  import Plotly from "plotly.js-dist-min";
+  import { renderFigure } from "../lib/charts.js";
+
   const rawBaseUrl = import.meta.env.BASE_URL;
   const baseUrl = rawBaseUrl.endsWith("/") ? rawBaseUrl : `${rawBaseUrl}/`;
   const casesTableBody = document.getElementById("cases-table-body");
@@ -55,10 +62,9 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
   const caseMetaPanel = document.getElementById("case-meta-panel");
   const durationsTitle = document.getElementById("durations-title");
   const speedupTitle = document.getElementById("speedup-title");
-  const durationsLink = document.getElementById("durations-link");
-  const speedupLink = document.getElementById("speedup-link");
-  const durationsImage = document.getElementById("durations-image");
-  const speedupImage = document.getElementById("speedup-image");
+  const durationsPlot = document.getElementById("durations-plot");
+  const speedupPlot = document.getElementById("speedup-plot");
+  const durationsMetricSelect = document.getElementById("durations-metric-select");
 
   const fmt = (value) => {
     if (typeof value !== "number" || Number.isNaN(value)) return "-";
@@ -130,19 +136,46 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
     `;
   };
 
-  const renderPlots = (selectedCase) => {
-    const caseId = selectedCase?.id ?? "unknown";
-    const durationsPath = selectedCase?.plots?.durations;
-    const speedupPath = selectedCase?.plots?.speedup;
-    const durationsUrl = durationsPath ? `${baseUrl}figures/${durationsPath}` : "";
-    const speedupUrl = speedupPath ? `${baseUrl}figures/${speedupPath}` : "";
+  const fetchJson = async (path) => {
+    if (!path) return null;
+    const res = await fetch(`${baseUrl}figures/${path}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  };
 
+  const renderPlots = async (selectedCase) => {
+    const caseId = selectedCase?.id ?? "unknown";
     durationsTitle.textContent = `Durations (${caseId})`;
     speedupTitle.textContent = `Speedup (${caseId})`;
-    durationsLink.href = durationsUrl || "#";
-    speedupLink.href = speedupUrl || "#";
-    durationsImage.src = durationsUrl;
-    speedupImage.src = speedupUrl;
+
+    try {
+      const durationsPayload = await fetchJson(selectedCase?.plot_data?.durations);
+      if (durationsPayload) {
+        await renderFigure(Plotly, durationsPlot, "durations", durationsPayload, {
+          metric: durationsMetricSelect.value,
+        });
+        durationsMetricSelect.onchange = () => {
+          renderFigure(Plotly, durationsPlot, "durations", durationsPayload, {
+            metric: durationsMetricSelect.value,
+          });
+        };
+      } else {
+        durationsPlot.innerHTML = "<p class='muted'>No durations data available.</p>";
+      }
+    } catch (error) {
+      durationsPlot.innerHTML = `<p class="muted">Could not load durations data: ${esc(error)}</p>`;
+    }
+
+    try {
+      const speedupPayload = await fetchJson(selectedCase?.plot_data?.speedup);
+      if (speedupPayload) {
+        await renderFigure(Plotly, speedupPlot, "speedup", speedupPayload);
+      } else {
+        speedupPlot.innerHTML = "<p class='muted'>No speedup data available (requires multiple ranks).</p>";
+      }
+    } catch (error) {
+      speedupPlot.innerHTML = `<p class="muted">Could not load speedup data: ${esc(error)}</p>`;
+    }
   };
 
   const renderCaseMetadata = (selectedCase) => {
