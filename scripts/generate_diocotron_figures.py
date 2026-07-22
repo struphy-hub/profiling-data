@@ -235,6 +235,7 @@ def build_case_summary(
             "durations": f"cases/{folder_name}/durations_plot_total.png",
             "speedup": f"cases/{folder_name}/speedup_plot.png",
             "gantt": f"cases/{folder_name}/gantt_plot.png",
+            "flame": f"cases/{folder_name}/flame_plot.png",
         },
     }
 
@@ -318,6 +319,7 @@ def main() -> int:
                 "durations_plot_total.png",
                 "speedup_plot.png",
                 "gantt_plot.png",
+                "flame_plot.png",
                 "region_statistics.json",
             ):
                 stale_path = run_output_dir / stale_file
@@ -334,6 +336,7 @@ def main() -> int:
                 "durations": "durations_plot_total.png",
                 "speedup": "speedup_plot.png",
                 "gantt": "gantt_plot.png",
+                "flame": "flame_plot.png",
                 "region_statistics": "region_statistics.json",
             }
             for key, file_name in output_files.items():
