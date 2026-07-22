@@ -22,12 +22,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output",
         default="docs/public/figures",
-        help="Output directory passed to scope-profiler-pproc.",
+        help="Output directory passed to scope-profiler pproc.",
     )
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Print the command and selected files without running scope-profiler-pproc.",
+        help="Print the command and selected files without running scope-profiler pproc.",
     )
     return parser.parse_args()
 
@@ -172,6 +172,7 @@ def run_scope_profiler(
 ) -> None:
     command = [
         pproc_executable,
+        "pproc",
         *(str(file) for file in h5_files),
         "--ranks",
         "0",
@@ -254,13 +255,13 @@ def main() -> int:
     output_dir.mkdir(parents=True, exist_ok=True)
     cases_output_dir = output_dir / "cases"
     cases_output_dir.mkdir(parents=True, exist_ok=True)
-    local_pproc = repo_root / ".venv" / "bin" / "scope-profiler-pproc"
-    pproc_executable = shutil.which("scope-profiler-pproc")
+    local_pproc = repo_root / ".venv" / "bin" / "scope-profiler pproc"
+    pproc_executable = shutil.which("scope-profiler")
     if pproc_executable is None and local_pproc.exists():
         pproc_executable = str(local_pproc)
     if pproc_executable is None:
         raise SystemExit(
-            "scope-profiler-pproc was not found in PATH or .venv/bin. Install requirements first."
+            "scope-profiler was not found in PATH or .venv/bin. Install requirements first."
         )
 
     aggregated_files: list[dict] = []
