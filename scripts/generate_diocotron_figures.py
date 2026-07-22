@@ -232,7 +232,7 @@ def build_case_summary(
         "ranks": ranks,
         "common_regions": case_stats.get("common_regions", []),
         "plots": {
-            "durations": f"cases/{folder_name}/durations_plot.png",
+            "durations": f"cases/{folder_name}/durations_plot_total.png",
             "speedup": f"cases/{folder_name}/speedup_plot.png",
             "gantt": f"cases/{folder_name}/gantt_plot.png",
         },
@@ -315,7 +315,7 @@ def main() -> int:
             run_output_dir = case_output_dir / "runs" / run_id
             run_output_dir.mkdir(parents=True, exist_ok=True)
             for stale_file in (
-                "durations_plot.png",
+                "durations_plot_total.png",
                 "speedup_plot.png",
                 "gantt_plot.png",
                 "region_statistics.json",
@@ -331,7 +331,7 @@ def main() -> int:
             )
             run_outputs = {"id": run_id}
             output_files = {
-                "durations": "durations_plot.png",
+                "durations": "durations_plot_total.png",
                 "speedup": "speedup_plot.png",
                 "gantt": "gantt_plot.png",
                 "region_statistics": "region_statistics.json",
