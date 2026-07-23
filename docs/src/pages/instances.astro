@@ -1,0 +1,108 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Case instances" description="Every instance a profiling case has been run, with metadata and links to detailed figures.">
+  <section class="hero">
+    <p id="instances-breadcrumb" class="muted" style="margin-top: 0;"></p>
+    <h1 id="instances-title">Case instances</h1>
+    <p id="instances-subtitle" class="muted"></p>
+  </section>
+
+  <section class="card" style="margin-top: 1rem;">
+    <h2>Instances</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Datetime</th>
+            <th>Struphy model used</th>
+            <th>Cluster name</th>
+            <th>Ranks</th>
+            <th>Struphy commit</th>
+            <th>Open</th>
+          </tr>
+        </thead>
+        <tbody id="instances-table-body"></tbody>
+      </table>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { groupCases, groupKeyForCase, groupLabelForCase } from "../lib/cases.js";
+
+  const rawBaseUrl = import.meta.env.BASE_URL;
+  const baseUrl = rawBaseUrl.endsWith("/") ? rawBaseUrl : `${rawBaseUrl}/`;
+  const tableBody = document.getElementById("instances-table-body");
+  const breadcrumb = document.getElementById("instances-breadcrumb");
+  const titleEl = document.getElementById("instances-title");
+  const subtitleEl = document.getElementById("instances-subtitle");
+
+  const esc = (value) =>
+    String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;");
+
+  const formatDatetime = (value) => {
+    const text = String(value ?? "");
+    if (!text) return "-";
+    const parsed = new Date(text);
+    if (Number.isNaN(parsed.getTime())) return text;
+    return parsed.toLocaleString();
+  };
+
+  const render = async () => {
+    try {
+      const requestedGroup = new URLSearchParams(window.location.search).get("group");
+      const res = await fetch(`${baseUrl}figures/region_statistics.json`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const cases = Array.isArray(data.cases) ? data.cases.slice() : [];
+      if (!cases.length) {
+        tableBody.innerHTML = '<tr><td colspan="6" class="muted">No cases found in region_statistics.json.</td></tr>';
+        return;
+      }
+
+      const groups = groupCases(cases);
+      const groupKey = requestedGroup && groups.has(requestedGroup) ? requestedGroup : [...groups.keys()][0];
+      const entries = (groups.get(groupKey) ?? []).slice();
+      entries.sort((a, b) => String(b.datetime_utc ?? "").localeCompare(String(a.datetime_utc ?? "")));
+
+      breadcrumb.innerHTML = `<a href="${baseUrl}">Back to case overview</a>`;
+      titleEl.textContent = groupLabelForCase(entries[0]);
+      subtitleEl.textContent = entries[0]?.description ?? "";
+
+      if (!entries.length) {
+        tableBody.innerHTML = '<tr><td colspan="6" class="muted">No instances found for this case.</td></tr>';
+        return;
+      }
+
+      tableBody.innerHTML = entries
+        .map((entry) => {
+          const caseId = encodeURIComponent(entry.id ?? "");
+          const ranks = Array.isArray(entry.ranks) ? entry.ranks.slice().sort((a, b) => a - b) : [];
+          const rankSummary = ranks.length ? ranks.join(", ") : "-";
+          const meta = entry.case_metadata ?? {};
+          const commit = meta.struphy_commit || meta.commit_short || meta.commit || "-";
+          return `
+            <tr>
+              <td>${esc(formatDatetime(entry.datetime_utc))}</td>
+              <td>${esc(entry.struphy_model_used ?? "-")}</td>
+              <td>${esc(entry.cluster_name ?? "-")}</td>
+              <td>${esc(rankSummary)}</td>
+              <td><code>${esc(commit)}</code></td>
+              <td><a href="${baseUrl}figures?case=${caseId}#cases">View details</a></td>
+            </tr>
+          `;
+        })
+        .join("");
+    } catch (error) {
+      tableBody.innerHTML = `<tr><td colspan="6" class="muted">Could not load instances table: ${esc(error)}</td></tr>`;
+    }
+  };
+
+  render();
+</script>

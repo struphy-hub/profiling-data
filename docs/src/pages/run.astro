@@ -44,6 +44,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
 <script>
   import Plotly from "plotly.js-dist-min";
   import { renderFigure } from "../lib/charts.js";
+  import { groupKeyForCase } from "../lib/cases.js";
 
   const rawBaseUrl = import.meta.env.BASE_URL;
   const baseUrl = rawBaseUrl.endsWith("/") ? rawBaseUrl : `${rawBaseUrl}/`;
@@ -115,7 +116,13 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
         caseRuns[0];
 
       runBreadcrumb.innerHTML = `
-        <a href="${baseUrl}figures?case=${encodeURIComponent(selectedCase.id)}#cases">Back to case explorer</a>
+        <a href="${baseUrl}">Case overview</a>
+        &rsaquo;
+        <a href="${baseUrl}instances?group=${encodeURIComponent(groupKeyForCase(selectedCase))}">
+          ${selectedCase.title ? `${selectedCase.title} instances` : "Instances"}
+        </a>
+        &rsaquo;
+        <a href="${baseUrl}figures?case=${encodeURIComponent(selectedCase.id)}#cases">Run explorer</a>
       `;
 
       runMetaPanel.innerHTML = `

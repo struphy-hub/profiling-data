@@ -190,18 +190,18 @@ export function buildSpeedupFigure(points) {
     if (!regions.includes(point.region)) regions.push(point.region);
   }
   const colors = assignColors(regions);
-  const rankCounts = [...new Set(points.map((point) => point.rank_count))].sort((a, b) => a - b);
+  const rankCounts = [...new Set(points.map((point) => point.num_ranks))].sort((a, b) => a - b);
   const baseline = rankCounts[0] ?? 1;
 
   const data = regions.map((region) => {
     const rows = points
       .filter((point) => point.region === region)
-      .sort((a, b) => a.rank_count - b.rank_count);
+      .sort((a, b) => a.num_ranks - b.num_ranks);
     return {
       type: "scatter",
       mode: "lines+markers",
       name: region,
-      x: rows.map((row) => row.rank_count),
+      x: rows.map((row) => row.num_ranks),
       y: rows.map((row) => row.speedup),
       line: { color: colors.get(region), width: 2 },
       marker: { color: colors.get(region), size: 8 },

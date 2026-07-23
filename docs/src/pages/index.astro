@@ -6,8 +6,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   <section class="hero">
     <h1>Struphy profiling dashboard</h1>
     <p>
-      Overview of available profiling cases. Open a case to inspect detailed metadata and view the generated
-      durations/speedup plots.
+      Overview of available profiling cases. Open a case to see every instance it has been run (one per submission),
+      then drill into an instance to inspect its runs, metadata, and generated durations/speedup plots.
     </p>
   </section>
 
@@ -17,13 +17,12 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       <table>
         <thead>
           <tr>
-            <th>Datetime</th>
             <th>Case title</th>
             <th>Description</th>
-            <th>Struphy model used</th>
             <th>Physics problem</th>
-            <th>Cluster name</th>
-            <th>Ranks</th>
+            <th>Struphy model used</th>
+            <th>Instances</th>
+            <th>Latest run</th>
             <th>Open</th>
           </tr>
         </thead>
@@ -34,6 +33,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 </BaseLayout>
 
 <script>
+  import { groupCases, groupKeyForCase, groupLabelForCase } from "../lib/cases.js";
+
   const rawBaseUrl = import.meta.env.BASE_URL;
   const baseUrl = rawBaseUrl.endsWith("/") ? rawBaseUrl : `${rawBaseUrl}/`;
   const tableBody = document.getElementById("home-cases-table-body");
@@ -71,48 +72,65 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     });
   };
 
+  // Joins the distinct, non-empty values for a field across all instances of
+  // a case, since e.g. the struphy model or physics problem is expected to
+  // be constant per case but is technically stored per instance.
+  const distinctValues = (entries, getter) => {
+    const values = [];
+    for (const entry of entries) {
+      const value = String(getter(entry) ?? "").trim();
+      if (value && !values.includes(value)) values.push(value);
+    }
+    return values;
+  };
+
   const render = async () => {
     try {
       const res = await fetch(`${baseUrl}figures/region_statistics.json`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const cases = Array.isArray(data.cases) ? data.cases.slice() : [];
-      cases.sort((a, b) => String(b.datetime_utc ?? "").localeCompare(String(a.datetime_utc ?? "")));
       if (!cases.length) {
-        tableBody.innerHTML = '<tr><td colspan="8" class="muted">No cases found in region_statistics.json.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="7" class="muted">No cases found in region_statistics.json.</td></tr>';
         return;
       }
 
-      tableBody.innerHTML = cases
-        .map((entry) => {
-          const caseId = encodeURIComponent(entry.id ?? "");
-          const ranks = Array.isArray(entry.ranks) ? entry.ranks.slice().sort((a, b) => a - b) : [];
-          const rankSummary = ranks.length ? ranks.join(", ") : "-";
-          const description = String(entry.description ?? "");
+      const groups = [...groupCases(cases).entries()].map(([groupKey, entries]) => {
+        const sorted = entries
+          .slice()
+          .sort((a, b) => String(b.datetime_utc ?? "").localeCompare(String(a.datetime_utc ?? "")));
+        return { groupKey, entries: sorted, latest: sorted[0] };
+      });
+      groups.sort((a, b) => String(b.latest?.datetime_utc ?? "").localeCompare(String(a.latest?.datetime_utc ?? "")));
+
+      tableBody.innerHTML = groups
+        .map(({ groupKey, entries, latest }) => {
+          const description = String(latest?.description ?? "");
           const clampDescription = shouldClampDescription(description);
           const descriptionClass = clampDescription
             ? "case-description case-description--clamped"
             : "case-description";
+          const physicsProblems = distinctValues(entries, (entry) => entry.physics_problem);
+          const models = distinctValues(entries, (entry) => entry.struphy_model_used);
           return `
             <tr>
-              <td>${esc(formatDatetime(entry.datetime_utc))}</td>
-              <td><strong>${esc(entry.title ?? "-")}</strong></td>
+              <td><strong>${esc(groupLabelForCase(latest))}</strong></td>
               <td class="muted">
                 <div class="${descriptionClass}">${esc(description || "-")}</div>
                 ${clampDescription ? '<button type="button" class="desc-toggle" aria-expanded="false">Expand</button>' : ""}
               </td>
-              <td>${esc(entry.struphy_model_used ?? "-")}</td>
-              <td>${esc(entry.physics_problem ?? "-")}</td>
-              <td>${esc(entry.cluster_name ?? "-")}</td>
-              <td>${esc(rankSummary)}</td>
-              <td><a href="${baseUrl}figures?case=${caseId}#cases">View details</a></td>
+              <td>${esc(physicsProblems.join(", ") || "-")}</td>
+              <td>${esc(models.join(", ") || "-")}</td>
+              <td>${entries.length}</td>
+              <td>${esc(formatDatetime(latest?.datetime_utc))}</td>
+              <td><a href="${baseUrl}instances?group=${encodeURIComponent(groupKey)}">View instances</a></td>
             </tr>
           `;
         })
         .join("");
       bindDescriptionToggles();
     } catch (error) {
-      tableBody.innerHTML = `<tr><td colspan="8" class="muted">Could not load case table: ${esc(error)}</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="7" class="muted">Could not load case table: ${esc(error)}</td></tr>`;
     }
   };
 
