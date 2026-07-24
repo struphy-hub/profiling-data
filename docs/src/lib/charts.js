@@ -176,10 +176,29 @@ const METRIC_LABELS = {
 };
 
 export function buildDurationsFigure(bars, metric) {
-  const files = [];
-  for (const bar of bars) {
-    if (!files.includes(bar.file)) files.push(bar.file);
+  // Check if data includes per-rank information
+  const hasRankData = bars.some((bar) => bar.rank !== undefined);
+
+  let groupBy, colors;
+  if (hasRankData) {
+    // Group by rank
+    const ranks = [];
+    for (const bar of bars) {
+      if (!ranks.includes(bar.rank)) ranks.push(bar.rank);
+    }
+    ranks.sort((a, b) => a - b);
+    groupBy = ranks;
+    colors = assignColors(ranks.map((r) => `Rank ${r}`));
+  } else {
+    // Group by file (original behavior)
+    const files = [];
+    for (const bar of bars) {
+      if (!files.includes(bar.file)) files.push(bar.file);
+    }
+    groupBy = files;
+    colors = assignColors(files);
   }
+
   const regions = [];
   for (const bar of bars) {
     if (!regions.includes(bar.region)) regions.push(bar.region);
@@ -190,7 +209,10 @@ export function buildDurationsFigure(bars, metric) {
     const match = filename.match(/ranks(\d+)/);
     return match ? parseInt(match[1], 10) : 0;
   };
-  const fileRankMap = new Map(files.map((file) => [file, extractRankCount(file)]));
+  const fileRankMap = new Map(
+    [...new Set(bars.map((b) => b.file))]
+      .map((file) => [file, extractRankCount(file)])
+  );
   const regionRankMap = new Map();
   for (const bar of bars) {
     if (bar.region && bar.file) {
@@ -205,26 +227,30 @@ export function buildDurationsFigure(bars, metric) {
   }
   regions.sort((a, b) => (regionRankMap.get(a) ?? 0) - (regionRankMap.get(b) ?? 0));
 
-  const colors = assignColors(files);
-
-  const data = files.map((file) => {
-    const rows = bars.filter((bar) => bar.file === file && bar.metric === metric);
+  const data = groupBy.map((group) => {
+    let rows;
+    if (hasRankData) {
+      rows = bars.filter((bar) => bar.rank === group && bar.metric === metric);
+    } else {
+      rows = bars.filter((bar) => bar.file === group && bar.metric === metric);
+    }
     const byRegion = new Map(rows.map((row) => [row.region, row.value_seconds]));
+    const label = hasRankData ? `Rank ${group}` : group;
     return {
       type: "bar",
-      name: file,
+      name: label,
       x: regions,
       y: regions.map((region) => byRegion.get(region) ?? null),
-      marker: { color: colors.get(file) },
-      hovertemplate: "<b>%{x}</b><br>" + file.replace(/[&<>]/g, "") + ": %{y:.4f}s<extra></extra>",
+      marker: { color: colors.get(label) },
+      hovertemplate: "<b>%{x}</b><br>" + label.replace(/[&<>]/g, "") + ": %{y:.4f}s<extra></extra>",
     };
   });
 
   const layout = baseLayout({
     height: Math.max(360, 42 * regions.length + 180),
-    margin: { l: 160, r: 24, t: files.length > 1 ? 56 : 16, b: 140 },
+    margin: { l: 160, r: 24, t: groupBy.length > 1 ? 56 : 16, b: 140 },
     barmode: "group",
-    showlegend: files.length > 1,
+    showlegend: groupBy.length > 1,
     legend: { orientation: "h", y: 1.12, x: 0, font: { color: MUTED_COLOR, size: 11 } },
     xaxis: axisStyle({ tickangle: -35 }),
     yaxis: axisStyle({ title: { text: METRIC_LABELS[metric] ?? "Duration (s)" } }),

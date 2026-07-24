@@ -169,13 +169,14 @@ def run_scope_profiler(
     h5_files: list[Path],
     output_dir: Path,
     dry_run: bool,
+    ranks: str = "0",
 ) -> None:
     command = [
         pproc_executable,
         "pproc",
         *(str(file) for file in h5_files),
         "--ranks",
-        "0",
+        ranks,
         "-o",
         str(output_dir),
         "--export-data",
@@ -329,15 +330,17 @@ def main() -> int:
                 stale_path = run_output_dir / stale_file
                 if stale_path.exists():
                     stale_path.unlink()
+            # Generate data for rank 0 (for speedup, gantt, flame)
             run_scope_profiler(
                 pproc_executable,
                 [Path(str(entry["file_path"]))],
                 run_output_dir,
                 args.dry_run,
+                ranks="0",
             )
+
             run_outputs = {"id": run_id}
             output_files = {
-                "durations": "durations_data.json",
                 "speedup": "speedup_data.json",
                 "gantt": "gantt_data.json",
                 "flame": "flame_data.json",
@@ -346,6 +349,36 @@ def main() -> int:
             for key, file_name in output_files.items():
                 if (run_output_dir / file_name).exists():
                     run_outputs[key] = f"cases/{case_dir.name}/runs/{run_id}/{file_name}"
+
+            # Generate durations data for all ranks and merge them
+            num_ranks = entry.get("num_ranks", 1)
+            merged_durations = {"bars": []}
+            for rank in range(num_ranks):
+                rank_dir = run_output_dir / f"rank_{rank}"
+                rank_dir.mkdir(parents=True, exist_ok=True)
+                run_scope_profiler(
+                    pproc_executable,
+                    [Path(str(entry["file_path"]))],
+                    rank_dir,
+                    args.dry_run,
+                    ranks=str(rank),
+                )
+                rank_durations_path = rank_dir / "durations_data.json"
+                if rank_durations_path.exists():
+                    with rank_durations_path.open("r", encoding="utf-8") as f:
+                        rank_data = json.load(f)
+                    if isinstance(rank_data.get("bars"), list):
+                        for bar in rank_data["bars"]:
+                            bar["rank"] = rank
+                        merged_durations["bars"].extend(rank_data["bars"])
+
+            if merged_durations["bars"]:
+                durations_path = run_output_dir / "durations_data.json"
+                with durations_path.open("w", encoding="utf-8") as f:
+                    json.dump(merged_durations, f, indent=2)
+                    f.write("\n")
+                run_outputs["durations"] = f"cases/{case_dir.name}/runs/{run_id}/durations_data.json"
+
             entry["run_outputs"] = run_outputs
             aggregated_files.append(entry)
 
