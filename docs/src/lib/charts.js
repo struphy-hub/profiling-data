@@ -16,11 +16,21 @@ const CATEGORICAL_PALETTE = [
 ];
 const OVERFLOW_COLOR = "#898781";
 
-const TEXT_COLOR = "#111827";
-const MUTED_COLOR = "#6b7280";
-const GRID_COLOR = "#e1e0d9";
 const FONT_FAMILY =
   "Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+
+// Chrome colors (text, gridlines, hover surface) follow the site's active theme
+// (the `data-theme` attribute set by the header toggle) so the charts stay
+// legible in dark mode. The categorical series palette above is vivid enough to
+// read on both backgrounds, so it is not themed.
+function themeColors() {
+  const dark =
+    typeof document !== "undefined" &&
+    document.documentElement.dataset.theme === "dark";
+  return dark
+    ? { text: "#e5e7eb", muted: "#9ca3af", grid: "#2a2f3a", hoverBg: "#171a21" }
+    : { text: "#111827", muted: "#6b7280", grid: "#e1e0d9", hoverBg: "#ffffff" };
+}
 
 export function assignColors(names) {
   const colors = new Map();
@@ -33,24 +43,30 @@ export function assignColors(names) {
   return colors;
 }
 
-const baseLayout = (overrides = {}) => ({
-  font: { family: FONT_FAMILY, color: TEXT_COLOR, size: 12 },
-  paper_bgcolor: "transparent",
-  plot_bgcolor: "transparent",
-  margin: { l: 160, r: 24, t: 16, b: 48 },
-  hoverlabel: { bgcolor: "#ffffff", bordercolor: GRID_COLOR, font: { color: TEXT_COLOR } },
-  legend: { orientation: "h", y: -0.18, font: { color: MUTED_COLOR, size: 11 } },
-  ...overrides,
-});
+const baseLayout = (overrides = {}) => {
+  const c = themeColors();
+  return {
+    font: { family: FONT_FAMILY, color: c.text, size: 12 },
+    paper_bgcolor: "transparent",
+    plot_bgcolor: "transparent",
+    margin: { l: 160, r: 24, t: 16, b: 48 },
+    hoverlabel: { bgcolor: c.hoverBg, bordercolor: c.grid, font: { color: c.text } },
+    legend: { orientation: "h", y: -0.18, font: { color: c.muted, size: 11 } },
+    ...overrides,
+  };
+};
 
-const axisStyle = (overrides = {}) => ({
-  gridcolor: GRID_COLOR,
-  zerolinecolor: GRID_COLOR,
-  linecolor: GRID_COLOR,
-  tickfont: { color: MUTED_COLOR, size: 11 },
-  title: { font: { color: MUTED_COLOR, size: 12 } },
-  ...overrides,
-});
+const axisStyle = (overrides = {}) => {
+  const c = themeColors();
+  return {
+    gridcolor: c.grid,
+    zerolinecolor: c.grid,
+    linecolor: c.grid,
+    tickfont: { color: c.muted, size: 11 },
+    title: { font: { color: c.muted, size: 12 } },
+    ...overrides,
+  };
+};
 
 const plotConfig = { responsive: true, displaylogo: false, modeBarButtonsToRemove: ["lasso2d", "select2d"] };
 
@@ -100,7 +116,7 @@ export function buildGanttFigure(intervals) {
     margin: { l: 160, r: 24, t: 16, b: 110 },
     barmode: "overlay",
     showlegend: order.length > 1,
-    legend: { orientation: "h", y: -0.3, font: { color: MUTED_COLOR, size: 11 } },
+    legend: { orientation: "h", y: -0.3, font: { color: themeColors().muted, size: 11 } },
     xaxis: axisStyle({ title: { text: "Time (s)", standoff: 12 } }),
     yaxis: axisStyle({ autorange: "reversed", categoryorder: "array", categoryarray: order }),
   });
@@ -180,9 +196,9 @@ export function buildFlameFigure(calls) {
       values: values,
       branchvalues: "total",
       tiling: { orientation: "h" },
-      marker: { colors: markerColors, line: { color: GRID_COLOR, width: 1 } },
+      marker: { colors: markerColors, line: { color: themeColors().grid, width: 1 } },
       textposition: "middle center",
-      textfont: { color: TEXT_COLOR, size: 11 },
+      textfont: { color: themeColors().text, size: 11 },
       hovertext: hoverTexts,
       hoverinfo: "text",
     },
@@ -279,7 +295,7 @@ export function buildDurationsFigure(bars, metric) {
     margin: { l: 160, r: 24, t: groupBy.length > 1 ? 56 : 16, b: 140 },
     barmode: "group",
     showlegend: groupBy.length > 1,
-    legend: { orientation: "h", y: 1.12, x: 0, font: { color: MUTED_COLOR, size: 11 } },
+    legend: { orientation: "h", y: 1.12, x: 0, font: { color: themeColors().muted, size: 11 } },
     xaxis: axisStyle({ tickangle: -35 }),
     yaxis: axisStyle({ title: { text: METRIC_LABELS[metric] ?? "Duration (s)" } }),
   });
@@ -318,7 +334,7 @@ export function buildSpeedupFigure(points) {
     name: "Optimal speedup",
     x: rankCounts,
     y: rankCounts.map((count) => count / baseline),
-    line: { color: MUTED_COLOR, width: 1.5, dash: "dash" },
+    line: { color: themeColors().muted, width: 1.5, dash: "dash" },
     hoverinfo: "skip",
   });
 
@@ -332,8 +348,18 @@ export function buildSpeedupFigure(points) {
   return { data, layout };
 }
 
+// Track rendered figures so they can be re-themed when the user toggles dark
+// mode. Each container remembers its last render spec (including the current
+// metric), so a refresh re-renders with the latest state under the new theme.
+const themedFigures = new Set();
+let lastPlotly = null;
+
 export async function renderFigure(Plotly, container, kind, payload, extra) {
   if (!container) return;
+  lastPlotly = Plotly;
+  container.__figureSpec = { kind, payload, extra };
+  themedFigures.add(container);
+
   let figure;
   if (kind === "gantt") figure = buildGanttFigure(payload.intervals);
   else if (kind === "flame") figure = buildFlameFigure(payload.calls);
@@ -341,4 +367,21 @@ export async function renderFigure(Plotly, container, kind, payload, extra) {
   else if (kind === "speedup") figure = buildSpeedupFigure(payload.points);
   else throw new Error(`Unknown chart kind: ${kind}`);
   await render(Plotly, container, figure.data, figure.layout);
+}
+
+// Re-render every known figure using the current theme colors.
+export function refreshThemedFigures() {
+  if (!lastPlotly) return;
+  for (const container of themedFigures) {
+    if (!container.isConnected) {
+      themedFigures.delete(container);
+      continue;
+    }
+    const spec = container.__figureSpec;
+    if (spec) renderFigure(lastPlotly, container, spec.kind, spec.payload, spec.extra);
+  }
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("themechanged", refreshThemedFigures);
 }

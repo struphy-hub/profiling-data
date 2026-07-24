@@ -13,6 +13,17 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
   <section class="card" style="margin-top: 1rem;">
     <h2>Cases</h2>
+    <div class="toolbar">
+      <input
+        id="cases-search"
+        class="search-input"
+        type="search"
+        placeholder="Filter by title, description, physics problem, or model…"
+        aria-label="Filter cases"
+        autocomplete="off"
+      />
+      <span id="cases-result-count" class="result-count"></span>
+    </div>
     <div class="table-wrap">
       <table>
         <thead>
@@ -112,8 +123,16 @@ import BaseLayout from "../layouts/BaseLayout.astro";
             : "case-description";
           const physicsProblems = distinctValues(entries, (entry) => entry.physics_problem);
           const models = distinctValues(entries, (entry) => entry.struphy_model_used);
+          const searchText = [
+            groupLabelForCase(latest),
+            description,
+            physicsProblems.join(" "),
+            models.join(" "),
+          ]
+            .join(" ")
+            .toLowerCase();
           return `
-            <tr>
+            <tr data-search="${esc(searchText)}">
               <td><strong>${esc(groupLabelForCase(latest))}</strong></td>
               <td class="muted">
                 <div class="${descriptionClass}">${esc(description || "-")}</div>
@@ -129,9 +148,48 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         })
         .join("");
       bindDescriptionToggles();
+      setupSearch(groups.length);
     } catch (error) {
       tableBody.innerHTML = `<tr><td colspan="7" class="muted">Could not load case table: ${esc(error)}</td></tr>`;
     }
+  };
+
+  const setupSearch = (totalCount) => {
+    const searchInput = document.getElementById("cases-search");
+    const resultCount = document.getElementById("cases-result-count");
+    if (!searchInput || !resultCount) return;
+
+    const rows = [...tableBody.querySelectorAll("tr[data-search]")];
+
+    const applyFilter = () => {
+      const query = searchInput.value.trim().toLowerCase();
+      let visible = 0;
+      for (const row of rows) {
+        const match = !query || (row.dataset.search ?? "").includes(query);
+        row.style.display = match ? "" : "none";
+        if (match) visible += 1;
+      }
+
+      // Show/remove a "no matches" placeholder row.
+      let emptyRow = tableBody.querySelector("tr.empty-row");
+      if (visible === 0) {
+        if (!emptyRow) {
+          emptyRow = document.createElement("tr");
+          emptyRow.className = "empty-row";
+          emptyRow.innerHTML = '<td colspan="7" class="empty-state">No cases match your filter.</td>';
+          tableBody.appendChild(emptyRow);
+        }
+      } else if (emptyRow) {
+        emptyRow.remove();
+      }
+
+      resultCount.textContent = query
+        ? `${visible} of ${totalCount} cases`
+        : `${totalCount} case${totalCount === 1 ? "" : "s"}`;
+    };
+
+    searchInput.addEventListener("input", applyFilter);
+    applyFilter();
   };
 
   render();

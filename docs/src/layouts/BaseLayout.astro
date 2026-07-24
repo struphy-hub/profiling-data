@@ -22,6 +22,15 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <title>{title}</title>
+    <script is:inline>
+      // Apply the saved theme before first paint to avoid a flash.
+      // Default is light; dark only when explicitly chosen.
+      try {
+        if (localStorage.getItem("theme") === "dark") {
+          document.documentElement.dataset.theme = "dark";
+        }
+      } catch (_) {}
+    </script>
   </head>
   <body>
     <header class="site-header">
@@ -29,11 +38,57 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
         <a href={baseUrl} class="brand">Struphy Profiling</a>
         <nav class="links">
           <a href={baseUrl}>Overview</a>
+          <button
+            id="theme-toggle"
+            class="theme-toggle"
+            type="button"
+            aria-pressed="false"
+            aria-label="Toggle dark mode"
+          >
+            <span id="theme-toggle-icon" aria-hidden="true">🌙</span>
+            <span id="theme-toggle-label">Dark</span>
+          </button>
         </nav>
       </div>
     </header>
     <main class="shell">
       <slot />
     </main>
+    <footer class="site-footer">
+      <div class="shell">Struphy profiling dashboard — generated from scope-profiler exports.</div>
+    </footer>
+    <script is:inline>
+      (() => {
+        const root = document.documentElement;
+        const button = document.getElementById("theme-toggle");
+        const icon = document.getElementById("theme-toggle-icon");
+        const label = document.getElementById("theme-toggle-label");
+        if (!button) return;
+
+        const sync = () => {
+          const isDark = root.dataset.theme === "dark";
+          button.setAttribute("aria-pressed", isDark ? "true" : "false");
+          // The button shows the action it performs, not the current state.
+          if (icon) icon.textContent = isDark ? "☀︎" : "🌙";
+          if (label) label.textContent = isDark ? "Light" : "Dark";
+        };
+
+        button.addEventListener("click", () => {
+          const isDark = root.dataset.theme === "dark";
+          if (isDark) {
+            delete root.dataset.theme;
+            try { localStorage.setItem("theme", "light"); } catch (_) {}
+          } else {
+            root.dataset.theme = "dark";
+            try { localStorage.setItem("theme", "dark"); } catch (_) {}
+          }
+          sync();
+          // Charts render once, so tell them to re-theme.
+          window.dispatchEvent(new Event("themechanged"));
+        });
+
+        sync();
+      })();
+    </script>
   </body>
 </html>
