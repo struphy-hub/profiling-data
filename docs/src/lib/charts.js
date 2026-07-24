@@ -157,13 +157,21 @@ export function buildDurationsFigure(bars, metric) {
     if (!regions.includes(bar.region)) regions.push(bar.region);
   }
 
-  // Sort regions by MPI rank count
+  // Extract MPI rank count from filename and sort regions by rank count
+  const extractRankCount = (filename) => {
+    const match = filename.match(/ranks(\d+)/);
+    return match ? parseInt(match[1], 10) : 0;
+  };
+  const fileRankMap = new Map(files.map((file) => [file, extractRankCount(file)]));
   const regionRankMap = new Map();
   for (const bar of bars) {
-    if (bar.region && bar.num_ranks !== undefined) {
-      const existing = regionRankMap.get(bar.region);
-      if (existing === undefined || bar.num_ranks < existing) {
-        regionRankMap.set(bar.region, bar.num_ranks);
+    if (bar.region && bar.file) {
+      const rankCount = fileRankMap.get(bar.file);
+      if (rankCount !== undefined) {
+        const existing = regionRankMap.get(bar.region);
+        if (existing === undefined || rankCount < existing) {
+          regionRankMap.set(bar.region, rankCount);
+        }
       }
     }
   }
