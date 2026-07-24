@@ -65,6 +65,19 @@ export function buildGanttFigure(intervals) {
   for (const interval of intervals) {
     if (!order.includes(interval.region)) order.push(interval.region);
   }
+
+  // Sort regions by their first start time
+  const regionFirstStartMap = new Map();
+  for (const interval of intervals) {
+    if (interval.region) {
+      const existing = regionFirstStartMap.get(interval.region);
+      if (existing === undefined || interval.start_seconds < existing) {
+        regionFirstStartMap.set(interval.region, interval.start_seconds);
+      }
+    }
+  }
+  order.sort((a, b) => (regionFirstStartMap.get(a) ?? 0) - (regionFirstStartMap.get(b) ?? 0));
+
   const colors = assignColors(order);
 
   const data = order.map((region) => {
@@ -255,7 +268,7 @@ export async function renderFigure(Plotly, container, kind, payload, extra) {
   let figure;
   if (kind === "gantt") figure = buildGanttFigure(payload.intervals);
   else if (kind === "flame") figure = buildFlameFigure(payload.calls);
-  else if (kind === "durations") figure = buildDurationsFigure(payload.bars, extra?.metric ?? "avg");
+  else if (kind === "durations") figure = buildDurationsFigure(payload.bars, extra?.metric ?? "total");
   else if (kind === "speedup") figure = buildSpeedupFigure(payload.points);
   else throw new Error(`Unknown chart kind: ${kind}`);
   await render(Plotly, container, figure.data, figure.layout);
