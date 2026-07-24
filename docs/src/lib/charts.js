@@ -219,24 +219,40 @@ const METRIC_LABELS = {
   total: "Total duration (s)",
 };
 
-export function buildDurationsFigure(bars, metric) {
+// Distinct ranks present in a durations payload, sorted ascending. Empty when
+// the data has no per-rank breakdown (older single-rank exports).
+export function durationsRanks(bars) {
+  const ranks = [];
+  for (const bar of bars ?? []) {
+    if (bar.rank !== undefined && !ranks.includes(bar.rank)) ranks.push(bar.rank);
+  }
+  return ranks.sort((a, b) => a - b);
+}
+
+export function buildDurationsFigure(bars, metric, selectedRanks) {
   // Check if data includes per-rank information
   const hasRankData = bars.some((bar) => bar.rank !== undefined);
 
+  // Capture the full rank set before any filtering so each rank keeps a stable
+  // color as others are toggled on/off.
+  const allRanks = durationsRanks(bars);
+
+  // When rank data is present and a selection is given, keep only those ranks.
+  // A null/undefined selection means "show all"; an empty array shows none.
+  const rankFilter =
+    hasRankData && Array.isArray(selectedRanks) ? new Set(selectedRanks) : null;
+  const visibleBars = rankFilter
+    ? bars.filter((bar) => bar.rank === undefined || rankFilter.has(bar.rank))
+    : bars;
+
   let groupBy, colors;
   if (hasRankData) {
-    // Group by rank
-    const ranks = [];
-    for (const bar of bars) {
-      if (!ranks.includes(bar.rank)) ranks.push(bar.rank);
-    }
-    ranks.sort((a, b) => a - b);
-    groupBy = ranks;
-    colors = assignColors(ranks.map((r) => `Rank ${r}`));
+    colors = assignColors(allRanks.map((r) => `Rank ${r}`));
+    groupBy = durationsRanks(visibleBars);
   } else {
     // Group by file (original behavior)
     const files = [];
-    for (const bar of bars) {
+    for (const bar of visibleBars) {
       if (!files.includes(bar.file)) files.push(bar.file);
     }
     groupBy = files;
@@ -244,7 +260,7 @@ export function buildDurationsFigure(bars, metric) {
   }
 
   const regions = [];
-  for (const bar of bars) {
+  for (const bar of visibleBars) {
     if (!regions.includes(bar.region)) regions.push(bar.region);
   }
 
@@ -254,11 +270,11 @@ export function buildDurationsFigure(bars, metric) {
     return match ? parseInt(match[1], 10) : 0;
   };
   const fileRankMap = new Map(
-    [...new Set(bars.map((b) => b.file))]
+    [...new Set(visibleBars.map((b) => b.file))]
       .map((file) => [file, extractRankCount(file)])
   );
   const regionRankMap = new Map();
-  for (const bar of bars) {
+  for (const bar of visibleBars) {
     if (bar.region && bar.file) {
       const rankCount = fileRankMap.get(bar.file);
       if (rankCount !== undefined) {
@@ -274,9 +290,9 @@ export function buildDurationsFigure(bars, metric) {
   const data = groupBy.map((group) => {
     let rows;
     if (hasRankData) {
-      rows = bars.filter((bar) => bar.rank === group && bar.metric === metric);
+      rows = visibleBars.filter((bar) => bar.rank === group && bar.metric === metric);
     } else {
-      rows = bars.filter((bar) => bar.file === group && bar.metric === metric);
+      rows = visibleBars.filter((bar) => bar.file === group && bar.metric === metric);
     }
     const byRegion = new Map(rows.map((row) => [row.region, row.value_seconds]));
     const label = hasRankData ? `Rank ${group}` : group;
@@ -363,7 +379,8 @@ export async function renderFigure(Plotly, container, kind, payload, extra) {
   let figure;
   if (kind === "gantt") figure = buildGanttFigure(payload.intervals);
   else if (kind === "flame") figure = buildFlameFigure(payload.calls);
-  else if (kind === "durations") figure = buildDurationsFigure(payload.bars, extra?.metric ?? "total");
+  else if (kind === "durations")
+    figure = buildDurationsFigure(payload.bars, extra?.metric ?? "total", extra?.ranks);
   else if (kind === "speedup") figure = buildSpeedupFigure(payload.points);
   else throw new Error(`Unknown chart kind: ${kind}`);
   await render(Plotly, container, figure.data, figure.layout);

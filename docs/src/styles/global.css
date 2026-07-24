@@ -325,3 +325,57 @@ tbody tr:last-child td {
   color: var(--muted);
   padding: 1.5rem;
 }
+
+.rank-select {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  width: 100%;
+  margin: 0.25rem 0 0.6rem;
+}
+
+.rank-select-label {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-right: 0.15rem;
+}
+
+.rank-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text);
+  padding: 0.15rem 0.55rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.rank-chip:hover {
+  border-color: var(--accent);
+}
+
+.rank-chip input {
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.rank-btn {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--heading);
+  padding: 0.15rem 0.55rem;
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.rank-btn:hover {
+  background: var(--row-hover);
+  border-color: var(--accent);
+}

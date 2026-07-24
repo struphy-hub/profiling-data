@@ -43,7 +43,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
 
 <script>
   import Plotly from "plotly.js-dist-min";
-  import { renderFigure } from "../lib/charts.js";
+  import { renderFigure, durationsRanks } from "../lib/charts.js";
   import { groupKeyForCase } from "../lib/cases.js";
 
   const rawBaseUrl = import.meta.env.BASE_URL;
@@ -90,6 +90,60 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
       ["Destination", fileMetadata.destination ?? "-"],
       ["Run metadata", JSON.stringify(fileMetadata)],
     ];
+  };
+
+  // Renders the durations chart plus, when the data is broken down per MPI
+  // rank, an interactive checkbox group to choose which ranks are shown.
+  const setupDurations = async (def, container, payload) => {
+    const metricSelect = document.getElementById(`metric-select-${def.key}`);
+    const rankBox = document.getElementById(`rank-select-${def.key}`);
+    const ranks = durationsRanks(payload.bars);
+    let selectedRanks = ranks.slice();
+
+    const draw = () =>
+      renderFigure(Plotly, container, def.kind, payload, {
+        metric: metricSelect.value,
+        // Only constrain ranks when the data actually has a rank breakdown.
+        ranks: ranks.length ? selectedRanks : undefined,
+      });
+
+    metricSelect.addEventListener("change", draw);
+
+    if (ranks.length && rankBox) {
+      rankBox.hidden = false;
+      rankBox.innerHTML = `
+        <span class="rank-select-label">Ranks:</span>
+        ${ranks
+          .map(
+            (rank) => `
+              <label class="rank-chip">
+                <input type="checkbox" value="${rank}" checked /> ${rank}
+              </label>`,
+          )
+          .join("")}
+        <button type="button" class="rank-btn" data-action="all">All</button>
+        <button type="button" class="rank-btn" data-action="none">None</button>
+      `;
+
+      const checkboxes = [...rankBox.querySelectorAll('input[type="checkbox"]')];
+      const syncSelection = () => {
+        selectedRanks = checkboxes
+          .filter((cb) => cb.checked)
+          .map((cb) => Number(cb.value));
+        draw();
+      };
+
+      checkboxes.forEach((cb) => cb.addEventListener("change", syncSelection));
+      rankBox.querySelectorAll(".rank-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const check = btn.dataset.action === "all";
+          checkboxes.forEach((cb) => (cb.checked = check));
+          syncSelection();
+        });
+      });
+    }
+
+    await draw();
   };
 
   const render = async () => {
@@ -163,6 +217,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
                       : ""
                   }
                 </div>
+                ${def.key === "durations" ? `<div id="rank-select-${def.key}" class="rank-select" hidden></div>` : ""}
                 <div id="plot-${def.key}" class="plot-container"></div>
               </article>
             `,
@@ -176,7 +231,9 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
             const plotRes = await fetch(`${baseUrl}figures/${outputs[def.key]}`);
             if (!plotRes.ok) throw new Error(`HTTP ${plotRes.status}`);
             const payload = await plotRes.json();
-            if (def.hasMetric) {
+            if (def.kind === "durations") {
+              await setupDurations(def, container, payload);
+            } else if (def.hasMetric) {
               const select = document.getElementById(`metric-select-${def.key}`);
               await renderFigure(Plotly, container, def.kind, payload, { metric: select.value });
               select.addEventListener("change", () => {
