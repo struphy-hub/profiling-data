@@ -108,7 +108,11 @@ export function buildGanttFigure(intervals) {
   return { data, layout };
 }
 
-// Flame: icicle chart showing call hierarchy by region and depth
+// Flame: icicle chart showing call hierarchy with proper parent-child relationships.
+// Nodes are matched by a unique `ids` array (not by label), so repeated region
+// names don't collide. `branchvalues: "total"` is required because each node's
+// value is its own duration and a parent's duration already includes its
+// children's — without it Plotly would double-count and overflow the parent.
 export function buildFlameFigure(calls) {
   const regions = [];
   for (const call of calls) {
@@ -116,44 +120,68 @@ export function buildFlameFigure(calls) {
   }
   const colors = assignColors(regions);
 
+  // Sort by start time (then depth) so a parent always precedes its children.
+  const sortedCalls = [...calls]
+    .map((call, index) => ({ ...call, index }))
+    .sort((a, b) => a.start_seconds - b.start_seconds || a.depth - b.depth);
+
+  const rootDuration = sortedCalls
+    .filter((call) => call.depth === 0)
+    .reduce((sum, call) => sum + (call.end_seconds - call.start_seconds), 0);
+
+  const ids = ["All"];
   const labels = ["All"];
   const parents = [""];
-  const values = [calls.reduce((sum, call) => sum + (call.end_seconds - call.start_seconds), 0)];
+  const values = [rootDuration];
   const markerColors = [OVERFLOW_COLOR];
   const hoverTexts = ["All calls"];
 
-  // First level: regions
-  for (const region of regions) {
-    const regionCalls = calls.filter((c) => c.region === region);
-    const regionTotal = regionCalls.reduce((sum, c) => sum + (c.end_seconds - c.start_seconds), 0);
-    labels.push(region);
-    parents.push("All");
-    values.push(regionTotal);
-    markerColors.push(colors.get(region));
-    hoverTexts.push(`<b>${region}</b><br>total: ${regionTotal.toFixed(4)}s`);
-  }
+  // Map each sorted position to its node id so children can reference parents.
+  const idBySortedPos = new Map();
 
-  // Second level: individual calls
-  const sortedCalls = [...calls].sort((a, b) => a.start_seconds - b.start_seconds);
   for (let i = 0; i < sortedCalls.length; i++) {
     const call = sortedCalls[i];
     const duration = call.end_seconds - call.start_seconds;
-    labels.push(`${i}`);
-    parents.push(call.region);
+    const id = `node_${i}`;
+    idBySortedPos.set(i, id);
+
+    // Parent: most recent shallower call whose time range contains this one.
+    let parentId = "All";
+    if (call.depth > 0) {
+      for (let j = i - 1; j >= 0; j--) {
+        const candidate = sortedCalls[j];
+        if (
+          candidate.depth === call.depth - 1 &&
+          candidate.start_seconds <= call.start_seconds &&
+          candidate.end_seconds >= call.end_seconds
+        ) {
+          parentId = idBySortedPos.get(j);
+          break;
+        }
+      }
+    }
+
+    ids.push(id);
+    labels.push(call.region);
+    parents.push(parentId);
     values.push(duration);
     markerColors.push(colors.get(call.region));
     hoverTexts.push(
-      `<b>${call.region}</b><br>depth: ${call.depth}<br>duration: ${duration.toFixed(4)}s`
+      `<b>${call.region}</b><br>depth: ${call.depth}<br>start: ${call.start_seconds.toFixed(4)}s<br>duration: ${duration.toFixed(4)}s`
     );
   }
 
   const data = [
     {
       type: "icicle",
+      ids: ids,
       labels: labels,
       parents: parents,
       values: values,
+      branchvalues: "total",
+      tiling: { orientation: "h" },
       marker: { colors: markerColors, line: { color: GRID_COLOR, width: 1 } },
+      textposition: "middle center",
       textfont: { color: TEXT_COLOR, size: 11 },
       hovertext: hoverTexts,
       hoverinfo: "text",
