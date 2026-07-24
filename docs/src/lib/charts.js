@@ -156,6 +156,19 @@ export function buildDurationsFigure(bars, metric) {
   for (const bar of bars) {
     if (!regions.includes(bar.region)) regions.push(bar.region);
   }
+
+  // Sort regions by MPI rank count
+  const regionRankMap = new Map();
+  for (const bar of bars) {
+    if (bar.region && bar.num_ranks !== undefined) {
+      const existing = regionRankMap.get(bar.region);
+      if (existing === undefined || bar.num_ranks < existing) {
+        regionRankMap.set(bar.region, bar.num_ranks);
+      }
+    }
+  }
+  regions.sort((a, b) => (regionRankMap.get(a) ?? 0) - (regionRankMap.get(b) ?? 0));
+
   const colors = assignColors(files);
 
   const data = files.map((file) => {
