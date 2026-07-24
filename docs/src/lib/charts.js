@@ -108,46 +108,61 @@ export function buildGanttFigure(intervals) {
   return { data, layout };
 }
 
-// Flame: one horizontal-bar trace per region, laid out by reconstructed call
-// depth (y) instead of a fixed per-region row, so recursive calls stack.
+// Flame: icicle chart showing call hierarchy by region and depth
 export function buildFlameFigure(calls) {
-  const order = [];
+  const regions = [];
   for (const call of calls) {
-    if (!order.includes(call.region)) order.push(call.region);
+    if (!regions.includes(call.region)) regions.push(call.region);
   }
-  const colors = assignColors(order);
-  const maxDepth = calls.reduce((max, call) => Math.max(max, call.depth), 0);
+  const colors = assignColors(regions);
 
-  const data = order.map((region) => {
-    const rows = calls.filter((call) => call.region === region);
-    return {
-      type: "bar",
-      orientation: "h",
-      name: region,
-      y: rows.map((row) => row.depth),
-      x: rows.map((row) => row.end_seconds - row.start_seconds),
-      base: rows.map((row) => row.start_seconds),
-      marker: { color: colors.get(region) },
-      hovertemplate:
-        "<b>%{y}</b><br>" +
-        region.replace(/[&<>]/g, "") +
-        "<br>duration: %{x:.4f}s<extra></extra>",
-    };
-  });
+  const labels = ["All"];
+  const parents = [""];
+  const values = [calls.reduce((sum, call) => sum + (call.end_seconds - call.start_seconds), 0)];
+  const markerColors = [OVERFLOW_COLOR];
+  const hoverTexts = ["All calls"];
+
+  // First level: regions
+  for (const region of regions) {
+    const regionCalls = calls.filter((c) => c.region === region);
+    const regionTotal = regionCalls.reduce((sum, c) => sum + (c.end_seconds - c.start_seconds), 0);
+    labels.push(region);
+    parents.push("All");
+    values.push(regionTotal);
+    markerColors.push(colors.get(region));
+    hoverTexts.push(`<b>${region}</b><br>total: ${regionTotal.toFixed(4)}s`);
+  }
+
+  // Second level: individual calls
+  const sortedCalls = [...calls].sort((a, b) => a.start_seconds - b.start_seconds);
+  for (let i = 0; i < sortedCalls.length; i++) {
+    const call = sortedCalls[i];
+    const duration = call.end_seconds - call.start_seconds;
+    labels.push(`${i}`);
+    parents.push(call.region);
+    values.push(duration);
+    markerColors.push(colors.get(call.region));
+    hoverTexts.push(
+      `<b>${call.region}</b><br>depth: ${call.depth}<br>duration: ${duration.toFixed(4)}s`
+    );
+  }
+
+  const data = [
+    {
+      type: "icicle",
+      labels: labels,
+      parents: parents,
+      values: values,
+      marker: { colors: markerColors, line: { color: GRID_COLOR, width: 1 } },
+      textfont: { color: TEXT_COLOR, size: 11 },
+      hovertext: hoverTexts,
+      hoverinfo: "text",
+    },
+  ];
 
   const layout = baseLayout({
-    height: Math.max(260, 48 * (maxDepth + 1) + 160),
-    margin: { l: 160, r: 24, t: 16, b: 110 },
-    barmode: "overlay",
-    showlegend: order.length > 1,
-    legend: { orientation: "h", y: -0.3, font: { color: MUTED_COLOR, size: 11 } },
-    xaxis: axisStyle({ title: { text: "Time (s)", standoff: 12 } }),
-    yaxis: axisStyle({
-      title: { text: "Call depth" },
-      tickmode: "linear",
-      dtick: 1,
-      range: [-0.5, maxDepth + 0.5],
-    }),
+    height: 500,
+    margin: { l: 24, r: 24, t: 16, b: 24 },
   });
 
   return { data, layout };
