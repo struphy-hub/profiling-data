@@ -34,4 +34,14 @@ All run-level figures — durations, gantt, flame and the flame graph — are ge
 
 The `.prof` file is also published, and is downloadable from the run page for use with any pstats viewer.
 
+## Timeline (speedscope)
+
+Each run page also embeds [speedscope](https://www.speedscope.app), which shows every individual call rather than the aggregate the flame graph is built from — so it offers Time Order, Left Heavy and Sandwich views.
+
+- `scope-profiler pproc --export-speedscope` writes `profile.speedscope.json`.
+- speedscope is a self-contained static web app with no server component. `docs/scripts/copy-speedscope.mjs` copies its release build out of `node_modules` into `docs/public/speedscope/`, run automatically from the `predev`/`prebuild` npm hooks (it has to happen after `npm ci`, so the Python figure generation cannot do it).
+- The run page embeds it in an iframe and points it at the profile with speedscope's `#profileURL=` hash parameter.
+
+`docs/public/speedscope/` is generated and git-ignored, like `docs/public/figures/`.
+
 Everything under `docs/public/figures/cases/` is wiped and regenerated on each run, so artifacts from cases that no longer exist are not published.

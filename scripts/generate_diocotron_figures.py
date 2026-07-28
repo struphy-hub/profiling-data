@@ -172,6 +172,7 @@ def run_scope_profiler(
     dry_run: bool,
     ranks: str = "0",
     export_prof: bool = False,
+    export_speedscope: bool = False,
 ) -> None:
     command = [
         pproc_executable,
@@ -188,6 +189,8 @@ def run_scope_profiler(
     ]
     if export_prof:
         command.append("--export-prof")
+    if export_speedscope:
+        command.append("--export-speedscope")
 
     if dry_run:
         print("Dry run command:")
@@ -377,6 +380,7 @@ def main() -> int:
                 args.dry_run,
                 ranks="0",
                 export_prof=True,
+                export_speedscope=True,
             )
 
             run_outputs = {"id": run_id}
@@ -386,6 +390,7 @@ def main() -> int:
                 "gantt": "gantt_data.json",
                 "flame": "flame_data.json",
                 "region_statistics": "region_statistics.json",
+                "speedscope": "profile.speedscope.json",
             }
             for key, file_name in output_files.items():
                 if (run_output_dir / file_name).exists():

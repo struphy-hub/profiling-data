@@ -30,6 +30,21 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
   </section>
 
   <section class="card" style="margin-top: 1rem;">
+    <div class="figure-tile-header">
+      <h2 style="margin-top: 0;">Timeline <span class="muted">(rank 0)</span></h2>
+      <div class="figure-tile-header">
+        <a id="speedscope-open" class="rank-btn" target="_blank" rel="noopener" hidden>Open full page</a>
+        <a id="speedscope-download" class="rank-btn" download hidden>Download profile</a>
+      </div>
+    </div>
+    <p class="muted" style="margin-top: 0;">
+      Every individual call, as it happened. Use the view selector for
+      Time&nbsp;Order, Left&nbsp;Heavy or Sandwich.
+    </p>
+    <div id="speedscope-panel"></div>
+  </section>
+
+  <section class="card" style="margin-top: 1rem;">
     <h2 style="margin-top: 0;">Region statistics</h2>
     <div class="table-wrap">
       <table>
@@ -62,6 +77,9 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
   const runFigures = document.getElementById("run-figures");
   const flamegraphPanel = document.getElementById("flamegraph-panel");
   const flamegraphDownload = document.getElementById("flamegraph-download");
+  const speedscopePanel = document.getElementById("speedscope-panel");
+  const speedscopeOpen = document.getElementById("speedscope-open");
+  const speedscopeDownload = document.getElementById("speedscope-download");
 
   const esc = (value) =>
     String(value ?? "")
@@ -123,6 +141,31 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
     } catch (error) {
       flamegraphPanel.innerHTML = `<p class="muted">Could not load flame graph: ${esc(error)}</p>`;
     }
+  };
+
+  // speedscope is a self-contained static app; it loads a profile from the
+  // `profileURL` hash parameter. Embedded in an iframe because it owns its
+  // whole document (keyboard shortcuts, its own layout and theming).
+  const setupSpeedscope = (runEntry) => {
+    const profile = runEntry.run_outputs?.speedscope;
+    if (!profile) {
+      speedscopePanel.innerHTML = "<p class='muted'>No timeline profile available for this run.</p>";
+      return;
+    }
+
+    const profileUrl = new URL(`${baseUrl}figures/${profile}`, window.location.href).href;
+    const title = runEntry.label ? `${runEntry.label} (rank 0)` : "rank 0";
+    // index.html is named explicitly: the Astro dev server serves files from
+    // public/ but does not resolve a bare directory to its index.
+    const viewerUrl =
+      `${baseUrl}speedscope/index.html#profileURL=${encodeURIComponent(profileUrl)}` +
+      `&title=${encodeURIComponent(title)}`;
+
+    speedscopeOpen.href = viewerUrl;
+    speedscopeOpen.hidden = false;
+    speedscopeDownload.href = profileUrl;
+    speedscopeDownload.hidden = false;
+    speedscopePanel.innerHTML = `<iframe class="speedscope-frame" src="${esc(viewerUrl)}" title="speedscope timeline"></iframe>`;
   };
 
   const render = async () => {
@@ -225,6 +268,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
       );
 
       await setupFlamegraph(runEntry);
+      setupSpeedscope(runEntry);
 
       const stats = runEntry.region_statistics || {};
       const commonRegions = Array.isArray(selectedCase.common_regions) ? selectedCase.common_regions : [];
@@ -252,6 +296,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
       runMetaPanel.innerHTML = `<p class="muted">Could not load run metadata: ${esc(error)}</p>`;
       runFigures.innerHTML = "";
       flamegraphPanel.innerHTML = "";
+      speedscopePanel.innerHTML = "";
       runRegionsBody.innerHTML = "";
     }
   };

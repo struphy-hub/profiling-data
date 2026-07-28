@@ -198,6 +198,15 @@ a:hover {
   display: block;
 }
 
+/* speedscope owns its whole document, so it is embedded rather than inlined. */
+.speedscope-frame {
+  width: 100%;
+  height: 600px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+}
+
 .metric-select,
 .search-input {
   border: 1px solid var(--border);
