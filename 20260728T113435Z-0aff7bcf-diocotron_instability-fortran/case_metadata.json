@@ -1,0 +1,251 @@
+{
+  "general_information": {
+    "time_date_utc": "2026-07-28T11:34:35.821653+00:00",
+    "datetime_token": "20260728T113435Z",
+    "test_case_identifier": "diocotron_instability",
+    "test_case_name": "Diocotron instability",
+    "test_case_description": "Scaling test running the diocotron profiling setup with multiple MPI ranks.",
+    "physics_problem": "Diocotron instability in a non-neutral plasma.",
+    "struphy_model_used": "ToyDrift",
+    "simulation_name": "Diocotron instability",
+    "simulation_description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n",
+    "results_root": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf"
+  },
+  "hardware_information": {
+    "cluster_name": "pitagora_dcgp",
+    "node_hostnames": [
+      "login05"
+    ]
+  },
+  "software_information": {
+    "struphy_commit": "0aff7bcf369d1465e42ac11289f435fcdb301700",
+    "pyccel_language": "fortran",
+    "pyccel_compiler_family": "GNU",
+    "compiler_options": {
+      "compiler_config": null,
+      "omp_pic": false,
+      "omp_feec": false,
+      "verbose": false,
+      "time_execution": false,
+      "yes": false
+    },
+    "parameter_file": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/parameters.py",
+    "parameter_file_source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/profiling/examples/ToyGyrokinetic/diocotron_instability/params_diocotron.py",
+    "python_environment_pip_freeze": "add_trailing_comma==4.0.0\naiohappyeyeballs==2.7.1\naiohttp==3.14.3\naiosignal==1.4.0\nanyio==4.14.2\nargcomplete==3.7.0\nargon2-cffi==25.1.0\nargon2-cffi-bindings==25.1.0\nArpeggio==2.0.3\narrow==1.4.0\nastroid==4.0.4\nasttokens==3.0.2\nasync-lru==2.3.0\nattrs==26.1.0\nautopep8==2.3.2\nbabel==2.18.0\nbeautifulsoup4==4.15.0\nblack==26.5.1\nbleach==6.4.0\ncertifi==2026.7.22\ncffi==2.1.0\ncfgv==3.5.0\ncharset-normalizer==3.4.9\nchoreographer==1.3.0\nclick==8.4.2\ncomm==0.2.3\ncontourpy==1.3.3\ncoverage==7.15.2\ncunumpy==0.1.1\ncycler==0.12.1\ncyclopts==4.22.1\ndebugpy==1.8.21\ndecorator==5.3.1\ndefusedxml==0.7.1\ndill==0.4.1\ndistlib==0.4.3\ndocstring_parser==0.18.0\nexecuting==2.2.1\nfastjsonschema==2.21.2\nfeectools==0.1.3\nfilelock==3.32.0\nflake8==7.3.0\nfonttools==4.63.0\nfqdn==1.5.1\nfrozenlist==1.8.0\nh11==0.16.0\nh5py==3.16.0\nhttpcore==1.0.9\nhttpx==0.28.1\nidentify==2.6.19\nidna==3.18\nimmutabledict==4.3.1\niniconfig==2.3.0\nipykernel==7.3.0\nipython==9.15.0\nipython_pygments_lexers==1.1.1\nipywidgets==8.1.8\nisoduration==20.11.0\nisort==8.0.1\njedi==0.20.0\nJinja2==3.1.6\njson5==0.15.0\njsonpointer==3.1.1\njsonschema==4.26.0\njsonschema-specifications==2025.9.1\njupyter-events==0.12.1\njupyter-lsp==2.3.1\njupyter_builder==1.1.1\njupyter_client==8.9.1\njupyter_core==5.9.1\njupyter_server==2.20.0\njupyter_server_terminals==0.5.4\njupyterlab==4.6.2\njupyterlab_pygments==0.3.0\njupyterlab_server==2.28.0\njupyterlab_widgets==3.0.16\nkaleido==1.3.0\nkiwisolver==1.5.0\nlark==1.3.1\nline_profiler==5.0.2\nlogistro==2.0.1\nmarkdown-it-py==4.2.0\nMarkupSafe==3.0.3\nmatplotlib==3.11.0\nmatplotlib-inline==0.2.2\nmccabe==0.7.0\nmdurl==0.1.2\nmeson==1.11.2\nmistune==3.3.4\nmore-itertools==11.1.0\nmpi4py==4.1.1\nmpmath==1.3.0\nmsgpack==1.2.1\nmultidict==6.7.1\nmypy_extensions==1.1.0\nnarwhals==2.24.0\nnbclient==0.11.0\nnbconvert==7.17.1\nnbformat==5.10.4\nnbstripout==0.9.1\nnest-asyncio2==1.7.2\nninja==1.13.0\nnodeenv==1.10.0\nnotebook==7.6.1\nnotebook_shim==0.2.4\nnumpy==2.4.6\norjson==3.11.9\noverrides==7.7.0\npackaging==26.2\npandas==3.0.5\npandocfilters==1.5.1\nparso==0.8.7\npathspec==1.1.1\npexpect==4.9.0\npillow==12.3.0\nplatformdirs==4.11.0\nplotly==6.9.0\npluggy==1.6.0\npooch==1.9.0\npre_commit==4.6.1\nprometheus_client==0.25.0\nprompt_toolkit==3.0.52\npropcache==0.5.2\npsutil==7.2.2\nptyprocess==0.7.0\npure_eval==0.2.3\npyccel==2.2.3\npycodestyle==2.14.0\npycparser==3.0\npyevtk==1.7.0\npyflakes==3.4.0\nPygments==2.20.0\npylint==4.0.6\npyparsing==3.3.2\npytest==9.1.0\npytest-mpi==0.6\npytest-testmon==2.2.0\npython-dateutil==2.9.0.post0\npython-discovery==1.5.0\npython-json-logger==4.1.0\npytokens==0.4.1\npyvista==0.48.0\nPyYAML==6.0.3\npyzmq==27.1.0\nreferencing==0.37.0\nrequests==2.34.2\nrfc3339-validator==0.1.4\nrfc3986-validator==0.1.1\nrfc3987-syntax==1.1.0\nrich==15.0.0\nrich-rst==2.1.0\nrpds-py==2026.6.3\nruff==0.16.0\nscipy==1.17.1\nscooby==0.11.2\nscope-profiler==0.2\nSend2Trash==2.1.0\nsimplejson==4.1.1\nsix==1.17.0\nslurm-script-generator==0.3.5\nsoupsieve==2.9.1\nssort==0.16.0\nstack-data==0.6.3\n-e git+ssh://git@github.com/struphy-hub/struphy.git@0aff7bcf369d1465e42ac11289f435fcdb301700#egg=struphy\nsympy==1.14.0\ntabulate==0.10.0\ntblib==3.2.2\ntermcolor==3.3.0\nterminado==0.18.1\ntextX==4.4.0\ntinycss2==1.5.1\ntokenize_rt==6.2.0\ntomli_w==1.2.0\ntomlkit==0.15.1\ntornado==6.5.7\ntqdm==4.69.0\ntraitlets==5.15.1\ntrame==3.13.0\ntrame-client==3.13.2\ntrame-common==1.2.4\ntrame-server==3.12.5\ntrame-vtk==2.11.8\ntrame-vuetify==3.2.2\ntyping_extensions==4.16.0\ntzdata==2026.3\nuri-template==1.3.0\nurllib3==2.7.0\nvirtualenv==21.7.0\nvtk==9.6.1\nwcwidth==0.8.2\nwebcolors==25.10.0\nwebencodings==0.5.1\nwebsocket-client==1.9.0\nwidgetsnbextension==4.0.15\nwslink==2.5.7\nyarl==1.24.5"
+  },
+  "job_information": {
+    "scheduler": "slurm",
+    "jobs": [
+      {
+        "ranks": 2,
+        "script_path": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/job_profile_diocotron_instability_01.sh",
+        "script": "#!/bin/bash\n########################################################\n#            This script was generated using           #\n#             slurm-script-generator v0.3.5            #\n# https://github.com/max-models/slurm-script-generator #\n#      `pip install slurm-script-generator==0.3.5`     #\n########################################################\n\n########################################################\n# Pragmas for Job Config                               #\n#SBATCH --job-name=profiling_diocotron_instability_ranks2 # name of job\n#SBATCH --account=FUSIO_HLST_7                         # charge job to specified account\n#SBATCH --partition=dcgp_fua_dbg                       # partition requested\n#                                                      #\n# Pragmas for Time And Priority                        #\n#SBATCH --time=00:15:00                                # time limit\n#                                                      #\n# Pragmas for Io And Directory                         #\n#SBATCH --output=./%x.%j.out                           # File to redirect output (%%x=jobname, %%j=jobid)\n#SBATCH --error=./%x.%j.err                            # File to redirect error (%%x=jobname, %%j=jobid)\n#                                                      #\n# Pragmas for Notifications                            #\n#SBATCH --mail-type=none                               # notify on state change\n#                                                      #\n# Pragmas for Core Node And Task Allocation            #\n#SBATCH --nodes=1                                      # number of nodes on which to run\n#SBATCH --ntasks-per-node=2                            # number of tasks to invoke on each node\n#SBATCH --cpus-per-task=1                              # number of cpus required per task\n#                                                      #\n# Pragmas for Memory                                   #\n#SBATCH --mem=480GB                                    # minimum amount of real memory\n########################################################\nmodule purge\nsource ./setup/modules.sh load\nmodule list\nsource /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv-fortran/bin/activate\necho \"----------------------------------------\"\necho \"Running profiling case: diocotron_instability (2 MPI ranks)\"\necho \"Description: Scaling test running the diocotron profiling setup with multiple MPI ranks.\"\necho \"Physics problem: Diocotron instability in a non-neutral plasma.\"\necho \"Struphy model used: ToyDrift\"\necho \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\necho \"----------------------------------------\"\nmkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\ncp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/profiling/examples/ToyGyrokinetic/diocotron_instability/params_diocotron.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/parameters.py\"\nls -l \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\n\necho \"Running diocotron_instability with 2 MPI ranks\"\ncd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\nsrun -n 2 python /pitagora/home/userexternal/mlindqvi/git_repos/struphy/profiling/examples/ToyGyrokinetic/diocotron_instability/params_diocotron.py  > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/struphy.out\" 2>&1\n\necho \"----------------------------------------\"\necho \"Completed profiling case: diocotron_instability (2 MPI ranks)\"\necho \"----------------------------------------\"\n",
+        "pragmas": {
+          "account": "FUSIO_HLST_7",
+          "job_name": "profiling_diocotron_instability_ranks2",
+          "partition": "dcgp_fua_dbg",
+          "time": "00:15:00",
+          "error": "./%x.%j.err",
+          "output": "./%x.%j.out",
+          "mail_type": "none",
+          "cpus_per_task": 1,
+          "nodes": 1,
+          "ntasks_per_node": 2,
+          "mem": "480GB"
+        }
+      },
+      {
+        "ranks": 4,
+        "script_path": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/job_profile_diocotron_instability_02.sh",
+        "script": "#!/bin/bash\n########################################################\n#            This script was generated using           #\n#             slurm-script-generator v0.3.5            #\n# https://github.com/max-models/slurm-script-generator #\n#      `pip install slurm-script-generator==0.3.5`     #\n########################################################\n\n########################################################\n# Pragmas for Job Config                               #\n#SBATCH --job-name=profiling_diocotron_instability_ranks4 # name of job\n#SBATCH --account=FUSIO_HLST_7                         # charge job to specified account\n#SBATCH --partition=dcgp_fua_dbg                       # partition requested\n#                                                      #\n# Pragmas for Time And Priority                        #\n#SBATCH --time=00:15:00                                # time limit\n#                                                      #\n# Pragmas for Io And Directory                         #\n#SBATCH --output=./%x.%j.out                           # File to redirect output (%%x=jobname, %%j=jobid)\n#SBATCH --error=./%x.%j.err                            # File to redirect error (%%x=jobname, %%j=jobid)\n#                                                      #\n# Pragmas for Notifications                            #\n#SBATCH --mail-type=none                               # notify on state change\n#                                                      #\n# Pragmas for Core Node And Task Allocation            #\n#SBATCH --nodes=1                                      # number of nodes on which to run\n#SBATCH --ntasks-per-node=4                            # number of tasks to invoke on each node\n#SBATCH --cpus-per-task=1                              # number of cpus required per task\n#                                                      #\n# Pragmas for Memory                                   #\n#SBATCH --mem=480GB                                    # minimum amount of real memory\n########################################################\nmodule purge\nsource ./setup/modules.sh load\nmodule list\nsource /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv-fortran/bin/activate\necho \"----------------------------------------\"\necho \"Running profiling case: diocotron_instability (4 MPI ranks)\"\necho \"Description: Scaling test running the diocotron profiling setup with multiple MPI ranks.\"\necho \"Physics problem: Diocotron instability in a non-neutral plasma.\"\necho \"Struphy model used: ToyDrift\"\necho \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\necho \"----------------------------------------\"\nmkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\ncp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/profiling/examples/ToyGyrokinetic/diocotron_instability/params_diocotron.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/parameters.py\"\nls -l \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\n\necho \"Running diocotron_instability with 4 MPI ranks\"\ncd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\nsrun -n 4 python /pitagora/home/userexternal/mlindqvi/git_repos/struphy/profiling/examples/ToyGyrokinetic/diocotron_instability/params_diocotron.py  > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/struphy.out\" 2>&1\n\necho \"----------------------------------------\"\necho \"Completed profiling case: diocotron_instability (4 MPI ranks)\"\necho \"----------------------------------------\"\n",
+        "pragmas": {
+          "account": "FUSIO_HLST_7",
+          "job_name": "profiling_diocotron_instability_ranks4",
+          "partition": "dcgp_fua_dbg",
+          "time": "00:15:00",
+          "error": "./%x.%j.err",
+          "output": "./%x.%j.out",
+          "mail_type": "none",
+          "cpus_per_task": 1,
+          "nodes": 1,
+          "ntasks_per_node": 4,
+          "mem": "480GB"
+        }
+      },
+      {
+        "ranks": 8,
+        "script_path": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/job_profile_diocotron_instability_03.sh",
+        "script": "#!/bin/bash\n########################################################\n#            This script was generated using           #\n#             slurm-script-generator v0.3.5            #\n# https://github.com/max-models/slurm-script-generator #\n#      `pip install slurm-script-generator==0.3.5`     #\n########################################################\n\n########################################################\n# Pragmas for Job Config                               #\n#SBATCH --job-name=profiling_diocotron_instability_ranks8 # name of job\n#SBATCH --account=FUSIO_HLST_7                         # charge job to specified account\n#SBATCH --partition=dcgp_fua_dbg                       # partition requested\n#                                                      #\n# Pragmas for Time And Priority                        #\n#SBATCH --time=00:15:00                                # time limit\n#                                                      #\n# Pragmas for Io And Directory                         #\n#SBATCH --output=./%x.%j.out                           # File to redirect output (%%x=jobname, %%j=jobid)\n#SBATCH --error=./%x.%j.err                            # File to redirect error (%%x=jobname, %%j=jobid)\n#                                                      #\n# Pragmas for Notifications                            #\n#SBATCH --mail-type=none                               # notify on state change\n#                                                      #\n# Pragmas for Core Node And Task Allocation            #\n#SBATCH --nodes=1                                      # number of nodes on which to run\n#SBATCH --ntasks-per-node=8                            # number of tasks to invoke on each node\n#SBATCH --cpus-per-task=1                              # number of cpus required per task\n#                                                      #\n# Pragmas for Memory                                   #\n#SBATCH --mem=480GB                                    # minimum amount of real memory\n########################################################\nmodule purge\nsource ./setup/modules.sh load\nmodule list\nsource /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv-fortran/bin/activate\necho \"----------------------------------------\"\necho \"Running profiling case: diocotron_instability (8 MPI ranks)\"\necho \"Description: Scaling test running the diocotron profiling setup with multiple MPI ranks.\"\necho \"Physics problem: Diocotron instability in a non-neutral plasma.\"\necho \"Struphy model used: ToyDrift\"\necho \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\necho \"----------------------------------------\"\nmkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\ncp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/profiling/examples/ToyGyrokinetic/diocotron_instability/params_diocotron.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/parameters.py\"\nls -l \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\n\necho \"Running diocotron_instability with 8 MPI ranks\"\ncd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\nsrun -n 8 python /pitagora/home/userexternal/mlindqvi/git_repos/struphy/profiling/examples/ToyGyrokinetic/diocotron_instability/params_diocotron.py  > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/struphy.out\" 2>&1\n\necho \"----------------------------------------\"\necho \"Completed profiling case: diocotron_instability (8 MPI ranks)\"\necho \"----------------------------------------\"\n",
+        "pragmas": {
+          "account": "FUSIO_HLST_7",
+          "job_name": "profiling_diocotron_instability_ranks8",
+          "partition": "dcgp_fua_dbg",
+          "time": "00:15:00",
+          "error": "./%x.%j.err",
+          "output": "./%x.%j.out",
+          "mail_type": "none",
+          "cpus_per_task": 1,
+          "nodes": 1,
+          "ntasks_per_node": 8,
+          "mem": "480GB"
+        }
+      },
+      {
+        "ranks": 16,
+        "script_path": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/job_profile_diocotron_instability_04.sh",
+        "script": "#!/bin/bash\n########################################################\n#            This script was generated using           #\n#             slurm-script-generator v0.3.5            #\n# https://github.com/max-models/slurm-script-generator #\n#      `pip install slurm-script-generator==0.3.5`     #\n########################################################\n\n########################################################\n# Pragmas for Job Config                               #\n#SBATCH --job-name=profiling_diocotron_instability_ranks16 # name of job\n#SBATCH --account=FUSIO_HLST_7                         # charge job to specified account\n#SBATCH --partition=dcgp_fua_dbg                       # partition requested\n#                                                      #\n# Pragmas for Time And Priority                        #\n#SBATCH --time=00:15:00                                # time limit\n#                                                      #\n# Pragmas for Io And Directory                         #\n#SBATCH --output=./%x.%j.out                           # File to redirect output (%%x=jobname, %%j=jobid)\n#SBATCH --error=./%x.%j.err                            # File to redirect error (%%x=jobname, %%j=jobid)\n#                                                      #\n# Pragmas for Notifications                            #\n#SBATCH --mail-type=none                               # notify on state change\n#                                                      #\n# Pragmas for Core Node And Task Allocation            #\n#SBATCH --nodes=1                                      # number of nodes on which to run\n#SBATCH --ntasks-per-node=16                           # number of tasks to invoke on each node\n#SBATCH --cpus-per-task=1                              # number of cpus required per task\n#                                                      #\n# Pragmas for Memory                                   #\n#SBATCH --mem=480GB                                    # minimum amount of real memory\n########################################################\nmodule purge\nsource ./setup/modules.sh load\nmodule list\nsource /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv-fortran/bin/activate\necho \"----------------------------------------\"\necho \"Running profiling case: diocotron_instability (16 MPI ranks)\"\necho \"Description: Scaling test running the diocotron profiling setup with multiple MPI ranks.\"\necho \"Physics problem: Diocotron instability in a non-neutral plasma.\"\necho \"Struphy model used: ToyDrift\"\necho \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\necho \"----------------------------------------\"\nmkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\ncp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/profiling/examples/ToyGyrokinetic/diocotron_instability/params_diocotron.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/parameters.py\"\nls -l \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\n\necho \"Running diocotron_instability with 16 MPI ranks\"\ncd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\nsrun -n 16 python /pitagora/home/userexternal/mlindqvi/git_repos/struphy/profiling/examples/ToyGyrokinetic/diocotron_instability/params_diocotron.py  > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/struphy.out\" 2>&1\n\necho \"----------------------------------------\"\necho \"Completed profiling case: diocotron_instability (16 MPI ranks)\"\necho \"----------------------------------------\"\n",
+        "pragmas": {
+          "account": "FUSIO_HLST_7",
+          "job_name": "profiling_diocotron_instability_ranks16",
+          "partition": "dcgp_fua_dbg",
+          "time": "00:15:00",
+          "error": "./%x.%j.err",
+          "output": "./%x.%j.out",
+          "mail_type": "none",
+          "cpus_per_task": 1,
+          "nodes": 1,
+          "ntasks_per_node": 16,
+          "mem": "480GB"
+        }
+      },
+      {
+        "ranks": 32,
+        "script_path": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/job_profile_diocotron_instability_05.sh",
+        "script": "#!/bin/bash\n########################################################\n#            This script was generated using           #\n#             slurm-script-generator v0.3.5            #\n# https://github.com/max-models/slurm-script-generator #\n#      `pip install slurm-script-generator==0.3.5`     #\n########################################################\n\n########################################################\n# Pragmas for Job Config                               #\n#SBATCH --job-name=profiling_diocotron_instability_ranks32 # name of job\n#SBATCH --account=FUSIO_HLST_7                         # charge job to specified account\n#SBATCH --partition=dcgp_fua_dbg                       # partition requested\n#                                                      #\n# Pragmas for Time And Priority                        #\n#SBATCH --time=00:15:00                                # time limit\n#                                                      #\n# Pragmas for Io And Directory                         #\n#SBATCH --output=./%x.%j.out                           # File to redirect output (%%x=jobname, %%j=jobid)\n#SBATCH --error=./%x.%j.err                            # File to redirect error (%%x=jobname, %%j=jobid)\n#                                                      #\n# Pragmas for Notifications                            #\n#SBATCH --mail-type=none                               # notify on state change\n#                                                      #\n# Pragmas for Core Node And Task Allocation            #\n#SBATCH --nodes=1                                      # number of nodes on which to run\n#SBATCH --ntasks-per-node=32                           # number of tasks to invoke on each node\n#SBATCH --cpus-per-task=1                              # number of cpus required per task\n#                                                      #\n# Pragmas for Memory                                   #\n#SBATCH --mem=480GB                                    # minimum amount of real memory\n########################################################\nmodule purge\nsource ./setup/modules.sh load\nmodule list\nsource /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv-fortran/bin/activate\necho \"----------------------------------------\"\necho \"Running profiling case: diocotron_instability (32 MPI ranks)\"\necho \"Description: Scaling test running the diocotron profiling setup with multiple MPI ranks.\"\necho \"Physics problem: Diocotron instability in a non-neutral plasma.\"\necho \"Struphy model used: ToyDrift\"\necho \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\necho \"----------------------------------------\"\nmkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\ncp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/profiling/examples/ToyGyrokinetic/diocotron_instability/params_diocotron.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/parameters.py\"\nls -l \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\n\necho \"Running diocotron_instability with 32 MPI ranks\"\ncd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\nsrun -n 32 python /pitagora/home/userexternal/mlindqvi/git_repos/struphy/profiling/examples/ToyGyrokinetic/diocotron_instability/params_diocotron.py  > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/struphy.out\" 2>&1\n\necho \"----------------------------------------\"\necho \"Completed profiling case: diocotron_instability (32 MPI ranks)\"\necho \"----------------------------------------\"\n",
+        "pragmas": {
+          "account": "FUSIO_HLST_7",
+          "job_name": "profiling_diocotron_instability_ranks32",
+          "partition": "dcgp_fua_dbg",
+          "time": "00:15:00",
+          "error": "./%x.%j.err",
+          "output": "./%x.%j.out",
+          "mail_type": "none",
+          "cpus_per_task": 1,
+          "nodes": 1,
+          "ntasks_per_node": 32,
+          "mem": "480GB"
+        }
+      },
+      {
+        "ranks": 64,
+        "script_path": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/job_profile_diocotron_instability_06.sh",
+        "script": "#!/bin/bash\n########################################################\n#            This script was generated using           #\n#             slurm-script-generator v0.3.5            #\n# https://github.com/max-models/slurm-script-generator #\n#      `pip install slurm-script-generator==0.3.5`     #\n########################################################\n\n########################################################\n# Pragmas for Job Config                               #\n#SBATCH --job-name=profiling_diocotron_instability_ranks64 # name of job\n#SBATCH --account=FUSIO_HLST_7                         # charge job to specified account\n#SBATCH --partition=dcgp_fua_dbg                       # partition requested\n#                                                      #\n# Pragmas for Time And Priority                        #\n#SBATCH --time=00:15:00                                # time limit\n#                                                      #\n# Pragmas for Io And Directory                         #\n#SBATCH --output=./%x.%j.out                           # File to redirect output (%%x=jobname, %%j=jobid)\n#SBATCH --error=./%x.%j.err                            # File to redirect error (%%x=jobname, %%j=jobid)\n#                                                      #\n# Pragmas for Notifications                            #\n#SBATCH --mail-type=none                               # notify on state change\n#                                                      #\n# Pragmas for Core Node And Task Allocation            #\n#SBATCH --nodes=1                                      # number of nodes on which to run\n#SBATCH --ntasks-per-node=64                           # number of tasks to invoke on each node\n#SBATCH --cpus-per-task=1                              # number of cpus required per task\n#                                                      #\n# Pragmas for Memory                                   #\n#SBATCH --mem=480GB                                    # minimum amount of real memory\n########################################################\nmodule purge\nsource ./setup/modules.sh load\nmodule list\nsource /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv-fortran/bin/activate\necho \"----------------------------------------\"\necho \"Running profiling case: diocotron_instability (64 MPI ranks)\"\necho \"Description: Scaling test running the diocotron profiling setup with multiple MPI ranks.\"\necho \"Physics problem: Diocotron instability in a non-neutral plasma.\"\necho \"Struphy model used: ToyDrift\"\necho \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\necho \"----------------------------------------\"\nmkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\ncp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/profiling/examples/ToyGyrokinetic/diocotron_instability/params_diocotron.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/parameters.py\"\nls -l \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\n\necho \"Running diocotron_instability with 64 MPI ranks\"\ncd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\nsrun -n 64 python /pitagora/home/userexternal/mlindqvi/git_repos/struphy/profiling/examples/ToyGyrokinetic/diocotron_instability/params_diocotron.py  > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/struphy.out\" 2>&1\n\necho \"----------------------------------------\"\necho \"Completed profiling case: diocotron_instability (64 MPI ranks)\"\necho \"----------------------------------------\"\n",
+        "pragmas": {
+          "account": "FUSIO_HLST_7",
+          "job_name": "profiling_diocotron_instability_ranks64",
+          "partition": "dcgp_fua_dbg",
+          "time": "00:15:00",
+          "error": "./%x.%j.err",
+          "output": "./%x.%j.out",
+          "mail_type": "none",
+          "cpus_per_task": 1,
+          "nodes": 1,
+          "ntasks_per_node": 64,
+          "mem": "480GB"
+        }
+      },
+      {
+        "ranks": 128,
+        "script_path": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/job_profile_diocotron_instability_07.sh",
+        "script": "#!/bin/bash\n########################################################\n#            This script was generated using           #\n#             slurm-script-generator v0.3.5            #\n# https://github.com/max-models/slurm-script-generator #\n#      `pip install slurm-script-generator==0.3.5`     #\n########################################################\n\n########################################################\n# Pragmas for Job Config                               #\n#SBATCH --job-name=profiling_diocotron_instability_ranks128 # name of job\n#SBATCH --account=FUSIO_HLST_7                         # charge job to specified account\n#SBATCH --partition=dcgp_fua_dbg                       # partition requested\n#                                                      #\n# Pragmas for Time And Priority                        #\n#SBATCH --time=00:15:00                                # time limit\n#                                                      #\n# Pragmas for Io And Directory                         #\n#SBATCH --output=./%x.%j.out                           # File to redirect output (%%x=jobname, %%j=jobid)\n#SBATCH --error=./%x.%j.err                            # File to redirect error (%%x=jobname, %%j=jobid)\n#                                                      #\n# Pragmas for Notifications                            #\n#SBATCH --mail-type=none                               # notify on state change\n#                                                      #\n# Pragmas for Core Node And Task Allocation            #\n#SBATCH --nodes=1                                      # number of nodes on which to run\n#SBATCH --ntasks-per-node=128                          # number of tasks to invoke on each node\n#SBATCH --cpus-per-task=1                              # number of cpus required per task\n#                                                      #\n# Pragmas for Memory                                   #\n#SBATCH --mem=480GB                                    # minimum amount of real memory\n########################################################\nmodule purge\nsource ./setup/modules.sh load\nmodule list\nsource /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv-fortran/bin/activate\necho \"----------------------------------------\"\necho \"Running profiling case: diocotron_instability (128 MPI ranks)\"\necho \"Description: Scaling test running the diocotron profiling setup with multiple MPI ranks.\"\necho \"Physics problem: Diocotron instability in a non-neutral plasma.\"\necho \"Struphy model used: ToyDrift\"\necho \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\necho \"----------------------------------------\"\nmkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\ncp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/profiling/examples/ToyGyrokinetic/diocotron_instability/params_diocotron.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/parameters.py\"\nls -l \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\n\necho \"Running diocotron_instability with 128 MPI ranks\"\ncd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\nsrun -n 128 python /pitagora/home/userexternal/mlindqvi/git_repos/struphy/profiling/examples/ToyGyrokinetic/diocotron_instability/params_diocotron.py  > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/struphy.out\" 2>&1\n\necho \"----------------------------------------\"\necho \"Completed profiling case: diocotron_instability (128 MPI ranks)\"\necho \"----------------------------------------\"\n",
+        "pragmas": {
+          "account": "FUSIO_HLST_7",
+          "job_name": "profiling_diocotron_instability_ranks128",
+          "partition": "dcgp_fua_dbg",
+          "time": "00:15:00",
+          "error": "./%x.%j.err",
+          "output": "./%x.%j.out",
+          "mail_type": "none",
+          "cpus_per_task": 1,
+          "nodes": 1,
+          "ntasks_per_node": 128,
+          "mem": "480GB"
+        }
+      },
+      {
+        "ranks": 256,
+        "script_path": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/job_profile_diocotron_instability_08.sh",
+        "script": "#!/bin/bash\n########################################################\n#            This script was generated using           #\n#             slurm-script-generator v0.3.5            #\n# https://github.com/max-models/slurm-script-generator #\n#      `pip install slurm-script-generator==0.3.5`     #\n########################################################\n\n########################################################\n# Pragmas for Job Config                               #\n#SBATCH --job-name=profiling_diocotron_instability_ranks256 # name of job\n#SBATCH --account=FUSIO_HLST_7                         # charge job to specified account\n#SBATCH --partition=dcgp_fua_dbg                       # partition requested\n#                                                      #\n# Pragmas for Time And Priority                        #\n#SBATCH --time=00:15:00                                # time limit\n#                                                      #\n# Pragmas for Io And Directory                         #\n#SBATCH --output=./%x.%j.out                           # File to redirect output (%%x=jobname, %%j=jobid)\n#SBATCH --error=./%x.%j.err                            # File to redirect error (%%x=jobname, %%j=jobid)\n#                                                      #\n# Pragmas for Notifications                            #\n#SBATCH --mail-type=none                               # notify on state change\n#                                                      #\n# Pragmas for Core Node And Task Allocation            #\n#SBATCH --nodes=1                                      # number of nodes on which to run\n#SBATCH --ntasks-per-node=256                          # number of tasks to invoke on each node\n#SBATCH --cpus-per-task=1                              # number of cpus required per task\n#                                                      #\n# Pragmas for Memory                                   #\n#SBATCH --mem=480GB                                    # minimum amount of real memory\n########################################################\nmodule purge\nsource ./setup/modules.sh load\nmodule list\nsource /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv-fortran/bin/activate\necho \"----------------------------------------\"\necho \"Running profiling case: diocotron_instability (256 MPI ranks)\"\necho \"Description: Scaling test running the diocotron profiling setup with multiple MPI ranks.\"\necho \"Physics problem: Diocotron instability in a non-neutral plasma.\"\necho \"Struphy model used: ToyDrift\"\necho \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\necho \"----------------------------------------\"\nmkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\ncp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/profiling/examples/ToyGyrokinetic/diocotron_instability/params_diocotron.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/parameters.py\"\nls -l \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\n\necho \"Running diocotron_instability with 256 MPI ranks\"\ncd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability\"\nsrun -n 256 python /pitagora/home/userexternal/mlindqvi/git_repos/struphy/profiling/examples/ToyGyrokinetic/diocotron_instability/params_diocotron.py  > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/struphy.out\" 2>&1\n\necho \"----------------------------------------\"\necho \"Completed profiling case: diocotron_instability (256 MPI ranks)\"\necho \"----------------------------------------\"\n",
+        "pragmas": {
+          "account": "FUSIO_HLST_7",
+          "job_name": "profiling_diocotron_instability_ranks256",
+          "partition": "dcgp_fua_dbg",
+          "time": "00:15:00",
+          "error": "./%x.%j.err",
+          "output": "./%x.%j.out",
+          "mail_type": "none",
+          "cpus_per_task": 1,
+          "nodes": 1,
+          "ntasks_per_node": 256,
+          "mem": "480GB"
+        }
+      }
+    ]
+  },
+  "files": [
+    {
+      "source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/sim_ranks128/profiling_data.h5",
+      "relative_source": "sim_ranks128/profiling_data.h5",
+      "ranks": "128",
+      "destination": "diocotron_instability-ranks0128-fortran.h5",
+      "run_metadata_source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/sim_ranks128/run_metadata.json",
+      "run_metadata_destination": "diocotron_instability-ranks0128-fortran-run_metadata.json"
+    },
+    {
+      "source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/sim_ranks16/profiling_data.h5",
+      "relative_source": "sim_ranks16/profiling_data.h5",
+      "ranks": "16",
+      "destination": "diocotron_instability-ranks0016-fortran.h5",
+      "run_metadata_source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/sim_ranks16/run_metadata.json",
+      "run_metadata_destination": "diocotron_instability-ranks0016-fortran-run_metadata.json"
+    },
+    {
+      "source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/sim_ranks2/profiling_data.h5",
+      "relative_source": "sim_ranks2/profiling_data.h5",
+      "ranks": "2",
+      "destination": "diocotron_instability-ranks0002-fortran.h5",
+      "run_metadata_source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/sim_ranks2/run_metadata.json",
+      "run_metadata_destination": "diocotron_instability-ranks0002-fortran-run_metadata.json"
+    },
+    {
+      "source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/sim_ranks256/profiling_data.h5",
+      "relative_source": "sim_ranks256/profiling_data.h5",
+      "ranks": "256",
+      "destination": "diocotron_instability-ranks0256-fortran.h5",
+      "run_metadata_source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/sim_ranks256/run_metadata.json",
+      "run_metadata_destination": "diocotron_instability-ranks0256-fortran-run_metadata.json"
+    },
+    {
+      "source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/sim_ranks32/profiling_data.h5",
+      "relative_source": "sim_ranks32/profiling_data.h5",
+      "ranks": "32",
+      "destination": "diocotron_instability-ranks0032-fortran.h5",
+      "run_metadata_source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/sim_ranks32/run_metadata.json",
+      "run_metadata_destination": "diocotron_instability-ranks0032-fortran-run_metadata.json"
+    },
+    {
+      "source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/sim_ranks4/profiling_data.h5",
+      "relative_source": "sim_ranks4/profiling_data.h5",
+      "ranks": "4",
+      "destination": "diocotron_instability-ranks0004-fortran.h5",
+      "run_metadata_source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/sim_ranks4/run_metadata.json",
+      "run_metadata_destination": "diocotron_instability-ranks0004-fortran-run_metadata.json"
+    },
+    {
+      "source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/sim_ranks64/profiling_data.h5",
+      "relative_source": "sim_ranks64/profiling_data.h5",
+      "ranks": "64",
+      "destination": "diocotron_instability-ranks0064-fortran.h5",
+      "run_metadata_source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/sim_ranks64/run_metadata.json",
+      "run_metadata_destination": "diocotron_instability-ranks0064-fortran-run_metadata.json"
+    },
+    {
+      "source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/sim_ranks8/profiling_data.h5",
+      "relative_source": "sim_ranks8/profiling_data.h5",
+      "ranks": "8",
+      "destination": "diocotron_instability-ranks0008-fortran.h5",
+      "run_metadata_source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260728T112602Z-0aff7bcf/diocotron_instability/sim_ranks8/run_metadata.json",
+      "run_metadata_destination": "diocotron_instability-ranks0008-fortran-run_metadata.json"
+    }
+  ]
+}
