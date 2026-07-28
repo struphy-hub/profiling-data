@@ -1,1 +1,2 @@
 scope-profiler[pproc] @ git+https://github.com/max-models/scope-profiler.git
+flameprof

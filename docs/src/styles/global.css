@@ -190,6 +190,14 @@ a:hover {
   width: 100%;
 }
 
+/* flameprof emits a fixed-width document; the build rewrites the header to a
+   viewBox so it can scale to the card instead. */
+.flamegraph svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
 .metric-select,
 .search-input {
   border: 1px solid var(--border);

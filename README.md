@@ -20,3 +20,14 @@ The generation command is automated via:
 It scans all diocotron profiling directories in the repository root and includes every `.h5` case automatically.
 Case `title` and `description` fields in `docs/public/figures/region_statistics.json` are injected from each folder's `case_metadata.json` (with `metadata.json` accepted for backward compatibility).
 Each profiling directory is processed independently, so plots are generated per-case under `docs/public/figures/cases/<case-id>/` and are never merged across different folders.
+
+## Flame graphs
+
+Each run page shows a flame graph, one per MPI rank, selectable from a dropdown.
+
+- `scope-profiler pproc --export-prof` writes `profile_rank<N>.prof` per rank.
+- [flameprof](https://pypi.org/project/flameprof/) renders each profile to `flamegraph_rank<N>.svg`. It is invoked as `python -m flameprof` because the console script it installs has an unusable shebang.
+- flameprof emits a fixed 1200px-wide SVG; the generation script rewrites the header to carry a `viewBox` instead, so the page can scale it to the card width.
+- The run page inlines the SVG rather than using it as an `<img>` source, so the per-frame hover tooltips (percentage, call count, tottime/cumtime) work.
+
+The `.prof` files are also published, and are downloadable from the run page for use with any pstats viewer.

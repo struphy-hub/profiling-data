@@ -7,6 +7,7 @@ import json
 import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 
@@ -170,6 +171,7 @@ def run_scope_profiler(
     output_dir: Path,
     dry_run: bool,
     ranks: str = "0",
+    export_prof: bool = False,
 ) -> None:
     command = [
         pproc_executable,
@@ -184,6 +186,8 @@ def run_scope_profiler(
         "json",
         "--skip-plot-images",
     ]
+    if export_prof:
+        command.append("--export-prof")
 
     if dry_run:
         print("Dry run command:")
@@ -191,6 +195,47 @@ def run_scope_profiler(
         return
 
     subprocess.run(command, check=True)
+
+
+SVG_HEADER_PATTERN = re.compile(
+    r'^.*?<svg version="1.1" width="(?P<width>[\d.]+)" height="(?P<height>[\d.]+)"',
+    re.DOTALL,
+)
+
+
+def render_flamegraph(prof_path: Path, output_path: Path) -> bool:
+    """Render a .prof file to an SVG flame graph with flameprof.
+
+    The console script shipped by flameprof has an unusable shebang, so it is
+    invoked as a module. The SVG it emits is a fixed 1200px wide document; the
+    header is rewritten to carry a viewBox instead so the page can scale it.
+    """
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "flameprof", str(prof_path)],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (subprocess.CalledProcessError, OSError) as error:
+        print(f"Could not render a flame graph for {prof_path}: {error}")
+        return False
+
+    svg = result.stdout
+    match = SVG_HEADER_PATTERN.match(svg)
+    if match is None:
+        print(f"Unexpected flameprof SVG header for {prof_path}; leaving it as-is.")
+    else:
+        # Drop the XML prolog and DOCTYPE too: the SVG is inlined into the run
+        # page, where only the <svg> element itself is meaningful.
+        svg = (
+            f'<svg version="1.1" viewBox="0 0 {match["width"]} {match["height"]}"'
+            + svg[match.end() :]
+        )
+
+    with output_path.open("w", encoding="utf-8") as file:
+        file.write(svg)
+    return True
 
 
 def slugify(value: str) -> str:
@@ -353,6 +398,7 @@ def main() -> int:
             # Generate durations data for all ranks and merge them
             num_ranks = entry.get("num_ranks", 1)
             merged_durations = {"bars": []}
+            flamegraphs = {}
             for rank in range(num_ranks):
                 rank_dir = run_output_dir / f"rank_{rank}"
                 rank_dir.mkdir(parents=True, exist_ok=True)
@@ -362,7 +408,15 @@ def main() -> int:
                     rank_dir,
                     args.dry_run,
                     ranks=str(rank),
+                    export_prof=True,
                 )
+                prof_path = rank_dir / f"profile_rank{rank}.prof"
+                svg_path = rank_dir / f"flamegraph_rank{rank}.svg"
+                if prof_path.exists() and render_flamegraph(prof_path, svg_path):
+                    flamegraphs[str(rank)] = {
+                        "svg": f"cases/{case_dir.name}/runs/{run_id}/rank_{rank}/{svg_path.name}",
+                        "prof": f"cases/{case_dir.name}/runs/{run_id}/rank_{rank}/{prof_path.name}",
+                    }
                 rank_durations_path = rank_dir / "durations_data.json"
                 if rank_durations_path.exists():
                     with rank_durations_path.open("r", encoding="utf-8") as f:
@@ -378,6 +432,9 @@ def main() -> int:
                     json.dump(merged_durations, f, indent=2)
                     f.write("\n")
                 run_outputs["durations"] = f"cases/{case_dir.name}/runs/{run_id}/durations_data.json"
+
+            if flamegraphs:
+                run_outputs["flamegraphs"] = flamegraphs
 
             entry["run_outputs"] = run_outputs
             aggregated_files.append(entry)

@@ -22,6 +22,17 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
   </section>
 
   <section class="card" style="margin-top: 1rem;">
+    <div class="figure-tile-header">
+      <h2 style="margin-top: 0;">Flame graph</h2>
+      <div id="flamegraph-controls" class="figure-tile-header" hidden>
+        <select id="flamegraph-rank-select" class="metric-select"></select>
+        <a id="flamegraph-download" class="rank-btn" download>Download .prof</a>
+      </div>
+    </div>
+    <div id="flamegraph-panel"></div>
+  </section>
+
+  <section class="card" style="margin-top: 1rem;">
     <h2 style="margin-top: 0;">Region statistics</h2>
     <div class="table-wrap">
       <table>
@@ -52,6 +63,10 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
   const runRegionsBody = document.getElementById("run-regions-body");
   const runBreadcrumb = document.getElementById("run-breadcrumb");
   const runFigures = document.getElementById("run-figures");
+  const flamegraphPanel = document.getElementById("flamegraph-panel");
+  const flamegraphControls = document.getElementById("flamegraph-controls");
+  const flamegraphRankSelect = document.getElementById("flamegraph-rank-select");
+  const flamegraphDownload = document.getElementById("flamegraph-download");
 
   const esc = (value) =>
     String(value ?? "")
@@ -144,6 +159,38 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
     }
 
     await draw();
+  };
+
+  // Shows the flameprof SVG for one rank at a time. The SVG is inlined rather
+  // than used as an <img> src so its per-frame <title> tooltips work.
+  const setupFlamegraph = (runEntry) => {
+    const flamegraphs = runEntry.run_outputs?.flamegraphs || {};
+    const ranks = Object.keys(flamegraphs).sort((a, b) => Number(a) - Number(b));
+    if (!ranks.length) {
+      flamegraphPanel.innerHTML = "<p class='muted'>No flame graph available for this run.</p>";
+      return;
+    }
+
+    flamegraphControls.hidden = false;
+    flamegraphRankSelect.innerHTML = ranks
+      .map((rank) => `<option value="${esc(rank)}">Rank ${esc(rank)}</option>`)
+      .join("");
+
+    const show = async () => {
+      const entry = flamegraphs[flamegraphRankSelect.value];
+      if (!entry) return;
+      flamegraphDownload.href = `${baseUrl}figures/${entry.prof}`;
+      try {
+        const res = await fetch(`${baseUrl}figures/${entry.svg}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        flamegraphPanel.innerHTML = `<div class="flamegraph">${await res.text()}</div>`;
+      } catch (error) {
+        flamegraphPanel.innerHTML = `<p class="muted">Could not load flame graph: ${esc(error)}</p>`;
+      }
+    };
+
+    flamegraphRankSelect.addEventListener("change", show);
+    return show();
   };
 
   const render = async () => {
@@ -248,6 +295,8 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
         }),
       );
 
+      await setupFlamegraph(runEntry);
+
       const stats = runEntry.region_statistics || {};
       const commonRegions = Array.isArray(selectedCase.common_regions) ? selectedCase.common_regions : [];
       const displayRegions = commonRegions.length ? commonRegions : Object.keys(stats);
@@ -273,6 +322,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
     } catch (error) {
       runMetaPanel.innerHTML = `<p class="muted">Could not load run metadata: ${esc(error)}</p>`;
       runFigures.innerHTML = "";
+      flamegraphPanel.innerHTML = "";
       runRegionsBody.innerHTML = "";
     }
   };
