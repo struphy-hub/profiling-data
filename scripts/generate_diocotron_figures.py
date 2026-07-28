@@ -305,6 +305,10 @@ def main() -> int:
 
     output_dir.mkdir(parents=True, exist_ok=True)
     cases_output_dir = output_dir / "cases"
+    # Everything under cases/ is regenerated below. Clearing it first keeps
+    # artifacts from cases (or layouts) that no longer exist out of the site.
+    if not args.dry_run and cases_output_dir.exists():
+        shutil.rmtree(cases_output_dir)
     cases_output_dir.mkdir(parents=True, exist_ok=True)
     local_pproc = repo_root / ".venv" / "bin" / "scope-profiler pproc"
     pproc_executable = shutil.which("scope-profiler")
@@ -365,27 +369,19 @@ def main() -> int:
             run_id = slugify(run_label)
             run_output_dir = case_output_dir / "runs" / run_id
             run_output_dir.mkdir(parents=True, exist_ok=True)
-            for stale_file in (
-                "durations_data.json",
-                "speedup_data.json",
-                "gantt_data.json",
-                "flame_data.json",
-                "region_statistics.json",
-            ):
-                stale_path = run_output_dir / stale_file
-                if stale_path.exists():
-                    stale_path.unlink()
-            # Generate data for rank 0 (for speedup, gantt, flame)
+            # Every run figure is rank 0 only for now.
             run_scope_profiler(
                 pproc_executable,
                 [Path(str(entry["file_path"]))],
                 run_output_dir,
                 args.dry_run,
                 ranks="0",
+                export_prof=True,
             )
 
             run_outputs = {"id": run_id}
             output_files = {
+                "durations": "durations_data.json",
                 "speedup": "speedup_data.json",
                 "gantt": "gantt_data.json",
                 "flame": "flame_data.json",
@@ -395,46 +391,11 @@ def main() -> int:
                 if (run_output_dir / file_name).exists():
                     run_outputs[key] = f"cases/{case_dir.name}/runs/{run_id}/{file_name}"
 
-            # Generate durations data for all ranks and merge them
-            num_ranks = entry.get("num_ranks", 1)
-            merged_durations = {"bars": []}
-            flamegraphs = {}
-            for rank in range(num_ranks):
-                rank_dir = run_output_dir / f"rank_{rank}"
-                rank_dir.mkdir(parents=True, exist_ok=True)
-                run_scope_profiler(
-                    pproc_executable,
-                    [Path(str(entry["file_path"]))],
-                    rank_dir,
-                    args.dry_run,
-                    ranks=str(rank),
-                    export_prof=True,
-                )
-                prof_path = rank_dir / f"profile_rank{rank}.prof"
-                svg_path = rank_dir / f"flamegraph_rank{rank}.svg"
-                if prof_path.exists() and render_flamegraph(prof_path, svg_path):
-                    flamegraphs[str(rank)] = {
-                        "svg": f"cases/{case_dir.name}/runs/{run_id}/rank_{rank}/{svg_path.name}",
-                        "prof": f"cases/{case_dir.name}/runs/{run_id}/rank_{rank}/{prof_path.name}",
-                    }
-                rank_durations_path = rank_dir / "durations_data.json"
-                if rank_durations_path.exists():
-                    with rank_durations_path.open("r", encoding="utf-8") as f:
-                        rank_data = json.load(f)
-                    if isinstance(rank_data.get("bars"), list):
-                        for bar in rank_data["bars"]:
-                            bar["rank"] = rank
-                        merged_durations["bars"].extend(rank_data["bars"])
-
-            if merged_durations["bars"]:
-                durations_path = run_output_dir / "durations_data.json"
-                with durations_path.open("w", encoding="utf-8") as f:
-                    json.dump(merged_durations, f, indent=2)
-                    f.write("\n")
-                run_outputs["durations"] = f"cases/{case_dir.name}/runs/{run_id}/durations_data.json"
-
-            if flamegraphs:
-                run_outputs["flamegraphs"] = flamegraphs
+            prof_path = run_output_dir / "profile_rank0.prof"
+            svg_path = run_output_dir / "flamegraph_rank0.svg"
+            if prof_path.exists() and render_flamegraph(prof_path, svg_path):
+                run_outputs["flamegraph"] = f"cases/{case_dir.name}/runs/{run_id}/{svg_path.name}"
+                run_outputs["profile"] = f"cases/{case_dir.name}/runs/{run_id}/{prof_path.name}"
 
             entry["run_outputs"] = run_outputs
             aggregated_files.append(entry)

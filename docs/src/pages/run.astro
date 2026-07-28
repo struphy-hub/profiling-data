@@ -23,11 +23,8 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
 
   <section class="card" style="margin-top: 1rem;">
     <div class="figure-tile-header">
-      <h2 style="margin-top: 0;">Flame graph</h2>
-      <div id="flamegraph-controls" class="figure-tile-header" hidden>
-        <select id="flamegraph-rank-select" class="metric-select"></select>
-        <a id="flamegraph-download" class="rank-btn" download>Download .prof</a>
-      </div>
+      <h2 style="margin-top: 0;">Flame graph <span class="muted">(rank 0)</span></h2>
+      <a id="flamegraph-download" class="rank-btn" download hidden>Download .prof</a>
     </div>
     <div id="flamegraph-panel"></div>
   </section>
@@ -54,7 +51,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
 
 <script>
   import Plotly from "plotly.js-dist-min";
-  import { renderFigure, durationsRanks } from "../lib/charts.js";
+  import { renderFigure } from "../lib/charts.js";
   import { groupKeyForCase } from "../lib/cases.js";
 
   const rawBaseUrl = import.meta.env.BASE_URL;
@@ -64,8 +61,6 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
   const runBreadcrumb = document.getElementById("run-breadcrumb");
   const runFigures = document.getElementById("run-figures");
   const flamegraphPanel = document.getElementById("flamegraph-panel");
-  const flamegraphControls = document.getElementById("flamegraph-controls");
-  const flamegraphRankSelect = document.getElementById("flamegraph-rank-select");
   const flamegraphDownload = document.getElementById("flamegraph-download");
 
   const esc = (value) =>
@@ -107,90 +102,27 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
     ];
   };
 
-  // Renders the durations chart plus, when the data is broken down per MPI
-  // rank, an interactive checkbox group to choose which ranks are shown.
-  const setupDurations = async (def, container, payload) => {
-    const metricSelect = document.getElementById(`metric-select-${def.key}`);
-    const rankBox = document.getElementById(`rank-select-${def.key}`);
-    const ranks = durationsRanks(payload.bars);
-    let selectedRanks = ranks.slice();
-
-    const draw = () =>
-      renderFigure(Plotly, container, def.kind, payload, {
-        metric: metricSelect.value,
-        // Only constrain ranks when the data actually has a rank breakdown.
-        ranks: ranks.length ? selectedRanks : undefined,
-      });
-
-    metricSelect.addEventListener("change", draw);
-
-    if (ranks.length && rankBox) {
-      rankBox.hidden = false;
-      rankBox.innerHTML = `
-        <span class="rank-select-label">Ranks:</span>
-        ${ranks
-          .map(
-            (rank) => `
-              <label class="rank-chip">
-                <input type="checkbox" value="${rank}" checked /> ${rank}
-              </label>`,
-          )
-          .join("")}
-        <button type="button" class="rank-btn" data-action="all">All</button>
-        <button type="button" class="rank-btn" data-action="none">None</button>
-      `;
-
-      const checkboxes = [...rankBox.querySelectorAll('input[type="checkbox"]')];
-      const syncSelection = () => {
-        selectedRanks = checkboxes
-          .filter((cb) => cb.checked)
-          .map((cb) => Number(cb.value));
-        draw();
-      };
-
-      checkboxes.forEach((cb) => cb.addEventListener("change", syncSelection));
-      rankBox.querySelectorAll(".rank-btn").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const check = btn.dataset.action === "all";
-          checkboxes.forEach((cb) => (cb.checked = check));
-          syncSelection();
-        });
-      });
-    }
-
-    await draw();
-  };
-
-  // Shows the flameprof SVG for one rank at a time. The SVG is inlined rather
-  // than used as an <img> src so its per-frame <title> tooltips work.
-  const setupFlamegraph = (runEntry) => {
-    const flamegraphs = runEntry.run_outputs?.flamegraphs || {};
-    const ranks = Object.keys(flamegraphs).sort((a, b) => Number(a) - Number(b));
-    if (!ranks.length) {
+  // Shows the rank 0 flameprof SVG. The SVG is inlined rather than used as an
+  // <img> src so its per-frame <title> tooltips work.
+  const setupFlamegraph = async (runEntry) => {
+    const outputs = runEntry.run_outputs || {};
+    if (!outputs.flamegraph) {
       flamegraphPanel.innerHTML = "<p class='muted'>No flame graph available for this run.</p>";
       return;
     }
 
-    flamegraphControls.hidden = false;
-    flamegraphRankSelect.innerHTML = ranks
-      .map((rank) => `<option value="${esc(rank)}">Rank ${esc(rank)}</option>`)
-      .join("");
+    if (outputs.profile) {
+      flamegraphDownload.href = `${baseUrl}figures/${outputs.profile}`;
+      flamegraphDownload.hidden = false;
+    }
 
-    const show = async () => {
-      const entry = flamegraphs[flamegraphRankSelect.value];
-      if (!entry) return;
-      flamegraphDownload.href = `${baseUrl}figures/${entry.prof}`;
-      try {
-        const res = await fetch(`${baseUrl}figures/${entry.svg}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        flamegraphPanel.innerHTML = `<div class="flamegraph">${await res.text()}</div>`;
-      } catch (error) {
-        flamegraphPanel.innerHTML = `<p class="muted">Could not load flame graph: ${esc(error)}</p>`;
-      }
-    };
-
-    flamegraphRankSelect.addEventListener("change", show);
-    return show();
+    try {
+      const res = await fetch(`${baseUrl}figures/${outputs.flamegraph}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      flamegraphPanel.innerHTML = `<div class="flamegraph">${await res.text()}</div>`;
+    } catch (error) {
+      flamegraphPanel.innerHTML = `<p class="muted">Could not load flame graph: ${esc(error)}</p>`;
+    }
   };
 
   const render = async () => {
@@ -264,7 +196,6 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
                       : ""
                   }
                 </div>
-                ${def.key === "durations" ? `<div id="rank-select-${def.key}" class="rank-select" hidden></div>` : ""}
                 <div id="plot-${def.key}" class="plot-container"></div>
               </article>
             `,
@@ -278,9 +209,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
             const plotRes = await fetch(`${baseUrl}figures/${outputs[def.key]}`);
             if (!plotRes.ok) throw new Error(`HTTP ${plotRes.status}`);
             const payload = await plotRes.json();
-            if (def.kind === "durations") {
-              await setupDurations(def, container, payload);
-            } else if (def.hasMetric) {
+            if (def.hasMetric) {
               const select = document.getElementById(`metric-select-${def.key}`);
               await renderFigure(Plotly, container, def.kind, payload, { metric: select.value });
               select.addEventListener("change", () => {

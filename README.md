@@ -23,11 +23,15 @@ Each profiling directory is processed independently, so plots are generated per-
 
 ## Flame graphs
 
-Each run page shows a flame graph, one per MPI rank, selectable from a dropdown.
+Each run page shows a flame graph.
 
-- `scope-profiler pproc --export-prof` writes `profile_rank<N>.prof` per rank.
-- [flameprof](https://pypi.org/project/flameprof/) renders each profile to `flamegraph_rank<N>.svg`. It is invoked as `python -m flameprof` because the console script it installs has an unusable shebang.
+All run-level figures — durations, gantt, flame and the flame graph — are generated for **rank 0 only** for now.
+
+- `scope-profiler pproc --export-prof` writes `profile_rank0.prof`.
+- [flameprof](https://pypi.org/project/flameprof/) renders it to `flamegraph_rank0.svg`. It is invoked as `python -m flameprof` because the console script it installs has an unusable shebang.
 - flameprof emits a fixed 1200px-wide SVG; the generation script rewrites the header to carry a `viewBox` instead, so the page can scale it to the card width.
 - The run page inlines the SVG rather than using it as an `<img>` source, so the per-frame hover tooltips (percentage, call count, tottime/cumtime) work.
 
-The `.prof` files are also published, and are downloadable from the run page for use with any pstats viewer.
+The `.prof` file is also published, and is downloadable from the run page for use with any pstats viewer.
+
+Everything under `docs/public/figures/cases/` is wiped and regenerated on each run, so artifacts from cases that no longer exist are not published.
