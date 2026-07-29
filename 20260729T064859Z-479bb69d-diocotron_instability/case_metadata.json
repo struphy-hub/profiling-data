@@ -7,8 +7,8 @@
     "test_case_description": "Scaling test running the diocotron profiling setup with multiple MPI ranks.",
     "physics_problem": "Diocotron instability in a non-neutral plasma.",
     "struphy_model_used": "ToyDrift",
-    "simulation_name": "diocotron_instability",
-    "simulation_description": "",
+    "simulation_name": "Diocotron instability",
+    "simulation_description": "\nThe Diocotron instability is a shear-driven instability that occurs in non-neutral plasmas confined by a magnetic field. \nIt typically appears when there is velocity shear in the E\u00d7B drift of a plasma column.\n\nThe parameter of this simulation file is based on a paper called:\n\n'A new fully two-dimensional conservative semi-Lagrangian\nmethod: applications on polar grids, from diocotron instability\nto ITG turbulence'\n\nDOI: 10.1140/epjd/e2014-50180-9\n",
     "results_root": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260729T064859Z-479bb69d"
   },
   "hardware_information": {
@@ -29,7 +29,7 @@
       "time_execution": false,
       "yes": false
     },
-    "parameter_file": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/profiling/examples/ToyGyrokinetic/diocotron_instability/params_diocotron.py",
+    "parameter_file": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260729T064859Z-479bb69d/diocotron_instability/parameters.py",
     "parameter_file_source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/profiling/examples/ToyGyrokinetic/diocotron_instability/params_diocotron.py",
     "python_environment_pip_freeze": "aiohappyeyeballs==2.7.1\naiohttp==3.14.2\naiosignal==1.4.0\nargcomplete==3.7.0\nArpeggio==2.0.3\nasttokens==3.0.2\nattrs==26.1.0\ncertifi==2026.6.17\ncharset-normalizer==3.4.9\ncomm==0.2.3\ncontourpy==1.3.3\ncoverage==7.15.2\ncunumpy==0.1.1\ncycler==0.12.1\ncyclopts==4.22.1\ndecorator==5.3.1\ndocstring_parser==0.18.0\nexecuting==2.2.1\nfeectools==0.1.3\nfilelock==3.32.0\nfonttools==4.63.0\nfrozenlist==1.8.0\nh5py==3.16.0\nidna==3.18\nimmutabledict==4.3.1\niniconfig==2.3.0\nipython==9.15.0\nipython_pygments_lexers==1.1.1\nipywidgets==8.1.8\njedi==0.20.0\njupyterlab_widgets==3.0.16\nkiwisolver==1.5.0\nline_profiler==5.0.2\nmarkdown-it-py==4.2.0\nmatplotlib==3.11.0\nmatplotlib-inline==0.2.2\nmdurl==0.1.2\nmeson==1.11.2\nmore-itertools==11.1.0\nmpmath==1.3.0\nmsgpack==1.2.1\nmultidict==6.7.1\nnarwhals==2.24.0\nnest-asyncio2==1.7.2\nninja==1.13.0\nnumpy==2.4.6\npackaging==26.2\nparso==0.8.7\npexpect==4.9.0\npillow==12.3.0\nplatformdirs==4.11.0\nplotly==6.9.0\npluggy==1.6.0\npooch==1.9.0\nprompt_toolkit==3.0.52\npropcache==0.5.2\npsutil==7.2.2\nptyprocess==0.7.0\npure_eval==0.2.3\npyccel==2.2.3\npyevtk==1.7.0\nPygments==2.20.0\npyparsing==3.3.2\npytest==9.1.0\npytest-mpi==0.6\npytest-testmon==2.2.0\npython-dateutil==2.9.0.post0\npyvista==0.48.0\nPyYAML==6.0.3\nrequests==2.34.2\nrich==15.0.0\nrich-rst==2.1.0\nruff==0.15.12\nscipy==1.17.1\nscooby==0.11.2\nscope-profiler==0.2\nsix==1.17.0\n-e git+ssh://git@github.com/max-models/slurm-script-generator.git@e109aae299a373fdd05fc9d3af09ebd2fbb94fd5#egg=slurm_script_generator\nstack-data==0.6.3\n-e git+ssh://git@github.com/struphy-hub/struphy.git@479bb69dbedf597eda3871fb9824b72745f119c0#egg=struphy\nsympy==1.14.0\ntblib==3.2.2\ntermcolor==3.3.0\ntextX==4.4.0\ntqdm==4.69.0\ntraitlets==5.15.1\ntrame==3.13.0\ntrame-client==3.13.2\ntrame-common==1.2.4\ntrame-server==3.12.5\ntrame-vtk==2.11.8\ntrame-vuetify==3.2.2\ntyping_extensions==4.16.0\nurllib3==2.7.0\nvtk==9.6.1\nwcwidth==0.8.2\nwidgetsnbextension==4.0.15\nwslink==2.5.7\nyarl==1.24.5"
   },
@@ -190,5 +190,15 @@
       }
     ]
   },
-  "files": []
+  "files": [
+    {
+      "source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260729T064859Z-479bb69d/diocotron_instability/sim_08/profiling_data.h5",
+      "relative_source": "sim_08/profiling_data.h5",
+      "launch_id": 8,
+      "ranks": "256",
+      "destination": "diocotron_instability-run08.h5",
+      "run_metadata_source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260729T064859Z-479bb69d/diocotron_instability/sim_08/run_metadata.json",
+      "run_metadata_destination": "diocotron_instability-run08-run_metadata.json"
+    }
+  ]
 }
