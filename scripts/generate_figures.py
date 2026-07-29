@@ -13,12 +13,16 @@ from pathlib import Path
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Generate scope-profiler figures from all diocotron profiling folders."
+        description="Generate scope-profiler figures from every profiling case folder."
     )
     parser.add_argument(
         "--pattern",
-        default="*-diocotron*",
-        help="Glob pattern used to select profiling directories in the repository root.",
+        default="*",
+        help=(
+            "Glob pattern used to select profiling directories in the repository root. "
+            "The default selects every case folder; pass e.g. '*-poisson_*' to restrict "
+            "the run to a single test case."
+        ),
     )
     parser.add_argument(
         "--output",
@@ -33,14 +37,30 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def resolve_case_metadata_path(case_dir: Path) -> Path:
+def find_case_metadata_path(case_dir: Path) -> Path | None:
     preferred = case_dir / "case_metadata.json"
     legacy = case_dir / "metadata.json"
     if preferred.exists():
         return preferred
     if legacy.exists():
         return legacy
-    raise SystemExit(f"Missing case metadata in {case_dir}: expected case_metadata.json")
+    return None
+
+
+def resolve_case_metadata_path(case_dir: Path) -> Path:
+    metadata_path = find_case_metadata_path(case_dir)
+    if metadata_path is None:
+        raise SystemExit(f"Missing case metadata in {case_dir}: expected case_metadata.json")
+    return metadata_path
+
+
+def is_case_dir(path: Path) -> bool:
+    """A profiling case folder holds a case metadata file next to its .h5 runs.
+
+    Test cases are not distinguished by name here: diocotron, poisson and any
+    future case are all picked up by the same layout check.
+    """
+    return path.is_dir() and find_case_metadata_path(path) is not None and any(path.glob("*.h5"))
 
 
 def extract_title(metadata: dict, case_dir: Path) -> str:
@@ -298,13 +318,11 @@ def main() -> int:
     repo_root = Path(__file__).resolve().parents[1]
     output_dir = (repo_root / args.output).resolve()
 
-    diocotron_dirs = sorted(
-        directory
-        for directory in repo_root.glob(args.pattern)
-        if directory.is_dir() and "diocotron" in directory.name
+    case_dirs = sorted(
+        directory for directory in repo_root.glob(args.pattern) if is_case_dir(directory)
     )
-    if not diocotron_dirs:
-        raise SystemExit(f"No .h5 files found in folders matching '{args.pattern}'.")
+    if not case_dirs:
+        raise SystemExit(f"No profiling case folders with .h5 files match '{args.pattern}'.")
 
     output_dir.mkdir(parents=True, exist_ok=True)
     cases_output_dir = output_dir / "cases"
@@ -313,10 +331,10 @@ def main() -> int:
     if not args.dry_run and cases_output_dir.exists():
         shutil.rmtree(cases_output_dir)
     cases_output_dir.mkdir(parents=True, exist_ok=True)
-    local_pproc = repo_root / ".venv" / "bin" / "scope-profiler pproc"
-    pproc_executable = shutil.which("scope-profiler")
-    if pproc_executable is None and local_pproc.exists():
-        pproc_executable = str(local_pproc)
+    # The repository venv is preferred over PATH: a stale global install of
+    # scope-profiler would otherwise win and fail on import.
+    local_pproc = repo_root / ".venv" / "bin" / "scope-profiler"
+    pproc_executable = str(local_pproc) if local_pproc.exists() else shutil.which("scope-profiler")
     if pproc_executable is None:
         raise SystemExit(
             "scope-profiler was not found in PATH or .venv/bin. Install requirements first."
@@ -326,10 +344,8 @@ def main() -> int:
     case_summaries: list[dict] = []
     total_files = 0
 
-    for case_dir in diocotron_dirs:
+    for case_dir in case_dirs:
         h5_files = sorted(case_dir.glob("*.h5"))
-        if not h5_files:
-            continue
         total_files += len(h5_files)
         (
             title,
@@ -405,10 +421,7 @@ def main() -> int:
             entry["run_outputs"] = run_outputs
             aggregated_files.append(entry)
 
-    if total_files == 0:
-        raise SystemExit(f"No .h5 files found in folders matching '{args.pattern}'.")
-
-    print(f"Selected {total_files} files from {len(diocotron_dirs)} diocotron folders.")
+    print(f"Selected {total_files} files from {len(case_dirs)} case folders.")
     if args.dry_run:
         return 0
 

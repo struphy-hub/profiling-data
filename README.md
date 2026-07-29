@@ -15,9 +15,10 @@ Figures are always generated from profiling data into `docs/public/figures` befo
 
 The generation command is automated via:
 
-`python scripts/generate_diocotron_figures.py`
+`python scripts/generate_figures.py`
 
-It scans all diocotron profiling directories in the repository root and includes every `.h5` case automatically.
+It scans every profiling case directory in the repository root — any folder holding a `case_metadata.json` next to `.h5` runs, regardless of test case (diocotron, poisson, …) — and includes every `.h5` file automatically.
+Pass `--pattern` to restrict the run to a subset, e.g. `--pattern '*-poisson_*'`.
 Case `title` and `description` fields in `docs/public/figures/region_statistics.json` are injected from each folder's `case_metadata.json` (with `metadata.json` accepted for backward compatibility).
 Each profiling directory is processed independently, so plots are generated per-case under `docs/public/figures/cases/<case-id>/` and are never merged across different folders.
 
