@@ -208,6 +208,15 @@
       "destination": "diocotron_instability-run01.h5",
       "run_metadata_source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260729T064859Z-479bb69d/diocotron_instability/sim_01/run_metadata.json",
       "run_metadata_destination": "diocotron_instability-run01-run_metadata.json"
+    },
+    {
+      "source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260729T064859Z-479bb69d/diocotron_instability/sim_02/profiling_data.h5",
+      "relative_source": "sim_02/profiling_data.h5",
+      "launch_id": 2,
+      "ranks": "4",
+      "destination": "diocotron_instability-run02.h5",
+      "run_metadata_source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/results/profiling/20260729T064859Z-479bb69d/diocotron_instability/sim_02/run_metadata.json",
+      "run_metadata_destination": "diocotron_instability-run02-run_metadata.json"
     }
   ]
 }
