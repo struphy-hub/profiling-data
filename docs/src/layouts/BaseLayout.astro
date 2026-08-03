@@ -90,5 +90,87 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
         sync();
       })();
     </script>
+    <script is:inline>
+      // Makes every heading a self-link: clicking it copies a shareable URL
+      // (page + query params + a #slug hash) and updates the address bar.
+      // Headings are linkified as they appear, including ones injected later
+      // by each page's own fetch-driven render, via MutationObserver.
+      (() => {
+        const HEADING_SELECTOR = "h1, h2, h3";
+        const takenIds = new Set(
+          Array.from(document.querySelectorAll("[id]")).map((el) => el.id),
+        );
+
+        const slugify = (text) =>
+          text
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "") || "section";
+
+        const uniqueId = (base) => {
+          let id = base;
+          let suffix = 2;
+          while (takenIds.has(id)) {
+            id = `${base}-${suffix}`;
+            suffix += 1;
+          }
+          takenIds.add(id);
+          return id;
+        };
+
+        const linkify = (heading) => {
+          if (heading.dataset.headingLinked) return;
+          heading.dataset.headingLinked = "true";
+
+          if (heading.id) {
+            takenIds.add(heading.id);
+          } else {
+            heading.id = uniqueId(slugify(heading.textContent || ""));
+          }
+
+          const link = document.createElement("a");
+          link.className = "heading-link";
+          link.href = `#${heading.id}`;
+          link.setAttribute("aria-label", "Copy link to this section");
+          while (heading.firstChild) link.appendChild(heading.firstChild);
+          heading.appendChild(link);
+
+          link.addEventListener("click", (event) => {
+            event.preventDefault();
+            const url = `${location.origin}${location.pathname}${location.search}#${heading.id}`;
+            history.replaceState(null, "", `#${heading.id}`);
+            heading.scrollIntoView({ block: "start", behavior: "smooth" });
+            navigator.clipboard
+              ?.writeText(url)
+              .then(() => {
+                link.classList.add("copied");
+                window.setTimeout(() => link.classList.remove("copied"), 1200);
+              })
+              .catch(() => {});
+          });
+
+          // The target heading may not exist yet when the browser first
+          // resolves the URL's fragment (it's added asynchronously by the
+          // page's own render), so retry the scroll once it does.
+          if (location.hash === `#${heading.id}`) {
+            heading.scrollIntoView({ block: "start" });
+          }
+        };
+
+        document.querySelectorAll(HEADING_SELECTOR).forEach(linkify);
+
+        const observer = new MutationObserver((mutations) => {
+          for (const mutation of mutations) {
+            for (const node of mutation.addedNodes) {
+              if (node.nodeType !== 1) continue;
+              if (node.matches?.(HEADING_SELECTOR)) linkify(node);
+              node.querySelectorAll?.(HEADING_SELECTOR).forEach(linkify);
+            }
+          }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+      })();
+    </script>
   </body>
 </html>

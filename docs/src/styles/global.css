@@ -215,6 +215,48 @@ a:hover {
   word-break: break-word;
 }
 
+h1,
+h2,
+h3 {
+  scroll-margin-top: 84px;
+}
+
+.heading-link {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45em;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.heading-link:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--muted);
+}
+
+.heading-link::after {
+  content: "🔗";
+  font-size: 0.6em;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.heading-link:hover::after,
+.heading-link:focus-visible::after {
+  opacity: 0.6;
+}
+
+.heading-link.copied::after {
+  content: "Copied!";
+  opacity: 1;
+  font-size: 0.5em;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
 .parameter-value {
   margin: 0;
   font-size: 0.85rem;
