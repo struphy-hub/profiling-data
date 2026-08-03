@@ -227,6 +227,15 @@
       "destination": "poisson_cube_strong_scaling-run01.h5",
       "run_metadata_source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20260803T055349Z-195db665/poisson_cube_strong_scaling/sim_01/run_metadata.json",
       "run_metadata_destination": "poisson_cube_strong_scaling-run01-run_metadata.json"
+    },
+    {
+      "source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20260803T055349Z-195db665/poisson_cube_strong_scaling/sim_09/profiling_data.h5",
+      "relative_source": "sim_09/profiling_data.h5",
+      "launch_id": 9,
+      "ranks": 256,
+      "destination": "poisson_cube_strong_scaling-run09.h5",
+      "run_metadata_source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20260803T055349Z-195db665/poisson_cube_strong_scaling/sim_09/run_metadata.json",
+      "run_metadata_destination": "poisson_cube_strong_scaling-run09-run_metadata.json"
     }
   ]
 }
