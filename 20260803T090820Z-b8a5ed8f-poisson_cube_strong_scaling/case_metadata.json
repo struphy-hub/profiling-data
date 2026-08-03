@@ -272,6 +272,15 @@
       "destination": "run06.h5",
       "run_metadata_source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20260803T090820Z-b8a5ed8f/poisson_cube_strong_scaling/sim_06/run_metadata.json",
       "run_metadata_destination": "run06.json"
+    },
+    {
+      "source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20260803T090820Z-b8a5ed8f/poisson_cube_strong_scaling/sim_07/profiling_data.h5",
+      "relative_source": "sim_07/profiling_data.h5",
+      "launch_id": 7,
+      "ranks": 64,
+      "destination": "run07.h5",
+      "run_metadata_source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20260803T090820Z-b8a5ed8f/poisson_cube_strong_scaling/sim_07/run_metadata.json",
+      "run_metadata_destination": "run07.json"
     }
   ],
   "results": [
@@ -365,6 +374,19 @@
         "results-run06/spline_degree.npy"
       ],
       "launch_id": 6
+    },
+    {
+      "source": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20260803T090820Z-b8a5ed8f/poisson_cube_strong_scaling/sim_07/results",
+      "destination": "results-run07",
+      "files": [
+        "results-run07/phi_slices.png",
+        "results-run07/rel_err_phi.npy",
+        "results-run07/rel_err_rhs.npy",
+        "results-run07/resolution.npy",
+        "results-run07/rhs_slices.png",
+        "results-run07/spline_degree.npy"
+      ],
+      "launch_id": 7
     }
   ]
 }
