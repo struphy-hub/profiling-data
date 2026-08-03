@@ -418,17 +418,25 @@ def main() -> int:
 
         case_stats_path = case_output_dir / "region_statistics.json"
         case_stats = load_region_stats(case_stats_path)
-        case_summaries.append(
-            build_case_summary(
-                case_dir.name,
-                title,
-                description,
-                case_stats,
-                str(metadata_path.relative_to(repo_root)),
-                case_details,
-                case_metadata_summary,
-            )
+        case_summary = build_case_summary(
+            case_dir.name,
+            title,
+            description,
+            case_stats,
+            str(metadata_path.relative_to(repo_root)),
+            case_details,
+            case_metadata_summary,
         )
+        case_summaries.append(case_summary)
+
+        # The shared parameters.py that every launch was submitted with lives
+        # once at the case root, not per run.
+        parameters_source = case_dir / "parameters.py"
+        if parameters_source.is_file():
+            shutil.copy2(parameters_source, case_output_dir / "parameters.py")
+            case_summary["parameters_file"] = f"cases/{case_dir.name}/parameters.py"
+
+        first_run_launch_id: int | None = None
 
         for entry in case_stats["files"]:
             entry["title"] = title
@@ -505,6 +513,14 @@ def main() -> int:
                 run_outputs["gallery"] = [
                     f"cases/{case_dir.name}/runs/{run_id}/gallery/{name}" for name in gallery_names
                 ]
+
+            # The case overview shows the first run's gallery (if any) as a
+            # representative preview, so it's tracked here as runs are seen.
+            if resolved is not None and run_outputs.get("gallery"):
+                launch_id = resolved["launch_id"]
+                if first_run_launch_id is None or launch_id < first_run_launch_id:
+                    first_run_launch_id = launch_id
+                    case_summary["gallery"] = run_outputs["gallery"]
 
             entry["run_outputs"] = run_outputs
             aggregated_files.append(entry)

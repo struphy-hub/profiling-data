@@ -31,6 +31,11 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
     </article>
   </section>
 
+  <section class="card" id="case-gallery-section" style="margin-top: 1rem; display: none;">
+    <h2 style="margin-top: 0;">Gallery <span class="muted" id="case-gallery-subtitle"></span></h2>
+    <div id="case-gallery" class="gallery-grid"></div>
+  </section>
+
   <section id="cases" class="card" style="margin-top: 1rem;">
     <h2>Case metadata explorer</h2>
     <p class="muted">Select a run to inspect rank-specific region-level timing statistics.</p>
@@ -50,12 +55,21 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
     </div>
     <div id="case-panel" class="card" style="margin-top: 1rem;"></div>
   </section>
+
+  <section class="card" id="case-parameters-section" style="margin-top: 1rem; display: none;">
+    <h2 style="margin-top: 0;">Parameter file</h2>
+    <p class="muted" id="case-parameters-path" style="margin-top: 0;"></p>
+    <pre class="code-block"><code id="case-parameters-code" class="language-python"></code></pre>
+  </section>
 </BaseLayout>
 
 <script>
   import Plotly from "plotly.js-dist-min";
+  import Prism from "prismjs";
+  import "prismjs/components/prism-python";
   import { renderFigure } from "../lib/charts.js";
   import { groupKeyForCase } from "../lib/cases.js";
+  import { renderGallery } from "../lib/gallery.js";
 
   const rawBaseUrl = import.meta.env.BASE_URL;
   const baseUrl = rawBaseUrl.endsWith("/") ? rawBaseUrl : `${rawBaseUrl}/`;
@@ -68,6 +82,12 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
   const durationsPlot = document.getElementById("durations-plot");
   const speedupPlot = document.getElementById("speedup-plot");
   const durationsMetricSelect = document.getElementById("durations-metric-select");
+  const caseGallerySection = document.getElementById("case-gallery-section");
+  const caseGallerySubtitle = document.getElementById("case-gallery-subtitle");
+  const caseGallery = document.getElementById("case-gallery");
+  const caseParametersSection = document.getElementById("case-parameters-section");
+  const caseParametersPath = document.getElementById("case-parameters-path");
+  const caseParametersCode = document.getElementById("case-parameters-code");
 
   const fmt = (value) => {
     if (typeof value !== "number" || Number.isNaN(value)) return "-";
@@ -181,6 +201,33 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
     }
   };
 
+  const renderCaseGallery = (selectedCase) => {
+    const rendered = renderGallery(caseGallery, selectedCase?.gallery, baseUrl);
+    caseGallerySection.style.display = rendered ? "" : "none";
+    caseGallerySubtitle.textContent = rendered ? "(first run)" : "";
+  };
+
+  const renderCaseParameters = async (selectedCase) => {
+    const path = selectedCase?.parameters_file;
+    if (!path) {
+      caseParametersSection.style.display = "none";
+      caseParametersCode.textContent = "";
+      return;
+    }
+    caseParametersSection.style.display = "";
+    caseParametersPath.textContent = path;
+    caseParametersCode.textContent = "Loading…";
+    try {
+      const res = await fetch(`${baseUrl}figures/${path}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const source = await res.text();
+      caseParametersCode.textContent = source;
+      Prism.highlightElement(caseParametersCode);
+    } catch (error) {
+      caseParametersCode.textContent = `Could not load parameter file: ${error}`;
+    }
+  };
+
   const renderCaseMetadata = (selectedCase) => {
     const metadata = selectedCase?.case_metadata ?? {};
     caseMetaPanel.innerHTML = `
@@ -243,6 +290,8 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
         casePanel.innerHTML = "<p class='muted'>No runs found for the selected case.</p>";
         renderPlots(selectedCase);
         renderCaseMetadata(selectedCase);
+        renderCaseGallery(selectedCase);
+        renderCaseParameters(selectedCase);
         return;
       }
 
@@ -253,6 +302,8 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
 
       renderPlots(selectedCase);
       renderCaseMetadata(selectedCase);
+      renderCaseGallery(selectedCase);
+      renderCaseParameters(selectedCase);
       let activeRow = null;
       files.forEach((entry, index) => {
         const row = document.createElement("tr");

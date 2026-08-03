@@ -13,7 +13,8 @@
   },
   "dependencies": {
     "astro": "^7.0.7",
-    "plotly.js-dist-min": "^3.7.0"
+    "plotly.js-dist-min": "^3.7.0",
+    "prismjs": "^1.30.0"
   },
   "devDependencies": {
     "speedscope": "^1.25.0"
