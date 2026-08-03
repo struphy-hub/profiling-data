@@ -16,6 +16,15 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
     <div id="run-meta-panel"></div>
   </section>
 
+  <section class="card" id="run-parameters-section" style="margin-top: 1rem; display: none;">
+    <h2 style="margin-top: 0;">Simulation parameters</h2>
+    <div class="table-wrap">
+      <table>
+        <tbody id="run-parameters-body"></tbody>
+      </table>
+    </div>
+  </section>
+
   <section class="card" style="margin-top: 1rem;">
     <h2 style="margin-top: 0;">Run figures</h2>
     <div id="run-figures" class="grid"></div>
@@ -82,6 +91,8 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
   const runFigures = document.getElementById("run-figures");
   const runGallerySection = document.getElementById("run-gallery-section");
   const runGallery = document.getElementById("run-gallery");
+  const runParametersSection = document.getElementById("run-parameters-section");
+  const runParametersBody = document.getElementById("run-parameters-body");
   const flamegraphPanel = document.getElementById("flamegraph-panel");
   const flamegraphDownload = document.getElementById("flamegraph-download");
   const speedscopePanel = document.getElementById("speedscope-panel");
@@ -112,7 +123,8 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
   const metadataRows = (runEntry, selectedCase) => {
     const fileMetadata = runEntry.file_metadata || {};
     const caseMeta = selectedCase.case_metadata || {};
-    return [
+    const pragmas = runEntry.job_info?.pragmas || {};
+    const rows = [
       ["Case", selectedCase.title ?? "-"],
       ["Run label", runEntry.label ?? "-"],
       ["Datetime", formatDatetime(selectedCase.datetime_utc ?? caseMeta.datetime_utc)],
@@ -120,11 +132,36 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
       ["Model", selectedCase.struphy_model_used ?? caseMeta.struphy_model_used ?? "-"],
       ["Physics problem", selectedCase.physics_problem ?? caseMeta.physics_problem ?? "-"],
       ["Cluster name", selectedCase.cluster_name ?? caseMeta.cluster_name ?? "-"],
+    ];
+    if (pragmas.partition) rows.push(["Slurm partition", pragmas.partition]);
+    if (pragmas.nodes != null) rows.push(["Nodes", pragmas.nodes]);
+    if (pragmas.time) rows.push(["Time limit", pragmas.time]);
+    if (pragmas.mem) rows.push(["Memory", pragmas.mem]);
+    rows.push(
       ["Source file", runEntry.file_path ?? "-"],
       ["Relative source", fileMetadata.relative_source ?? "-"],
       ["Destination", fileMetadata.destination ?? "-"],
-      ["Run metadata", JSON.stringify(fileMetadata)],
-    ];
+      ["Run parameters file", fileMetadata.run_metadata_destination ?? "-"],
+    );
+    return rows;
+  };
+
+  // The parameter JSON differs by model (Poisson vs. diocotron, ...), so
+  // rather than hardcoding fields it renders every top-level key generically:
+  // scalars inline, objects/arrays pretty-printed.
+  const IGNORED_PARAMETER_KEYS = new Set(["env", "started_at_epoch_s"]);
+
+  const parameterRows = (runParameters) => {
+    if (!runParameters || typeof runParameters !== "object") return [];
+    return Object.entries(runParameters)
+      .filter(([key]) => !IGNORED_PARAMETER_KEYS.has(key))
+      .map(([key, value]) => {
+        if (value === null || value === undefined) return [key, "-"];
+        if (typeof value === "object") {
+          return [key, `<pre class="parameter-value">${esc(JSON.stringify(value, null, 2))}</pre>`];
+        }
+        return [key, esc(String(value))];
+      });
   };
 
   // Shows the rank 0 flameprof SVG. The SVG is inlined rather than used as an
@@ -202,6 +239,19 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
       })
       .join("");
     runGallerySection.style.display = "";
+  };
+
+  const setupParameters = (runEntry) => {
+    const rows = parameterRows(runEntry.run_parameters);
+    if (!rows.length) {
+      runParametersSection.style.display = "none";
+      runParametersBody.innerHTML = "";
+      return;
+    }
+    runParametersBody.innerHTML = rows
+      .map(([key, value]) => `<tr><th>${esc(key)}</th><td style="white-space: pre-wrap;">${value}</td></tr>`)
+      .join("");
+    runParametersSection.style.display = "";
   };
 
   const render = async () => {
@@ -303,6 +353,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
         }),
       );
 
+      setupParameters(runEntry);
       await setupFlamegraph(runEntry);
       setupSpeedscope(runEntry);
       setupGallery(runEntry);
@@ -332,6 +383,8 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
     } catch (error) {
       runMetaPanel.innerHTML = `<p class="muted">Could not load run metadata: ${esc(error)}</p>`;
       runFigures.innerHTML = "";
+      runParametersSection.style.display = "none";
+      runParametersBody.innerHTML = "";
       runGallerySection.style.display = "none";
       runGallery.innerHTML = "";
       flamegraphPanel.innerHTML = "";

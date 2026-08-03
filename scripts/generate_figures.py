@@ -64,44 +64,30 @@ def is_case_dir(path: Path) -> bool:
 
 
 def extract_title(metadata: dict, case_dir: Path) -> str:
+    general_info = metadata.get("general_information", {})
     return str(
-        metadata.get("label")
-        or metadata.get("name")
-        or metadata.get("profiling_case_info", {}).get("test_case_name")
-        or metadata.get("general_information", {}).get("test_case_name")
+        general_info.get("test_case_name")
+        or general_info.get("simulation_name")
         or case_dir.name
     )
 
 
 def extract_description(metadata: dict) -> str:
+    general_info = metadata.get("general_information", {})
     return str(
-        metadata.get("description")
-        or metadata.get("profiling_case_info", {}).get("test_case_description")
-        or metadata.get("general_information", {}).get("test_case_description")
+        general_info.get("test_case_description")
+        or general_info.get("simulation_description")
         or ""
     )
 
 
 def extract_case_details(metadata: dict) -> dict:
-    profiling_info = metadata.get("profiling_case_info", {})
     general_info = metadata.get("general_information", {})
     hardware_info = metadata.get("hardware_information", {})
     return {
-        "datetime_utc": str(
-            metadata.get("datetime_utc")
-            or general_info.get("time_date_utc")
-            or ""
-        ),
-        "struphy_model_used": str(
-            profiling_info.get("struphy_model_used")
-            or general_info.get("struphy_model_used")
-            or ""
-        ),
-        "physics_problem": str(
-            profiling_info.get("physics_problem")
-            or general_info.get("physics_problem")
-            or ""
-        ),
+        "datetime_utc": str(general_info.get("time_date_utc") or ""),
+        "struphy_model_used": str(general_info.get("struphy_model_used") or ""),
+        "physics_problem": str(general_info.get("physics_problem") or ""),
         "cluster_name": str(hardware_info.get("cluster_name") or ""),
     }
 
@@ -110,50 +96,41 @@ def extract_case_metadata_summary(metadata: dict) -> dict:
     general_info = metadata.get("general_information", {})
     hardware_info = metadata.get("hardware_information", {})
     software_info = metadata.get("software_information", {})
-    profiling_info = metadata.get("profiling_case_info", {})
+    struphy_commit = str(software_info.get("struphy_commit") or "")
     return {
-        "datetime_utc": metadata.get("datetime_utc") or general_info.get("time_date_utc") or "",
-        "datetime_token": metadata.get("datetime_token") or "",
-        "commit": metadata.get("commit") or "",
-        "commit_short": metadata.get("commit_short") or "",
-        "testcase": metadata.get("testcase") or "",
-        "language": metadata.get("language") or "",
-        "source_results_root": metadata.get("source_results_root") or "",
-        "source_parameters_file": metadata.get("source_parameters_file") or "",
+        "datetime_utc": general_info.get("time_date_utc") or "",
+        "datetime_token": general_info.get("datetime_token") or "",
+        "commit": struphy_commit,
+        "commit_short": struphy_commit[:8],
+        "testcase": general_info.get("test_case_identifier") or "",
+        "language": software_info.get("pyccel_language") or "",
+        "source_results_root": general_info.get("results_root") or "",
+        "source_parameters_file": software_info.get("parameter_file_source") or "",
         "cluster_name": hardware_info.get("cluster_name") or "",
-        "struphy_model_used": profiling_info.get("struphy_model_used")
-        or general_info.get("struphy_model_used")
-        or "",
-        "physics_problem": profiling_info.get("physics_problem")
-        or general_info.get("physics_problem")
-        or "",
-        "test_case_identifier": profiling_info.get("test_case_identifier") or "",
-        "test_case_name": profiling_info.get("test_case_name")
-        or general_info.get("test_case_name")
-        or "",
-        "test_case_description": profiling_info.get("test_case_description")
-        or general_info.get("test_case_description")
-        or "",
-        "pyccel_language": profiling_info.get("pyccel_language")
-        or software_info.get("pyccel_language")
-        or "",
-        "pyccel_compiler_family": profiling_info.get("pyccel_compiler_family")
-        or software_info.get("pyccel_compiler_family")
-        or "",
-        "struphy_commit": software_info.get("struphy_commit") or "",
-        "slurm_script": general_info.get("slurm_script")
-        or profiling_info.get("slurm_script")
-        or "",
-        "slurm_variables": general_info.get("slurm_variables")
-        or profiling_info.get("slurm_variables")
-        or {},
-        "github": metadata.get("github") or {},
+        "cluster_hostnames": hardware_info.get("node_hostnames") or [],
+        "struphy_model_used": general_info.get("struphy_model_used") or "",
+        "physics_problem": general_info.get("physics_problem") or "",
+        "test_case_identifier": general_info.get("test_case_identifier") or "",
+        "test_case_name": general_info.get("test_case_name") or "",
+        "test_case_description": general_info.get("test_case_description") or "",
+        "pyccel_language": software_info.get("pyccel_language") or "",
+        "pyccel_compiler_family": software_info.get("pyccel_compiler_family") or "",
+        "struphy_commit": struphy_commit,
     }
 
 
-def load_case_metadata(
-    case_dir: Path,
-) -> tuple[str, str, dict, dict, dict, Path]:
+def index_by_key(entries: object, key: str) -> dict:
+    """Index a metadata list (files/results/jobs) by one of its own fields."""
+    if not isinstance(entries, list):
+        return {}
+    return {
+        entry[key]: entry
+        for entry in entries
+        if isinstance(entry, dict) and entry.get(key) is not None
+    }
+
+
+def load_case_metadata(case_dir: Path) -> tuple[str, str, dict, dict, dict, dict, dict, Path]:
     metadata_path = resolve_case_metadata_path(case_dir)
 
     with metadata_path.open("r", encoding="utf-8") as file:
@@ -161,24 +138,23 @@ def load_case_metadata(
 
     title = extract_title(metadata, case_dir)
     description = extract_description(metadata)
-    files = metadata.get("files", [])
-    if not isinstance(files, list):
-        raise SystemExit(f"Invalid 'files' section in {metadata_path}")
 
-    file_metadata_by_destination = {}
-    for file_entry in files:
-        if not isinstance(file_entry, dict):
-            continue
-        destination = file_entry.get("destination")
-        if destination:
-            file_metadata_by_destination[str(destination)] = file_entry
+    # The case metadata lists every destination file explicitly: which run.h5
+    # a launch produced, its run_metadata.json, and (if the simulation wrote
+    # any) its results-runNN folder. Everything below is keyed off launch_id
+    # rather than guessed from file names.
+    files_by_destination = index_by_key(metadata.get("files"), "destination")
+    results_by_launch_id = index_by_key(metadata.get("results"), "launch_id")
+    jobs_by_launch_id = index_by_key(metadata.get("job_information", {}).get("jobs"), "launch_id")
 
     case_details = extract_case_details(metadata)
     case_metadata_summary = extract_case_metadata_summary(metadata)
     return (
         title,
         description,
-        file_metadata_by_destination,
+        files_by_destination,
+        results_by_launch_id,
+        jobs_by_launch_id,
         case_details,
         case_metadata_summary,
         metadata_path,
@@ -269,36 +245,48 @@ def slugify(value: str) -> str:
 GALLERY_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".pdf"}
 
 
-def find_results_dir(case_dir: Path, h5_path: Path) -> Path | None:
-    """Locate the results-runNN folder matching a run's .h5 file, if any.
+def copy_gallery_files(case_dir: Path, results_entry: dict | None, run_output_dir: Path) -> list[str]:
+    """Copy a run's simulation-produced plots (as listed in case_metadata.json)
+    into its output folder, and return their names.
 
-    Some cases (e.g. poisson_cube_strong_scaling) ship a results-runNN sibling
-    folder alongside each runNN.h5 file, holding plots and other artifacts
-    produced by the simulation itself rather than by scope-profiler.
+    ``results_entry`` is the case metadata's `results[]` entry for this run's
+    launch_id: its `files` list gives the exact relative paths to copy, so no
+    directory scanning or file-name guessing is needed.
     """
-    match = re.search(r"run0*(\d+)", h5_path.stem, re.IGNORECASE)
-    if match is None:
-        return None
-    candidate = case_dir / f"results-run{match.group(1).zfill(2)}"
-    if candidate.is_dir():
-        return candidate
-    candidate = case_dir / f"results-run{match.group(1)}"
-    return candidate if candidate.is_dir() else None
-
-
-def copy_gallery_files(results_dir: Path, run_output_dir: Path) -> list[str]:
-    gallery_dir = run_output_dir / "gallery"
+    if not results_entry:
+        return []
     gallery_files = sorted(
-        path
-        for path in results_dir.iterdir()
-        if path.is_file() and path.suffix.lower() in GALLERY_EXTENSIONS
+        (case_dir / name)
+        for name in results_entry.get("files", [])
+        if Path(name).suffix.lower() in GALLERY_EXTENSIONS
     )
+    gallery_files = [path for path in gallery_files if path.is_file()]
     if not gallery_files:
         return []
+    gallery_dir = run_output_dir / "gallery"
     gallery_dir.mkdir(parents=True, exist_ok=True)
     for path in gallery_files:
         shutil.copy2(path, gallery_dir / path.name)
     return [path.name for path in gallery_files]
+
+
+def load_run_parameters(case_dir: Path, file_metadata: dict | None) -> dict | None:
+    """Load a run's own parameter JSON (destination given by case_metadata.json).
+
+    This file (e.g. run01.json) carries the simulation config actually used
+    for that launch - domain, grid, time stepping, etc. - which is richer and
+    less error-prone than re-deriving it from the shared parameters.py.
+    """
+    if not file_metadata:
+        return None
+    destination = file_metadata.get("run_metadata_destination")
+    if not destination:
+        return None
+    run_metadata_path = case_dir / destination
+    if not run_metadata_path.is_file():
+        return None
+    with run_metadata_path.open("r", encoding="utf-8") as file:
+        return json.load(file)
 
 
 def load_region_stats(path: Path) -> dict:
@@ -385,7 +373,9 @@ def main() -> int:
         (
             title,
             description,
-            file_metadata_by_destination,
+            files_by_destination,
+            results_by_launch_id,
+            jobs_by_launch_id,
             case_details,
             case_metadata_summary,
             metadata_path,
@@ -416,9 +406,23 @@ def main() -> int:
             entry["description"] = description
             entry["case_id"] = case_dir.name
             file_name = Path(str(entry.get("file_path", ""))).name
-            file_metadata = file_metadata_by_destination.get(file_name)
+            file_metadata = files_by_destination.get(file_name)
             if file_metadata is not None:
                 entry["file_metadata"] = file_metadata
+
+            launch_id = file_metadata.get("launch_id") if file_metadata else None
+            job_info = jobs_by_launch_id.get(launch_id)
+            if job_info is not None:
+                entry["job_info"] = {
+                    "launch_id": job_info.get("launch_id"),
+                    "ranks": job_info.get("ranks"),
+                    "pragmas": job_info.get("pragmas", {}),
+                }
+
+            run_parameters = load_run_parameters(case_dir, file_metadata)
+            if run_parameters is not None:
+                entry["run_parameters"] = run_parameters
+
             run_label = str(entry.get("label") or file_name)
             run_id = slugify(run_label)
             run_output_dir = case_output_dir / "runs" / run_id
@@ -453,13 +457,12 @@ def main() -> int:
                 run_outputs["flamegraph"] = f"cases/{case_dir.name}/runs/{run_id}/{svg_path.name}"
                 run_outputs["profile"] = f"cases/{case_dir.name}/runs/{run_id}/{prof_path.name}"
 
-            results_dir = find_results_dir(case_dir, Path(str(entry["file_path"])))
-            if results_dir is not None:
-                gallery_names = copy_gallery_files(results_dir, run_output_dir)
-                if gallery_names:
-                    run_outputs["gallery"] = [
-                        f"cases/{case_dir.name}/runs/{run_id}/gallery/{name}" for name in gallery_names
-                    ]
+            results_entry = results_by_launch_id.get(launch_id)
+            gallery_names = copy_gallery_files(case_dir, results_entry, run_output_dir)
+            if gallery_names:
+                run_outputs["gallery"] = [
+                    f"cases/{case_dir.name}/runs/{run_id}/gallery/{name}" for name in gallery_names
+                ]
 
             entry["run_outputs"] = run_outputs
             aggregated_files.append(entry)
