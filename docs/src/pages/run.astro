@@ -139,8 +139,8 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
     if (pragmas.mem) rows.push(["Memory", pragmas.mem]);
     rows.push(
       ["Source file", runEntry.file_path ?? "-"],
-      ["Relative source", fileMetadata.relative_source ?? "-"],
-      ["Destination", fileMetadata.destination ?? "-"],
+      ["Case-relative path", fileMetadata.relative_source ?? "-"],
+      ["Source run directory", fileMetadata.run_directory ?? "-"],
       ["Run parameters file", fileMetadata.run_metadata_destination ?? "-"],
     );
     return rows;

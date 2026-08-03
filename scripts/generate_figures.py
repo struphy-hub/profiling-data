@@ -123,7 +123,7 @@ def extract_case_metadata_summary(metadata: dict) -> dict:
 
 
 def index_by_key(entries: object, key: str) -> dict:
-    """Index a metadata list (files/results/jobs) by one of its own fields."""
+    """Index a metadata list (e.g. case_metadata.json's `runs[]`) by one of its own fields."""
     if not isinstance(entries, list):
         return {}
     return {
@@ -133,7 +133,7 @@ def index_by_key(entries: object, key: str) -> dict:
     }
 
 
-def load_case_metadata(case_dir: Path) -> tuple[str, str, dict, dict, dict, dict, dict, Path]:
+def load_case_metadata(case_dir: Path) -> tuple[str, str, dict, dict, dict, Path]:
     metadata_path = resolve_case_metadata_path(case_dir)
 
     with metadata_path.open("r", encoding="utf-8") as file:
@@ -142,26 +142,55 @@ def load_case_metadata(case_dir: Path) -> tuple[str, str, dict, dict, dict, dict
     title = extract_title(metadata, case_dir)
     description = extract_description(metadata)
 
-    # The case metadata lists every destination file explicitly: which run.h5
-    # a launch produced, its run_metadata.json, and (if the simulation wrote
-    # any) its results-runNN folder. Everything below is keyed off launch_id
-    # rather than guessed from file names.
-    files_by_destination = index_by_key(metadata.get("files"), "destination")
-    results_by_launch_id = index_by_key(metadata.get("results"), "launch_id")
-    jobs_by_launch_id = index_by_key(metadata.get("job_information", {}).get("jobs"), "launch_id")
+    # case_metadata.json's `runs[]` is just an index: for each launch, where
+    # to find that run's own metadata file. That file (loaded below, per
+    # run) is the actual source of truth for everything about the run - its
+    # .h5 file(s), result/gallery files, job, and simulation parameters.
+    runs_by_launch_id = index_by_key(metadata.get("runs"), "launch_id")
 
     case_details = extract_case_details(metadata)
     case_metadata_summary = extract_case_metadata_summary(metadata)
     return (
         title,
         description,
-        files_by_destination,
-        results_by_launch_id,
-        jobs_by_launch_id,
+        runs_by_launch_id,
         case_details,
         case_metadata_summary,
         metadata_path,
     )
+
+
+def load_run_metadata(case_dir: Path, run_entry: dict) -> dict | None:
+    """Load a run's own metadata JSON (e.g. results-run01/run01.json).
+
+    Its `packaged_files` section gives the run's profiling .h5 file(s) and
+    result/gallery files as paths relative to case_dir, and its `job` section
+    carries the Slurm submission for that specific launch - all relative to
+    this one file, regardless of which folder layout produced it.
+    """
+    run_metadata_rel = run_entry.get("run_metadata")
+    if not run_metadata_rel:
+        return None
+    run_metadata_path = case_dir / run_metadata_rel
+    if not run_metadata_path.is_file():
+        return None
+    with run_metadata_path.open("r", encoding="utf-8") as file:
+        return json.load(file)
+
+
+def resolve_run_h5_files(case_dir: Path, run_parameters: dict) -> list[Path]:
+    packaged_files = run_parameters.get("packaged_files") or {}
+    relative_paths = []
+    if packaged_files.get("profiling_data"):
+        relative_paths.append(packaged_files["profiling_data"])
+    relative_paths.extend(packaged_files.get("additional_profiling_data") or [])
+    return [path for path in (case_dir / rel for rel in relative_paths) if path.is_file()]
+
+
+def resolve_gallery_files(case_dir: Path, run_parameters: dict) -> list[Path]:
+    packaged_files = run_parameters.get("packaged_files") or {}
+    candidates = (case_dir / rel for rel in packaged_files.get("results") or [])
+    return [path for path in candidates if path.suffix.lower() in GALLERY_EXTENSIONS and path.is_file()]
 
 
 def run_scope_profiler(
@@ -248,48 +277,15 @@ def slugify(value: str) -> str:
 GALLERY_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".pdf"}
 
 
-def copy_gallery_files(case_dir: Path, results_entry: dict | None, run_output_dir: Path) -> list[str]:
-    """Copy a run's simulation-produced plots (as listed in case_metadata.json)
-    into its output folder, and return their names.
-
-    ``results_entry`` is the case metadata's `results[]` entry for this run's
-    launch_id: its `files` list gives the exact relative paths to copy, so no
-    directory scanning or file-name guessing is needed.
-    """
-    if not results_entry:
-        return []
-    gallery_files = sorted(
-        (case_dir / name)
-        for name in results_entry.get("files", [])
-        if Path(name).suffix.lower() in GALLERY_EXTENSIONS
-    )
-    gallery_files = [path for path in gallery_files if path.is_file()]
+def copy_gallery_files(gallery_files: list[Path], run_output_dir: Path) -> list[str]:
+    """Copy a run's simulation-produced plots into its output folder and return their names."""
     if not gallery_files:
         return []
     gallery_dir = run_output_dir / "gallery"
     gallery_dir.mkdir(parents=True, exist_ok=True)
     for path in gallery_files:
         shutil.copy2(path, gallery_dir / path.name)
-    return [path.name for path in gallery_files]
-
-
-def load_run_parameters(case_dir: Path, file_metadata: dict | None) -> dict | None:
-    """Load a run's own parameter JSON (destination given by case_metadata.json).
-
-    This file (e.g. run01.json) carries the simulation config actually used
-    for that launch - domain, grid, time stepping, etc. - which is richer and
-    less error-prone than re-deriving it from the shared parameters.py.
-    """
-    if not file_metadata:
-        return None
-    destination = file_metadata.get("run_metadata_destination")
-    if not destination:
-        return None
-    run_metadata_path = case_dir / destination
-    if not run_metadata_path.is_file():
-        return None
-    with run_metadata_path.open("r", encoding="utf-8") as file:
-        return json.load(file)
+    return sorted(path.name for path in gallery_files)
 
 
 def load_region_stats(path: Path) -> dict:
@@ -374,23 +370,43 @@ def main() -> int:
         (
             title,
             description,
-            files_by_destination,
-            results_by_launch_id,
-            jobs_by_launch_id,
+            runs_by_launch_id,
             case_details,
             case_metadata_summary,
             metadata_path,
         ) = load_case_metadata(case_dir)
 
-        # The .h5 files are found exclusively via case_metadata.json's
-        # `files[].destination` rather than by globbing the case folder: that
-        # destination is a path relative to case_dir (e.g. "run01.h5" or
-        # "results-run01/run01.h5" once results are nested per run), so this
-        # works regardless of how deep the layout gets.
-        h5_files = sorted(case_dir / destination for destination in files_by_destination)
-        file_metadata_by_resolved_path = {
-            str((case_dir / destination).resolve()): file_metadata
-            for destination, file_metadata in files_by_destination.items()
+        # case_metadata.json only indexes launches; each run's own metadata
+        # file is the source of truth for its .h5 file(s), so it's loaded and
+        # resolved up front. Launches whose metadata or .h5 is missing on
+        # disk (e.g. a partially synced case) are skipped rather than
+        # aborting the whole case.
+        resolved_runs = []
+        for launch_id, run_entry in sorted(runs_by_launch_id.items()):
+            run_parameters = load_run_metadata(case_dir, run_entry)
+            if run_parameters is None:
+                print(f"{case_dir.name}: skipping launch {launch_id}, no run metadata file found.")
+                continue
+            run_h5_files = resolve_run_h5_files(case_dir, run_parameters)
+            if not run_h5_files:
+                print(f"{case_dir.name}: skipping launch {launch_id}, no profiling .h5 file found.")
+                continue
+            resolved_runs.append(
+                {
+                    "launch_id": launch_id,
+                    "run_entry": run_entry,
+                    "run_parameters": run_parameters,
+                    "h5_files": run_h5_files,
+                }
+            )
+
+        if not resolved_runs:
+            print(f"{case_dir.name}: no usable runs found, skipping case.")
+            continue
+
+        h5_files = sorted({path for run in resolved_runs for path in run["h5_files"]})
+        run_by_resolved_h5 = {
+            str(path.resolve()): run for run in resolved_runs for path in run["h5_files"]
         }
         total_files += len(h5_files)
 
@@ -419,22 +435,35 @@ def main() -> int:
             entry["description"] = description
             entry["case_id"] = case_dir.name
             entry_path = Path(str(entry.get("file_path", "")))
-            file_metadata = file_metadata_by_resolved_path.get(str(entry_path.resolve()))
-            if file_metadata is not None:
-                entry["file_metadata"] = file_metadata
+            resolved = run_by_resolved_h5.get(str(entry_path.resolve()))
+            run_parameters = resolved["run_parameters"] if resolved else {}
+            packaged_files = run_parameters.get("packaged_files") or {}
 
-            launch_id = file_metadata.get("launch_id") if file_metadata else None
-            job_info = jobs_by_launch_id.get(launch_id)
-            if job_info is not None:
-                entry["job_info"] = {
-                    "launch_id": job_info.get("launch_id"),
-                    "ranks": job_info.get("ranks"),
-                    "pragmas": job_info.get("pragmas", {}),
+            if resolved is not None:
+                entry["file_metadata"] = {
+                    "launch_id": resolved["launch_id"],
+                    "folder": resolved["run_entry"].get("folder"),
+                    "relative_source": packaged_files.get("profiling_data"),
+                    "run_directory": packaged_files.get("run_directory"),
+                    "run_metadata_destination": resolved["run_entry"].get("run_metadata"),
                 }
 
-            run_parameters = load_run_parameters(case_dir, file_metadata)
-            if run_parameters is not None:
-                entry["run_parameters"] = run_parameters
+                job_info = run_parameters.get("job")
+                if job_info:
+                    entry["job_info"] = {
+                        "ranks": job_info.get("ranks"),
+                        "pragmas": job_info.get("pragmas", {}),
+                    }
+
+                # The parameter payload minus the job (surfaced separately
+                # above) and packaged_files (internal bookkeeping, not
+                # simulation config) - the rest is whatever the model put
+                # there, rendered generically on the run page.
+                entry["run_parameters"] = {
+                    key: value
+                    for key, value in run_parameters.items()
+                    if key not in ("job", "packaged_files")
+                }
 
             run_label = str(entry.get("label") or entry_path.name)
             run_id = slugify(run_label)
@@ -470,8 +499,8 @@ def main() -> int:
                 run_outputs["flamegraph"] = f"cases/{case_dir.name}/runs/{run_id}/{svg_path.name}"
                 run_outputs["profile"] = f"cases/{case_dir.name}/runs/{run_id}/{prof_path.name}"
 
-            results_entry = results_by_launch_id.get(launch_id)
-            gallery_names = copy_gallery_files(case_dir, results_entry, run_output_dir)
+            gallery_files = resolve_gallery_files(case_dir, run_parameters) if resolved else []
+            gallery_names = copy_gallery_files(gallery_files, run_output_dir)
             if gallery_names:
                 run_outputs["gallery"] = [
                     f"cases/{case_dir.name}/runs/{run_id}/gallery/{name}" for name in gallery_names
