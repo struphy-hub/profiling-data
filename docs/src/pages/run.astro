@@ -147,21 +147,31 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
   };
 
   // The parameter JSON differs by model (Poisson vs. diocotron, ...), so
-  // rather than hardcoding fields it renders every top-level key generically:
-  // scalars inline, objects/arrays pretty-printed.
+  // rather than hardcoding fields it renders every top-level key generically.
+  // Nested objects/arrays (domain, grid, derham_opts, time_opts, ...) are
+  // flattened to one compact "key: value, key: value" line instead of a
+  // pretty-printed JSON blob - short enough to scan at a glance.
   const IGNORED_PARAMETER_KEYS = new Set(["env", "started_at_epoch_s"]);
+
+  const compactValue = (value) => {
+    if (value === null || value === undefined) return "-";
+    if (Array.isArray(value)) {
+      if (!value.length) return "[]";
+      return `[${value.map(compactValue).join(", ")}]`;
+    }
+    if (typeof value === "object") {
+      const entries = Object.entries(value);
+      if (!entries.length) return "-";
+      return `{${entries.map(([key, val]) => `${key}: ${compactValue(val)}`).join(", ")}}`;
+    }
+    return String(value);
+  };
 
   const parameterRows = (runParameters) => {
     if (!runParameters || typeof runParameters !== "object") return [];
     return Object.entries(runParameters)
       .filter(([key]) => !IGNORED_PARAMETER_KEYS.has(key))
-      .map(([key, value]) => {
-        if (value === null || value === undefined) return [key, "-"];
-        if (typeof value === "object") {
-          return [key, `<pre class="parameter-value">${esc(JSON.stringify(value, null, 2))}</pre>`];
-        }
-        return [key, esc(String(value))];
-      });
+      .map(([key, value]) => [key, `<code class="parameter-value">${esc(compactValue(value))}</code>`]);
   };
 
   // Shows the rank 0 flameprof SVG. The SVG is inlined rather than used as an
