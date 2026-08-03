@@ -186,6 +186,35 @@ a:hover {
   flex-wrap: wrap;
 }
 
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.gallery-item {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.gallery-item img {
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.gallery-item .gallery-caption {
+  font-size: 0.85rem;
+  color: var(--muted);
+  word-break: break-word;
+}
+
 .plot-container {
   width: 100%;
 }

@@ -21,6 +21,11 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
     <div id="run-figures" class="grid"></div>
   </section>
 
+  <section class="card" id="run-gallery-section" style="margin-top: 1rem; display: none;">
+    <h2 style="margin-top: 0;">Gallery</h2>
+    <div id="run-gallery" class="gallery-grid"></div>
+  </section>
+
   <section class="card" style="margin-top: 1rem;">
     <div class="figure-tile-header">
       <h2 style="margin-top: 0;">Flame graph <span class="muted">(rank 0)</span></h2>
@@ -75,6 +80,8 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
   const runRegionsBody = document.getElementById("run-regions-body");
   const runBreadcrumb = document.getElementById("run-breadcrumb");
   const runFigures = document.getElementById("run-figures");
+  const runGallerySection = document.getElementById("run-gallery-section");
+  const runGallery = document.getElementById("run-gallery");
   const flamegraphPanel = document.getElementById("flamegraph-panel");
   const flamegraphDownload = document.getElementById("flamegraph-download");
   const speedscopePanel = document.getElementById("speedscope-panel");
@@ -166,6 +173,35 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
     speedscopeDownload.href = profileUrl;
     speedscopeDownload.hidden = false;
     speedscopePanel.innerHTML = `<iframe class="speedscope-frame" src="${esc(viewerUrl)}" title="speedscope timeline"></iframe>`;
+  };
+
+  const IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "gif", "webp", "svg"]);
+
+  const setupGallery = (runEntry) => {
+    const gallery = runEntry.run_outputs?.gallery;
+    if (!Array.isArray(gallery) || !gallery.length) {
+      runGallerySection.style.display = "none";
+      runGallery.innerHTML = "";
+      return;
+    }
+
+    runGallery.innerHTML = gallery
+      .map((path) => {
+        const url = `${baseUrl}figures/${path}`;
+        const name = path.split("/").pop() ?? path;
+        const ext = name.split(".").pop()?.toLowerCase() ?? "";
+        const preview = IMAGE_EXTENSIONS.has(ext)
+          ? `<img src="${esc(url)}" alt="${esc(name)}" loading="lazy" />`
+          : `<embed src="${esc(url)}" type="application/pdf" style="width: 100%; height: 320px; border-radius: 6px;" />`;
+        return `
+          <a class="gallery-item" href="${esc(url)}" target="_blank" rel="noopener" style="text-decoration: none; color: inherit;">
+            ${preview}
+            <span class="gallery-caption">${esc(name)}</span>
+          </a>
+        `;
+      })
+      .join("");
+    runGallerySection.style.display = "";
   };
 
   const render = async () => {
@@ -269,6 +305,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
 
       await setupFlamegraph(runEntry);
       setupSpeedscope(runEntry);
+      setupGallery(runEntry);
 
       const stats = runEntry.region_statistics || {};
       const commonRegions = Array.isArray(selectedCase.common_regions) ? selectedCase.common_regions : [];
@@ -295,6 +332,8 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
     } catch (error) {
       runMetaPanel.innerHTML = `<p class="muted">Could not load run metadata: ${esc(error)}</p>`;
       runFigures.innerHTML = "";
+      runGallerySection.style.display = "none";
+      runGallery.innerHTML = "";
       flamegraphPanel.innerHTML = "";
       speedscopePanel.innerHTML = "";
       runRegionsBody.innerHTML = "";

@@ -266,6 +266,41 @@ def slugify(value: str) -> str:
     return slug or "run"
 
 
+GALLERY_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".pdf"}
+
+
+def find_results_dir(case_dir: Path, h5_path: Path) -> Path | None:
+    """Locate the results-runNN folder matching a run's .h5 file, if any.
+
+    Some cases (e.g. poisson_cube_strong_scaling) ship a results-runNN sibling
+    folder alongside each runNN.h5 file, holding plots and other artifacts
+    produced by the simulation itself rather than by scope-profiler.
+    """
+    match = re.search(r"run0*(\d+)", h5_path.stem, re.IGNORECASE)
+    if match is None:
+        return None
+    candidate = case_dir / f"results-run{match.group(1).zfill(2)}"
+    if candidate.is_dir():
+        return candidate
+    candidate = case_dir / f"results-run{match.group(1)}"
+    return candidate if candidate.is_dir() else None
+
+
+def copy_gallery_files(results_dir: Path, run_output_dir: Path) -> list[str]:
+    gallery_dir = run_output_dir / "gallery"
+    gallery_files = sorted(
+        path
+        for path in results_dir.iterdir()
+        if path.is_file() and path.suffix.lower() in GALLERY_EXTENSIONS
+    )
+    if not gallery_files:
+        return []
+    gallery_dir.mkdir(parents=True, exist_ok=True)
+    for path in gallery_files:
+        shutil.copy2(path, gallery_dir / path.name)
+    return [path.name for path in gallery_files]
+
+
 def load_region_stats(path: Path) -> dict:
     with path.open("r", encoding="utf-8") as file:
         data = json.load(file)
@@ -417,6 +452,14 @@ def main() -> int:
             if prof_path.exists() and render_flamegraph(prof_path, svg_path):
                 run_outputs["flamegraph"] = f"cases/{case_dir.name}/runs/{run_id}/{svg_path.name}"
                 run_outputs["profile"] = f"cases/{case_dir.name}/runs/{run_id}/{prof_path.name}"
+
+            results_dir = find_results_dir(case_dir, Path(str(entry["file_path"])))
+            if results_dir is not None:
+                gallery_names = copy_gallery_files(results_dir, run_output_dir)
+                if gallery_names:
+                    run_outputs["gallery"] = [
+                        f"cases/{case_dir.name}/runs/{run_id}/gallery/{name}" for name in gallery_names
+                    ]
 
             entry["run_outputs"] = run_outputs
             aggregated_files.append(entry)
