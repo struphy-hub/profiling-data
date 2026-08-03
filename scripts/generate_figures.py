@@ -58,9 +58,12 @@ def is_case_dir(path: Path) -> bool:
     """A profiling case folder holds a case metadata file next to its .h5 runs.
 
     Test cases are not distinguished by name here: diocotron, poisson and any
-    future case are all picked up by the same layout check.
+    future case are all picked up by the same layout check. The .h5 files
+    themselves may live directly in the case folder or nested under a
+    results-runNN subfolder, so this looks recursively rather than assuming
+    either layout.
     """
-    return path.is_dir() and find_case_metadata_path(path) is not None and any(path.glob("*.h5"))
+    return path.is_dir() and find_case_metadata_path(path) is not None and any(path.rglob("*.h5"))
 
 
 def extract_title(metadata: dict, case_dir: Path) -> str:
@@ -368,8 +371,6 @@ def main() -> int:
     total_files = 0
 
     for case_dir in case_dirs:
-        h5_files = sorted(case_dir.glob("*.h5"))
-        total_files += len(h5_files)
         (
             title,
             description,
@@ -380,6 +381,18 @@ def main() -> int:
             case_metadata_summary,
             metadata_path,
         ) = load_case_metadata(case_dir)
+
+        # The .h5 files are found exclusively via case_metadata.json's
+        # `files[].destination` rather than by globbing the case folder: that
+        # destination is a path relative to case_dir (e.g. "run01.h5" or
+        # "results-run01/run01.h5" once results are nested per run), so this
+        # works regardless of how deep the layout gets.
+        h5_files = sorted(case_dir / destination for destination in files_by_destination)
+        file_metadata_by_resolved_path = {
+            str((case_dir / destination).resolve()): file_metadata
+            for destination, file_metadata in files_by_destination.items()
+        }
+        total_files += len(h5_files)
 
         case_output_dir = cases_output_dir / case_dir.name
         case_output_dir.mkdir(parents=True, exist_ok=True)
@@ -405,8 +418,8 @@ def main() -> int:
             entry["title"] = title
             entry["description"] = description
             entry["case_id"] = case_dir.name
-            file_name = Path(str(entry.get("file_path", ""))).name
-            file_metadata = files_by_destination.get(file_name)
+            entry_path = Path(str(entry.get("file_path", "")))
+            file_metadata = file_metadata_by_resolved_path.get(str(entry_path.resolve()))
             if file_metadata is not None:
                 entry["file_metadata"] = file_metadata
 
@@ -423,7 +436,7 @@ def main() -> int:
             if run_parameters is not None:
                 entry["run_parameters"] = run_parameters
 
-            run_label = str(entry.get("label") or file_name)
+            run_label = str(entry.get("label") or entry_path.name)
             run_id = slugify(run_label)
             run_output_dir = case_output_dir / "runs" / run_id
             run_output_dir.mkdir(parents=True, exist_ok=True)
