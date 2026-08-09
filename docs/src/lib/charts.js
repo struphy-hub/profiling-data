@@ -319,6 +319,44 @@ export function buildDurationsFigure(bars, metric, selectedRanks) {
   return { data, layout };
 }
 
+// Compare: grouped bar chart with exactly two series (case A vs case B),
+// one bar pair per region. Used by the compare page to show a chosen metric
+// side by side for two different case instances/runs.
+export function buildComparisonFigure(regions, labelA, valuesA, labelB, valuesB, metric) {
+  const colors = assignColors([labelA, labelB]);
+
+  const data = [
+    {
+      type: "bar",
+      name: labelA,
+      x: regions,
+      y: valuesA,
+      marker: { color: colors.get(labelA) },
+      hovertemplate: "<b>%{x}</b><br>" + labelA.replace(/[&<>]/g, "") + ": %{y:.4f}s<extra></extra>",
+    },
+    {
+      type: "bar",
+      name: labelB,
+      x: regions,
+      y: valuesB,
+      marker: { color: colors.get(labelB) },
+      hovertemplate: "<b>%{x}</b><br>" + labelB.replace(/[&<>]/g, "") + ": %{y:.4f}s<extra></extra>",
+    },
+  ];
+
+  const layout = baseLayout({
+    height: Math.max(360, 42 * regions.length + 180),
+    margin: { l: 160, r: 24, t: 16, b: 140 },
+    barmode: "group",
+    showlegend: true,
+    legend: { orientation: "h", y: 1.08, x: 0, font: { color: themeColors().muted, size: 11 } },
+    xaxis: axisStyle({ tickangle: -35 }),
+    yaxis: axisStyle({ title: { text: METRIC_LABELS[metric] ?? "Duration (s)" } }),
+  });
+
+  return { data, layout };
+}
+
 export function buildSpeedupFigure(points) {
   const regions = [];
   for (const point of points) {
@@ -382,6 +420,15 @@ export async function renderFigure(Plotly, container, kind, payload, extra) {
   else if (kind === "durations")
     figure = buildDurationsFigure(payload.bars, extra?.metric ?? "total", extra?.ranks);
   else if (kind === "speedup") figure = buildSpeedupFigure(payload.points);
+  else if (kind === "comparison")
+    figure = buildComparisonFigure(
+      payload.regions,
+      payload.labelA,
+      payload.valuesA,
+      payload.labelB,
+      payload.valuesB,
+      extra?.metric,
+    );
   else throw new Error(`Unknown chart kind: ${kind}`);
   await render(Plotly, container, figure.data, figure.layout);
 }

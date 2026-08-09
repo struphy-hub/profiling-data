@@ -1,0 +1,352 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Compare cases" description="Compare region-level timing statistics between two profiling case instances.">
+  <section class="hero">
+    <p class="muted" style="margin-top: 0;"><a id="compare-back-link" href="#">Case overview</a></p>
+    <h1>Compare cases</h1>
+    <p>Pick two case instances to compare their region-level timings side by side, e.g. two solver variants of the same test case.</p>
+  </section>
+
+  <section class="card" style="margin-top: 1rem;">
+    <div class="compare-pickers">
+      <div class="compare-picker">
+        <label class="compare-picker-label" for="case-a-select">Case A</label>
+        <select id="case-a-select" class="metric-select compare-select"></select>
+        <select id="run-a-select" class="metric-select compare-select"></select>
+      </div>
+      <button id="compare-swap" class="rank-btn compare-swap" type="button" title="Swap A and B">⇄ Swap</button>
+      <div class="compare-picker">
+        <label class="compare-picker-label" for="case-b-select">Case B</label>
+        <select id="case-b-select" class="metric-select compare-select"></select>
+        <select id="run-b-select" class="metric-select compare-select"></select>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="compare-metadata-section" style="margin-top: 1rem;">
+    <h2 style="margin-top: 0;">Metadata</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th id="compare-meta-head-a">Case A</th>
+            <th id="compare-meta-head-b">Case B</th>
+          </tr>
+        </thead>
+        <tbody id="compare-metadata-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="grid" style="margin-top: 1rem;">
+    <article class="card figure-tile">
+      <div class="figure-tile-header">
+        <h3 style="margin-top: 0;">Region timings</h3>
+        <select id="compare-metric-select" class="metric-select">
+          <option value="avg">Average</option>
+          <option value="min">Min</option>
+          <option value="max">Max</option>
+          <option value="total">Total</option>
+        </select>
+      </div>
+      <div id="compare-plot" class="plot-container"></div>
+    </article>
+  </section>
+
+  <section class="card" style="margin-top: 1rem;">
+    <h2 style="margin-top: 0;">Region-by-region delta</h2>
+    <p class="muted" style="margin-top: 0;">Positive delta/change means Case B is slower than Case A for that region.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Region</th>
+            <th id="compare-table-head-a">A avg (s)</th>
+            <th id="compare-table-head-b">B avg (s)</th>
+            <th>&Delta; (s)</th>
+            <th>&Delta; (%)</th>
+          </tr>
+        </thead>
+        <tbody id="compare-table-body"></tbody>
+      </table>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import Plotly from "plotly.js-dist-min";
+  import { renderFigure } from "../lib/charts.js";
+  import { groupKeyForCase, groupLabelForCase } from "../lib/cases.js";
+
+  const rawBaseUrl = import.meta.env.BASE_URL;
+  const baseUrl = rawBaseUrl.endsWith("/") ? rawBaseUrl : `${rawBaseUrl}/`;
+
+  const backLink = document.getElementById("compare-back-link");
+  backLink.href = baseUrl;
+
+  const caseASelect = document.getElementById("case-a-select");
+  const caseBSelect = document.getElementById("case-b-select");
+  const runASelect = document.getElementById("run-a-select");
+  const runBSelect = document.getElementById("run-b-select");
+  const swapButton = document.getElementById("compare-swap");
+  const metricSelect = document.getElementById("compare-metric-select");
+  const comparePlot = document.getElementById("compare-plot");
+  const metadataBody = document.getElementById("compare-metadata-body");
+  const metaHeadA = document.getElementById("compare-meta-head-a");
+  const metaHeadB = document.getElementById("compare-meta-head-b");
+  const tableBody = document.getElementById("compare-table-body");
+  const tableHeadA = document.getElementById("compare-table-head-a");
+  const tableHeadB = document.getElementById("compare-table-head-b");
+
+  const esc = (value) =>
+    String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;");
+
+  const fmt = (value) => {
+    if (typeof value !== "number" || Number.isNaN(value)) return "-";
+    if (Math.abs(value) >= 1) return value.toFixed(4);
+    return value.toExponential(3);
+  };
+
+  const fmtValue = (value) => {
+    if (value === null || value === undefined || value === "") return "-";
+    if (typeof value === "object") return esc(JSON.stringify(value));
+    return esc(String(value));
+  };
+
+  const formatDatetime = (value) => {
+    const text = String(value ?? "");
+    if (!text) return "-";
+    const parsed = new Date(text);
+    if (Number.isNaN(parsed.getTime())) return text;
+    return parsed.toLocaleString();
+  };
+
+  const METRIC_FIELD = {
+    avg: "average_duration_seconds",
+    min: "min_duration_seconds",
+    max: "max_duration_seconds",
+    total: "total_duration_seconds",
+  };
+
+  const caseLabel = (entry) =>
+    `${groupLabelForCase(entry)} — ${formatDatetime(entry.datetime_utc)}${
+      entry.cluster_name ? ` (${entry.cluster_name})` : ""
+    }`;
+
+  const runLabel = (file) => `${file.label ?? "run"} — ${file.num_ranks ?? "?"} rank${file.num_ranks === 1 ? "" : "s"}`;
+
+  let cases = [];
+  let files = [];
+
+  const filesForCase = (caseId) =>
+    files
+      .filter((file) => file.case_id === caseId)
+      .slice()
+      .sort((a, b) => (a.num_ranks ?? 0) - (b.num_ranks ?? 0));
+
+  const populateCaseSelect = (select, preferredId) => {
+    select.innerHTML = cases
+      .map((entry) => `<option value="${esc(entry.id)}">${esc(caseLabel(entry))}</option>`)
+      .join("");
+    if (preferredId && cases.some((entry) => entry.id === preferredId)) {
+      select.value = preferredId;
+    }
+  };
+
+  const populateRunSelect = (select, caseId, preferredLabel) => {
+    const runs = filesForCase(caseId);
+    select.innerHTML = runs
+      .map((file) => `<option value="${esc(file.label ?? "")}">${esc(runLabel(file))}</option>`)
+      .join("");
+    if (preferredLabel && runs.some((file) => file.label === preferredLabel)) {
+      select.value = preferredLabel;
+    }
+  };
+
+  const selectedCase = (select) => cases.find((entry) => entry.id === select.value);
+  const selectedRun = (select, caseId) => filesForCase(caseId).find((file) => file.label === select.value);
+
+  const renderMetadata = (entryA, entryB) => {
+    metaHeadA.textContent = groupLabelForCase(entryA) || "Case A";
+    metaHeadB.textContent = groupLabelForCase(entryB) || "Case B";
+    const metaA = entryA?.case_metadata ?? {};
+    const metaB = entryB?.case_metadata ?? {};
+
+    const rows = [
+      ["Test case", metaA.test_case_identifier || metaA.testcase, metaB.test_case_identifier || metaB.testcase],
+      ["Datetime", formatDatetime(entryA?.datetime_utc), formatDatetime(entryB?.datetime_utc)],
+      ["Struphy model", entryA?.struphy_model_used ?? metaA.struphy_model_used, entryB?.struphy_model_used ?? metaB.struphy_model_used],
+      ["Physics problem", entryA?.physics_problem ?? metaA.physics_problem, entryB?.physics_problem ?? metaB.physics_problem],
+      ["Cluster", entryA?.cluster_name ?? metaA.cluster_name, entryB?.cluster_name ?? metaB.cluster_name],
+      ["Language", metaA.language, metaB.language],
+      ["Commit", metaA.commit_short || metaA.commit, metaB.commit_short || metaB.commit],
+    ];
+
+    metadataBody.innerHTML = rows
+      .map(([field, a, b]) => {
+        const differs = String(a ?? "") !== String(b ?? "");
+        return `
+          <tr>
+            <td>${esc(field)}</td>
+            <td${differs ? ' class="compare-diff"' : ""}>${fmtValue(a)}</td>
+            <td${differs ? ' class="compare-diff"' : ""}>${fmtValue(b)}</td>
+          </tr>
+        `;
+      })
+      .join("");
+  };
+
+  const renderComparison = async () => {
+    const entryA = selectedCase(caseASelect);
+    const entryB = selectedCase(caseBSelect);
+    if (!entryA || !entryB) return;
+
+    const fileA = selectedRun(runASelect, entryA.id);
+    const fileB = selectedRun(runBSelect, entryB.id);
+
+    renderMetadata(entryA, entryB);
+
+    const labelA = `${groupLabelForCase(entryA)} (${fileA?.label ?? "-"})`;
+    const labelB = `${groupLabelForCase(entryB)} (${fileB?.label ?? "-"})`;
+    tableHeadA.textContent = `${groupLabelForCase(entryA)} avg (s)`;
+    tableHeadB.textContent = `${groupLabelForCase(entryB)} avg (s)`;
+
+    const statsA = fileA?.region_statistics ?? {};
+    const statsB = fileB?.region_statistics ?? {};
+    const regions = [...new Set([...Object.keys(statsA), ...Object.keys(statsB)])].sort();
+
+    const metric = metricSelect.value;
+    const field = METRIC_FIELD[metric];
+    const valuesA = regions.map((region) => statsA[region]?.[field] ?? null);
+    const valuesB = regions.map((region) => statsB[region]?.[field] ?? null);
+
+    if (!regions.length) {
+      comparePlot.innerHTML = "<p class='muted'>No overlapping region data to compare.</p>";
+    } else {
+      await renderFigure(
+        Plotly,
+        comparePlot,
+        "comparison",
+        { regions, labelA, valuesA, labelB, valuesB },
+        { metric },
+      );
+    }
+
+    tableBody.innerHTML = regions
+      .map((region) => {
+        const a = statsA[region]?.average_duration_seconds;
+        const b = statsB[region]?.average_duration_seconds;
+        const hasBoth = typeof a === "number" && typeof b === "number";
+        const delta = hasBoth ? b - a : null;
+        const pct = hasBoth && a !== 0 ? (delta / a) * 100 : null;
+        const deltaClass = hasBoth ? (delta > 0 ? "compare-slower" : delta < 0 ? "compare-faster" : "") : "";
+        return `
+          <tr>
+            <td>${esc(region)}</td>
+            <td>${fmt(a)}</td>
+            <td>${fmt(b)}</td>
+            <td class="${deltaClass}">${hasBoth ? `${delta >= 0 ? "+" : ""}${fmt(delta)}` : "-"}</td>
+            <td class="${deltaClass}">${hasBoth && pct !== null ? `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%` : "-"}</td>
+          </tr>
+        `;
+      })
+      .join("");
+  };
+
+  const updateUrl = () => {
+    const entryA = selectedCase(caseASelect);
+    const entryB = selectedCase(caseBSelect);
+    const params = new URLSearchParams();
+    if (entryA) params.set("a", entryA.id);
+    if (runASelect.value) params.set("runA", runASelect.value);
+    if (entryB) params.set("b", entryB.id);
+    if (runBSelect.value) params.set("runB", runBSelect.value);
+    history.replaceState(null, "", `${location.pathname}?${params.toString()}`);
+  };
+
+  const onCaseAChange = () => {
+    const entry = selectedCase(caseASelect);
+    populateRunSelect(runASelect, entry?.id);
+    renderComparison();
+    updateUrl();
+  };
+
+  const onCaseBChange = () => {
+    const entry = selectedCase(caseBSelect);
+    populateRunSelect(runBSelect, entry?.id);
+    renderComparison();
+    updateUrl();
+  };
+
+  const init = async () => {
+    try {
+      const res = await fetch(`${baseUrl}figures/region_statistics.json`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      cases = Array.isArray(data.cases) ? data.cases.slice() : [];
+      files = Array.isArray(data.files) ? data.files.slice() : [];
+
+      if (!cases.length) {
+        metadataBody.innerHTML = '<tr><td colspan="3" class="muted">No cases found in region_statistics.json.</td></tr>';
+        return;
+      }
+
+      cases.sort((a, b) => String(b.datetime_utc ?? "").localeCompare(String(a.datetime_utc ?? "")));
+
+      const params = new URLSearchParams(window.location.search);
+      const requestedA = params.get("a");
+      const requestedB = params.get("b");
+
+      const defaultA = requestedA && cases.some((c) => c.id === requestedA) ? requestedA : cases[0].id;
+      const defaultAGroup = groupKeyForCase(cases.find((c) => c.id === defaultA));
+      const defaultBEntry =
+        (requestedB && cases.find((c) => c.id === requestedB)) ??
+        cases.find((c) => groupKeyForCase(c) !== defaultAGroup) ??
+        cases[1] ??
+        cases[0];
+
+      populateCaseSelect(caseASelect, defaultA);
+      populateCaseSelect(caseBSelect, defaultBEntry?.id);
+      populateRunSelect(runASelect, defaultA, params.get("runA"));
+      populateRunSelect(runBSelect, defaultBEntry?.id, params.get("runB"));
+
+      caseASelect.addEventListener("change", onCaseAChange);
+      caseBSelect.addEventListener("change", onCaseBChange);
+      runASelect.addEventListener("change", () => {
+        renderComparison();
+        updateUrl();
+      });
+      runBSelect.addEventListener("change", () => {
+        renderComparison();
+        updateUrl();
+      });
+      metricSelect.addEventListener("change", renderComparison);
+      swapButton.addEventListener("click", () => {
+        const aCase = caseASelect.value;
+        const bCase = caseBSelect.value;
+        const aRun = runASelect.value;
+        const bRun = runBSelect.value;
+        populateCaseSelect(caseASelect, bCase);
+        populateCaseSelect(caseBSelect, aCase);
+        populateRunSelect(runASelect, bCase, bRun);
+        populateRunSelect(runBSelect, aCase, aRun);
+        renderComparison();
+        updateUrl();
+      });
+
+      await renderComparison();
+      updateUrl();
+    } catch (error) {
+      metadataBody.innerHTML = `<tr><td colspan="3" class="muted">Could not load case data: ${esc(error)}</td></tr>`;
+    }
+  };
+
+  init();
+</script>

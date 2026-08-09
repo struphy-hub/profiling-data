@@ -631,3 +631,45 @@ tbody tr:last-child td {
   background: var(--row-hover);
   border-color: var(--accent);
 }
+
+.compare-pickers {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.compare-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1 1 320px;
+  min-width: 260px;
+}
+
+.compare-picker-label {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.compare-select {
+  width: 100%;
+}
+
+.compare-swap {
+  margin-bottom: 0.1rem;
+}
+
+.compare-diff {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.compare-faster {
+  color: #1baf7a;
+}
+
+.compare-slower {
+  color: #e34948;
+}

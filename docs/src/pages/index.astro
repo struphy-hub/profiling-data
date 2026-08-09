@@ -35,6 +35,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
             <th>Instances</th>
             <th>Latest run</th>
             <th>Open</th>
+            <th>Compare</th>
           </tr>
         </thead>
         <tbody id="home-cases-table-body"></tbody>
@@ -102,7 +103,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       const data = await res.json();
       const cases = Array.isArray(data.cases) ? data.cases.slice() : [];
       if (!cases.length) {
-        tableBody.innerHTML = '<tr><td colspan="7" class="muted">No cases found in region_statistics.json.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="8" class="muted">No cases found in region_statistics.json.</td></tr>';
         return;
       }
 
@@ -143,6 +144,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
               <td>${entries.length}</td>
               <td>${esc(formatDatetime(latest?.datetime_utc))}</td>
               <td><a href="${baseUrl}instances?group=${encodeURIComponent(groupKey)}">View instances</a></td>
+              <td><a href="${baseUrl}compare?a=${encodeURIComponent(latest?.id ?? "")}">Compare</a></td>
             </tr>
           `;
         })
@@ -150,7 +152,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       bindDescriptionToggles();
       setupSearch(groups.length);
     } catch (error) {
-      tableBody.innerHTML = `<tr><td colspan="7" class="muted">Could not load case table: ${esc(error)}</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="8" class="muted">Could not load case table: ${esc(error)}</td></tr>`;
     }
   };
 
@@ -176,7 +178,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         if (!emptyRow) {
           emptyRow = document.createElement("tr");
           emptyRow.className = "empty-row";
-          emptyRow.innerHTML = '<td colspan="7" class="empty-state">No cases match your filter.</td>';
+          emptyRow.innerHTML = '<td colspan="8" class="empty-state">No cases match your filter.</td>';
           tableBody.appendChild(emptyRow);
         }
       } else if (emptyRow) {
