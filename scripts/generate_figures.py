@@ -214,6 +214,14 @@ def run_scope_profiler(
         "--export-data-format",
         "json",
         "--skip-plot-images",
+        # scope-profiler's durations bar plot only exports "total" unless
+        # told otherwise, but the durations page lets visitors switch between
+        # avg/min/max/total - all four need to be present in the export.
+        "--metrics",
+        "avg",
+        "min",
+        "max",
+        "total",
     ]
     if export_prof:
         command.append("--export-prof")

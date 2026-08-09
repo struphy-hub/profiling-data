@@ -17,10 +17,10 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
       <div class="figure-tile-header">
         <h3 id="durations-title" style="margin-top: 0;">Durations</h3>
         <select id="durations-metric-select" class="metric-select">
+          <option value="total" selected>Total</option>
           <option value="avg">Average</option>
           <option value="min">Min</option>
           <option value="max">Max</option>
-          <option value="total">Total</option>
         </select>
       </div>
       <div id="durations-plot" class="plot-container"></div>

@@ -46,10 +46,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       <div class="figure-tile-header">
         <h3 style="margin-top: 0;">Region timings</h3>
         <select id="compare-metric-select" class="metric-select">
+          <option value="total" selected>Total</option>
           <option value="avg">Average</option>
           <option value="min">Min</option>
           <option value="max">Max</option>
-          <option value="total">Total</option>
         </select>
       </div>
       <div id="compare-plot" class="plot-container"></div>
@@ -140,7 +140,19 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       entry.cluster_name ? ` (${entry.cluster_name})` : ""
     }`;
 
-  const runLabel = (file) => `${file.label ?? "run"} — ${file.num_ranks ?? "?"} rank${file.num_ranks === 1 ? "" : "s"}`;
+  // scope-profiler's own run label (e.g. "petsc, 1 rank", set via
+  // `ProfileManager.setup(label=...)`) already spells out the rank count for
+  // runs that were given one, so the rank suffix below is only appended when
+  // the label doesn't already mention it (e.g. older runs that fall back to
+  // their file stem, like "run01").
+  const runLabel = (file) => {
+    const label = String(file.label ?? "run");
+    const ranks = file.num_ranks;
+    if (ranks === undefined || ranks === null) return label;
+    const rankPhrase = `${ranks} rank`;
+    if (label.toLowerCase().includes(rankPhrase.toLowerCase())) return label;
+    return `${label} — ${ranks} rank${ranks === 1 ? "" : "s"}`;
+  };
 
   let cases = [];
   let files = [];
@@ -315,7 +327,19 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       populateCaseSelect(caseASelect, defaultA);
       populateCaseSelect(caseBSelect, defaultBEntry?.id);
       populateRunSelect(runASelect, defaultA, params.get("runA"));
-      populateRunSelect(runBSelect, defaultBEntry?.id, params.get("runB"));
+
+      // When A and B land on the same case (e.g. a single case whose runs
+      // are distinguished by scope-profiler run label rather than by
+      // separate case folders, such as a "pcg" vs "petsc" solver variant),
+      // default run B to a *different* run than run A so the comparison
+      // isn't a no-op.
+      let defaultRunB = params.get("runB");
+      if (!defaultRunB && defaultBEntry?.id === defaultA) {
+        const runsInCase = filesForCase(defaultA);
+        const runA = selectedRun(runASelect, defaultA);
+        defaultRunB = runsInCase.find((file) => file.label !== runA?.label)?.label;
+      }
+      populateRunSelect(runBSelect, defaultBEntry?.id, defaultRunB);
 
       caseASelect.addEventListener("change", onCaseAChange);
       caseBSelect.addEventListener("change", onCaseBChange);
