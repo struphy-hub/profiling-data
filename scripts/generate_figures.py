@@ -10,6 +10,24 @@ import subprocess
 import sys
 from pathlib import Path
 
+from scope_profiler import (
+    ProfilingResults,
+    export_prof,
+    export_speedscope,
+    plot_duration_timeseries,
+    plot_durations,
+    plot_flame,
+    plot_gantt,
+    plot_speedup,
+    read_h5,
+    write_region_statistics_json,
+)
+
+# scope-profiler's durations bar plot only exports "total" by default; the
+# durations page lets visitors switch between avg/min/max/total, so all four
+# need to be present in the export.
+DURATIONS_METRICS = ["avg", "min", "max", "total"]
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -193,47 +211,68 @@ def resolve_gallery_files(case_dir: Path, run_parameters: dict) -> list[Path]:
     return [path for path in candidates if path.suffix.lower() in GALLERY_EXTENSIONS and path.is_file()]
 
 
-def run_scope_profiler(
-    pproc_executable: str,
+def get_reader(h5_file: Path, reader_cache: dict[str, ProfilingResults]) -> ProfilingResults:
+    """Load (and cache) the scope-profiler reader for one HDF5 file.
+
+    Case-level and run-level post-processing both read some of the same
+    files (a run's own file is one of its case's files too), so caching
+    avoids parsing the same HDF5 file twice.
+    """
+    key = str(h5_file.resolve())
+    reader = reader_cache.get(key)
+    if reader is None:
+        reader = read_h5(h5_file)
+        reader_cache[key] = reader
+    return reader
+
+
+def run_pproc(
     h5_files: list[Path],
+    reader_cache: dict[str, ProfilingResults],
     output_dir: Path,
     dry_run: bool,
-    ranks: str = "0",
-    export_prof: bool = False,
-    export_speedscope: bool = False,
+    ranks: list[int] | None = None,
+    export_prof_files: bool = False,
+    export_speedscope_files: bool = False,
 ) -> None:
-    command = [
-        pproc_executable,
-        "pproc",
-        *(str(file) for file in h5_files),
-        "--ranks",
-        ranks,
-        "-o",
-        str(output_dir),
-        "--export-data",
-        "--export-data-format",
-        "json",
-        "--skip-plot-images",
-        # scope-profiler's durations bar plot only exports "total" unless
-        # told otherwise, but the durations page lets visitors switch between
-        # avg/min/max/total - all four need to be present in the export.
-        "--metrics",
-        "avg",
-        "min",
-        "max",
-        "total",
-    ]
-    if export_prof:
-        command.append("--export-prof")
-    if export_speedscope:
-        command.append("--export-speedscope")
-
+    """Post-process a set of HDF5 profiling files, in place of shelling out
+    to `scope-profiler pproc`: read them, then write the same JSON exports
+    (region_statistics.json, durations/gantt/flame/timeseries/speedup data,
+    plus optional .prof and speedscope files) via scope-profiler's Python
+    API directly.
+    """
     if dry_run:
-        print("Dry run command:")
-        print(" ".join(command))
+        print(f"Dry run: would post-process {[str(f) for f in h5_files]} into {output_dir}")
         return
 
-    subprocess.run(command, check=True)
+    ranks = [0] if ranks is None else ranks
+    readers = [get_reader(h5_file, reader_cache) for h5_file in h5_files]
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    if export_prof_files:
+        export_prof(readers, output_dir / "profile.prof", ranks=ranks)
+    if export_speedscope_files:
+        export_speedscope(readers, output_dir / "profile.speedscope.json", ranks=ranks)
+
+    plot_gantt(readers, ranks=ranks, data_filepath=output_dir / "gantt_data.json", data_format="json")
+    plot_flame(readers, ranks=ranks, data_filepath=output_dir / "flame_data.json", data_format="json")
+    plot_durations(
+        readers,
+        ranks=ranks,
+        metrics=DURATIONS_METRICS,
+        data_filepath=output_dir / "durations_data.json",
+        data_format="json",
+    )
+    plot_duration_timeseries(
+        readers,
+        ranks=ranks,
+        data_filepath=output_dir / "duration_timeseries_data.json",
+        data_format="json",
+    )
+    if len(readers) > 1:
+        plot_speedup(readers, ranks=ranks, data_filepath=output_dir / "speedup_data.json", data_format="json")
+
+    write_region_statistics_json(readers, output_dir / "region_statistics.json", ranks=ranks)
 
 
 SVG_HEADER_PATTERN = re.compile(
@@ -361,18 +400,11 @@ def main() -> int:
     if not args.dry_run and cases_output_dir.exists():
         shutil.rmtree(cases_output_dir)
     cases_output_dir.mkdir(parents=True, exist_ok=True)
-    # The repository venv is preferred over PATH: a stale global install of
-    # scope-profiler would otherwise win and fail on import.
-    local_pproc = repo_root / ".venv" / "bin" / "scope-profiler"
-    pproc_executable = str(local_pproc) if local_pproc.exists() else shutil.which("scope-profiler")
-    if pproc_executable is None:
-        raise SystemExit(
-            "scope-profiler was not found in PATH or .venv/bin. Install requirements first."
-        )
 
     aggregated_files: list[dict] = []
     case_summaries: list[dict] = []
     total_files = 0
+    reader_cache: dict[str, ProfilingResults] = {}
 
     for case_dir in case_dirs:
         (
@@ -420,7 +452,7 @@ def main() -> int:
 
         case_output_dir = cases_output_dir / case_dir.name
         case_output_dir.mkdir(parents=True, exist_ok=True)
-        run_scope_profiler(pproc_executable, h5_files, case_output_dir, args.dry_run)
+        run_pproc(h5_files, reader_cache, case_output_dir, args.dry_run)
         if args.dry_run:
             continue
 
@@ -486,14 +518,13 @@ def main() -> int:
             run_output_dir = case_output_dir / "runs" / run_id
             run_output_dir.mkdir(parents=True, exist_ok=True)
             # Every run figure is rank 0 only for now.
-            run_scope_profiler(
-                pproc_executable,
+            run_pproc(
                 [Path(str(entry["file_path"]))],
+                reader_cache,
                 run_output_dir,
                 args.dry_run,
-                ranks="0",
-                export_prof=True,
-                export_speedscope=True,
+                export_prof_files=True,
+                export_speedscope_files=True,
             )
 
             run_outputs = {"id": run_id}
