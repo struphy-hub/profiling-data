@@ -1,0 +1,87 @@
+{
+  "name": "",
+  "description": "",
+  "model": {
+    "model": "VlasovMaxwellOneSpecies"
+  },
+  "params_path": "/Users/max/git_repos/struphy/profiling/examples/VlasovMaxwellOneSpecies/weibel_instability/params_weibel_instability.py",
+  "env": {
+    "out_folders": "/Users/max/git_repos/struphy/_profiling_jobs/20260810T071645Z-56072ad1/weibel_instability_petsc",
+    "sim_folder": "sim_02",
+    "restart": false,
+    "max_runtime": 300,
+    "save_step": 1,
+    "sort_step": 0,
+    "num_clones": 1,
+    "profiling_activated": true,
+    "profiling_trace": true,
+    "profiling_label": "petsc, 1 rank"
+  },
+  "time_opts": {
+    "dt": 0.05,
+    "Tend": 400,
+    "split_algo": "LieTrotter"
+  },
+  "domain": {
+    "type": "Cuboid",
+    "params": {
+      "l1": 0.0,
+      "r1": 5.026548245743669,
+      "l2": 0.0,
+      "r2": 1.0,
+      "l3": 0.0,
+      "r3": 1.0
+    }
+  },
+  "equil": null,
+  "grid": {
+    "num_elements": [
+      16,
+      16,
+      16
+    ],
+    "mpi_dims_mask": [
+      true,
+      true,
+      true
+    ]
+  },
+  "derham_opts": {
+    "degree": [
+      1,
+      1,
+      1
+    ],
+    "bcs": [
+      null,
+      null,
+      null
+    ],
+    "nquads": null,
+    "nquads_proj": null,
+    "polar_splines": false,
+    "local_projectors": false
+  },
+  "model_name": "VlasovMaxwellOneSpecies",
+  "mpi_ranks": 1,
+  "use_mpi_comm_world": true,
+  "particle_species": {
+    "kinetic_ions": {
+      "var": {
+        "Np": 81920,
+        "ppc": 20,
+        "ppb": 1280.0
+      }
+    }
+  },
+  "started_at_epoch_s": 1786346216.306347,
+  "one_time_step": true,
+  "slurm_script": null,
+  "slurm_script_str": "#!/bin/bash\nset -e\nsource /Users/max/git_repos/struphy/.venv/bin/activate\necho \"----------------------------------------\"\necho \"Running profiling case: weibel_instability_petsc (1 MPI ranks)\"\necho \"Description: Weibel instability test case for VlasovMaxwellOneSpecies, solving the one-time initial Poisson problem with either feectools' native preconditioned CG (--solver pcg) or PETScSolver (KSP=cg, PC=gamg, --solver petsc).\"\necho \"Physics problem: Weibel instability driven by an anisotropic velocity distribution.\"\necho \"Struphy model used: VlasovMaxwellOneSpecies\"\necho \"Case directory: /Users/max/git_repos/struphy/_profiling_jobs/20260810T071645Z-56072ad1/weibel_instability_petsc\"\necho \"----------------------------------------\"\nmkdir -p \"/Users/max/git_repos/struphy/_profiling_jobs/20260810T071645Z-56072ad1/weibel_instability_petsc/sim_02\"\ncp \"/Users/max/git_repos/struphy/profiling/examples/VlasovMaxwellOneSpecies/weibel_instability/params_weibel_instability.py\" \"/Users/max/git_repos/struphy/_profiling_jobs/20260810T071645Z-56072ad1/weibel_instability_petsc/parameters.py\"\n\necho \"Running weibel_instability_petsc with 1 MPI ranks\"\ncd \"/Users/max/git_repos/struphy/_profiling_jobs/20260810T071645Z-56072ad1/weibel_instability_petsc\"\nmpirun -n 1 /Users/max/git_repos/struphy/.venv/bin/python /Users/max/git_repos/struphy/profiling/examples/VlasovMaxwellOneSpecies/weibel_instability/params_weibel_instability.py --id 2 --solver petsc > \"/Users/max/git_repos/struphy/_profiling_jobs/20260810T071645Z-56072ad1/weibel_instability_petsc/sim_02/struphy.out\" 2>&1\n\necho \"----------------------------------------\"\necho \"Completed profiling case: weibel_instability_petsc (1 MPI ranks)\"\necho \"----------------------------------------\"\n",
+  "packaged_files": {
+    "profiling_data": "results-run02/run02.h5",
+    "additional_profiling_data": [],
+    "results": [],
+    "run_directory": "/Users/max/git_repos/struphy/_profiling_jobs/20260810T071645Z-56072ad1/weibel_instability_petsc/sim_02"
+  }
+}
