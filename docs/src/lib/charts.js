@@ -229,7 +229,27 @@ export function durationsRanks(bars) {
   return ranks.sort((a, b) => a - b);
 }
 
-export function buildDurationsFigure(bars, metric, selectedRanks) {
+// Regions shown by default: the top-level integration loop and the
+// propagators. Kernels and other fine-grained regions are hidden until the
+// viewer opts into the full set.
+export function isHighlightRegion(region) {
+  return region === "model.integrate" || String(region ?? "").startsWith("prop:");
+}
+
+// True when the payload has at least one highlight region, i.e. when the
+// default filter would leave something to plot.
+export function hasHighlightRegions(bars) {
+  return (bars ?? []).some((bar) => isHighlightRegion(bar.region));
+}
+
+export function buildDurationsFigure(bars, metric, selectedRanks, showAllRegions) {
+  // Restrict to the highlight regions unless the caller asks for everything.
+  // Fall back to all regions when the payload has none of them, so the plot is
+  // never empty.
+  if (!showAllRegions && hasHighlightRegions(bars)) {
+    bars = bars.filter((bar) => isHighlightRegion(bar.region));
+  }
+
   // Check if data includes per-rank information
   const hasRankData = bars.some((bar) => bar.rank !== undefined);
 
@@ -418,7 +438,12 @@ export async function renderFigure(Plotly, container, kind, payload, extra) {
   if (kind === "gantt") figure = buildGanttFigure(payload.intervals);
   else if (kind === "flame") figure = buildFlameFigure(payload.calls);
   else if (kind === "durations")
-    figure = buildDurationsFigure(payload.bars, extra?.metric ?? "total", extra?.ranks);
+    figure = buildDurationsFigure(
+      payload.bars,
+      extra?.metric ?? "total",
+      extra?.ranks,
+      extra?.allRegions ?? false,
+    );
   else if (kind === "speedup") figure = buildSpeedupFigure(payload.points);
   else if (kind === "comparison")
     figure = buildComparisonFigure(
