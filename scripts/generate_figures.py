@@ -287,6 +287,153 @@ def run_pproc(
 
     write_region_statistics_json(readers, output_dir / "region_statistics.json", ranks=ranks)
 
+    add_setup_total(output_dir)
+
+
+SETUP_TOTAL_REGION = "setup: total"
+
+
+def is_setup_region(region: str) -> bool:
+    """Setup regions are named `setup: x`, `setup prop: x` or `setup var: x`."""
+    return region.startswith("setup:") or region.startswith("setup ")
+
+
+def merged_duration(intervals: list[tuple[float, float]]) -> float:
+    """Total wall time covered by a set of (start, end) intervals.
+
+    Setup regions nest (`setup: feec` runs inside `setup: allocate`, and so
+    on), so their durations cannot simply be summed - overlapping intervals
+    are merged first and only the union is counted.
+    """
+    total = 0.0
+    current_start, current_end = None, None
+    for start, end in sorted(intervals):
+        if current_end is None or start > current_end:
+            if current_end is not None:
+                total += current_end - current_start
+            current_start, current_end = start, end
+        else:
+            current_end = max(current_end, end)
+    if current_end is not None:
+        total += current_end - current_start
+    return total
+
+
+def add_setup_total(output_dir: Path) -> None:
+    """Add a synthetic `setup: total` region to the exports in output_dir.
+
+    Setup is split across many small regions, so the combined cost of getting
+    a run to its first time step is not visible in any single bar. This walks
+    the gantt intervals (the only export carrying start/end times), merges
+    every setup region per file and rank, and writes the result back into
+    durations_data.json and region_statistics.json as one extra region.
+    """
+    gantt_path = output_dir / "gantt_data.json"
+    durations_path = output_dir / "durations_data.json"
+    if not gantt_path.is_file():
+        return
+
+    with gantt_path.open("r", encoding="utf-8") as file:
+        intervals = json.load(file).get("intervals") or []
+
+    # (file label, rank) -> merged setup wall time
+    by_file_rank: dict[tuple[str, int], list[tuple[float, float]]] = {}
+    for interval in intervals:
+        if not is_setup_region(str(interval.get("region", ""))):
+            continue
+        key = (interval.get("file"), interval.get("rank"))
+        by_file_rank.setdefault(key, []).append(
+            (float(interval["start_seconds"]), float(interval["end_seconds"]))
+        )
+    setup_totals = {key: merged_duration(spans) for key, spans in by_file_rank.items()}
+    if not setup_totals:
+        return
+
+    # Per file: the longest rank, i.e. how long setup held the whole run up.
+    by_file: dict[str, float] = {}
+    for (file_label, _rank), value in setup_totals.items():
+        by_file[file_label] = max(by_file.get(file_label, 0.0), value)
+
+    if durations_path.is_file():
+        with durations_path.open("r", encoding="utf-8") as file:
+            durations = json.load(file)
+        bars = durations.get("bars") or []
+        # Mirror the shape of the existing bars: some exports carry a per-rank
+        # breakdown, others are per file only.
+        has_rank = any("rank" in bar for bar in bars)
+        metrics = list(dict.fromkeys(bar["metric"] for bar in bars)) or DURATIONS_METRICS
+        extra = []
+        for metric in metrics:
+            if has_rank:
+                for (file_label, rank), value in sorted(setup_totals.items(), key=lambda kv: str(kv[0])):
+                    extra.append(
+                        {
+                            "file": file_label,
+                            "rank": rank,
+                            "region": SETUP_TOTAL_REGION,
+                            "metric": metric,
+                            "value_seconds": value,
+                        }
+                    )
+            else:
+                for file_label, value in sorted(by_file.items()):
+                    extra.append(
+                        {
+                            "file": file_label,
+                            "region": SETUP_TOTAL_REGION,
+                            "metric": metric,
+                            "value_seconds": value,
+                        }
+                    )
+        # Regenerating is idempotent, but guard against a stale export.
+        durations["bars"] = [bar for bar in bars if bar.get("region") != SETUP_TOTAL_REGION] + extra
+        with durations_path.open("w", encoding="utf-8") as file:
+            json.dump(durations, file, indent=1)
+
+    stats_path = output_dir / "region_statistics.json"
+    if not stats_path.is_file():
+        return
+    with stats_path.open("r", encoding="utf-8") as file:
+        stats = json.load(file)
+
+    for entry in stats.get("files") or []:
+        value = by_file.get(entry.get("label"))
+        if value is None:
+            continue
+        per_rank = {
+            str(rank): summarize_setup_total(total)
+            for (file_label, rank), total in setup_totals.items()
+            if file_label == entry.get("label")
+        }
+        entry.setdefault("region_statistics", {})[SETUP_TOTAL_REGION] = {
+            **summarize_setup_total(value),
+            "per_rank": per_rank,
+        }
+
+    common = stats.get("common_regions")
+    if isinstance(common, list) and SETUP_TOTAL_REGION not in common:
+        # Only "common" when every file actually has setup timings.
+        if all(
+            SETUP_TOTAL_REGION in (entry.get("region_statistics") or {})
+            for entry in stats.get("files") or []
+        ):
+            common.append(SETUP_TOTAL_REGION)
+
+    with stats_path.open("w", encoding="utf-8") as file:
+        json.dump(stats, file, indent=1)
+
+
+def summarize_setup_total(value: float) -> dict:
+    """Region-statistics record for the one merged setup span."""
+    return {
+        "count": 1,
+        "average_duration_seconds": value,
+        "min_duration_seconds": value,
+        "max_duration_seconds": value,
+        "std_duration_seconds": 0.0,
+        "total_duration_seconds": value,
+    }
+
 
 SVG_HEADER_PATTERN = re.compile(
     r'^.*?<svg version="1.1" width="(?P<width>[\d.]+)" height="(?P<height>[\d.]+)"',

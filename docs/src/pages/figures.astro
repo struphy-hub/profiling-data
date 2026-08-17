@@ -176,8 +176,12 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
     return res.json();
   };
 
-  const renderPlots = async (selectedCase) => {
+  const renderPlots = async (selectedCase, caseFiles = []) => {
     const caseId = selectedCase?.id ?? "unknown";
+    // Label -> rank count, used to annotate each durations bar.
+    const ranksByFile = new Map(
+      caseFiles.filter((entry) => entry.num_ranks != null).map((entry) => [entry.label, entry.num_ranks]),
+    );
     durationsTitle.textContent = `Durations (${caseId})`;
     speedupTitle.textContent = `Speedup (${caseId})`;
 
@@ -188,6 +192,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
           renderFigure(Plotly, durationsPlot, "durations", durationsPayload, {
             metric: durationsMetricSelect.value,
             allRegions: durationsAllRegions.checked,
+            ranksByFile,
           });
         await draw();
         durationsMetricSelect.onchange = draw;
@@ -315,7 +320,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
         files.findIndex((entry) => entry.label === requestedCase),
       );
 
-      renderPlots(selectedCase);
+      renderPlots(selectedCase, files);
       renderCaseMetadata(selectedCase);
       renderCaseGallery(selectedCase);
       renderCaseParameters(selectedCase);

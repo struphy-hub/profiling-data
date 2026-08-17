@@ -331,6 +331,11 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
           )
           .join("") || "<p class='muted'>No run-level figures available.</p>";
 
+      // This page shows a single run, so its own rank count labels every bar.
+      const ranksByFile = new Map(
+        runEntry.num_ranks == null ? [] : [[runEntry.label, runEntry.num_ranks]],
+      );
+
       await Promise.all(
         figureDefs.map(async (def) => {
           const container = document.getElementById(`plot-${def.key}`);
@@ -346,6 +351,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
               renderFigure(Plotly, container, def.kind, payload, {
                 metric: select?.value,
                 allRegions: allRegions?.checked ?? false,
+                ranksByFile: ranksByFile,
               });
             await draw();
             select?.addEventListener("change", draw);

@@ -247,11 +247,12 @@ export function durationsRanks(bars) {
   return ranks.sort((a, b) => a - b);
 }
 
-// Regions shown by default: the top-level integration loop and the
-// propagators. Kernels and other fine-grained regions are hidden until the
-// viewer opts into the full set.
+// Regions shown by default: the top-level integration loop, the merged setup
+// span, and the propagators. Kernels and other fine-grained regions are hidden
+// until the viewer opts into the full set.
 export function isHighlightRegion(region) {
-  return region === "model.integrate" || String(region ?? "").startsWith("prop:");
+  const name = String(region ?? "");
+  return name === "model.integrate" || name === "setup: total" || name.startsWith("prop:");
 }
 
 // Restrict rows to the highlight regions unless the caller asks for
@@ -263,8 +264,12 @@ export function filterHighlightRows(rows, showAllRegions, getRegion = (row) => r
   return kept.length ? kept : rows;
 }
 
-export function buildDurationsFigure(bars, metric, selectedRanks, showAllRegions) {
+// `ranksByFile` maps a run label to the number of MPI ranks it used, so each
+// bar can be annotated with the rank count it was measured on. The durations
+// export itself does not carry it; the pages take it from region_statistics.
+export function buildDurationsFigure(bars, metric, selectedRanks, showAllRegions, ranksByFile) {
   bars = filterHighlightRows(bars, showAllRegions);
+  const rankCounts = ranksByFile instanceof Map ? ranksByFile : new Map(Object.entries(ranksByFile ?? {}));
 
   // Check if data includes per-rank information
   const hasRankData = bars.some((bar) => bar.rank !== undefined);
@@ -332,12 +337,25 @@ export function buildDurationsFigure(bars, metric, selectedRanks, showAllRegions
     }
     const byRegion = new Map(rows.map((row) => [row.region, row.value_seconds]));
     const label = hasRankData ? `Rank ${group}` : group;
+    // Rank count above each bar: the run's own rank count when grouping by
+    // file, the rank itself when the payload is a per-rank breakdown.
+    const ranks = hasRankData ? undefined : rankCounts.get(group);
+    const barText =
+      ranks === undefined
+        ? undefined
+        : regions.map((region) =>
+            byRegion.has(region) ? `${ranks} rank${ranks === 1 ? "" : "s"}` : "",
+          );
     return {
       type: "bar",
       name: label,
       x: regions,
       y: regions.map((region) => byRegion.get(region) ?? null),
       marker: { color: colors.get(label) },
+      text: barText,
+      textposition: barText ? "outside" : undefined,
+      textfont: { color: themeColors().muted, size: 10 },
+      cliponaxis: false,
       hovertemplate: "<b>%{x}</b><br>" + label.replace(/[&<>]/g, "") + ": %{y:.4f}s<extra></extra>",
     };
   });
@@ -470,7 +488,13 @@ export async function renderFigure(Plotly, container, kind, payload, extra) {
   if (kind === "gantt") figure = buildGanttFigure(payload.intervals);
   else if (kind === "flame") figure = buildFlameFigure(payload.calls);
   else if (kind === "durations")
-    figure = buildDurationsFigure(payload.bars, extra?.metric ?? "total", extra?.ranks, allRegions);
+    figure = buildDurationsFigure(
+      payload.bars,
+      extra?.metric ?? "total",
+      extra?.ranks,
+      allRegions,
+      extra?.ranksByFile,
+    );
   else if (kind === "speedup") figure = buildSpeedupFigure(payload.points, allRegions);
   else if (kind === "comparison")
     figure = buildComparisonFigure(
