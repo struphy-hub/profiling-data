@@ -294,8 +294,9 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
 
       const outputs = runEntry.run_outputs || {};
       const figureDefs = [
-        { key: "durations", title: "Durations", kind: "durations", hasMetric: true },
-        { key: "gantt", title: "Gantt", kind: "gantt" },
+        { key: "durations", title: "Durations", kind: "durations", hasMetric: true, hasRegionFilter: true },
+        { key: "gantt", title: "Gantt", kind: "gantt", hasRegionFilter: true },
+        // Flame is a call hierarchy, so it always shows every region.
         { key: "flame", title: "Flame", kind: "flame" },
       ].filter((def) => outputs[def.key]);
 
@@ -313,8 +314,12 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
                           <option value="min">Min</option>
                           <option value="max">Max</option>
                           <option value="total">Total</option>
-                        </select>
-                        <label class="muted region-toggle">
+                        </select>`
+                      : ""
+                  }
+                  ${
+                    def.hasRegionFilter
+                      ? `<label class="muted region-toggle">
                           <input type="checkbox" id="all-regions-${def.key}" /> All regions
                         </label>`
                       : ""
@@ -333,20 +338,18 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
             const plotRes = await fetch(`${baseUrl}figures/${outputs[def.key]}`);
             if (!plotRes.ok) throw new Error(`HTTP ${plotRes.status}`);
             const payload = await plotRes.json();
-            if (def.hasMetric) {
-              const select = document.getElementById(`metric-select-${def.key}`);
-              const allRegions = document.getElementById(`all-regions-${def.key}`);
-              const draw = () =>
-                renderFigure(Plotly, container, def.kind, payload, {
-                  metric: select.value,
-                  allRegions: allRegions?.checked ?? false,
-                });
-              await draw();
-              select.addEventListener("change", draw);
-              allRegions?.addEventListener("change", draw);
-            } else {
-              await renderFigure(Plotly, container, def.kind, payload);
-            }
+            const select = def.hasMetric ? document.getElementById(`metric-select-${def.key}`) : null;
+            const allRegions = def.hasRegionFilter
+              ? document.getElementById(`all-regions-${def.key}`)
+              : null;
+            const draw = () =>
+              renderFigure(Plotly, container, def.kind, payload, {
+                metric: select?.value,
+                allRegions: allRegions?.checked ?? false,
+              });
+            await draw();
+            select?.addEventListener("change", draw);
+            allRegions?.addEventListener("change", draw);
           } catch (error) {
             container.innerHTML = `<p class="muted">Could not load ${esc(def.title)} data: ${esc(error)}</p>`;
           }

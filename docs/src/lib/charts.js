@@ -76,7 +76,9 @@ async function render(Plotly, container, data, layout) {
 
 // Gantt: one horizontal-bar trace per region so the legend gets one entry
 // per region and every call for that region shares its color.
-export function buildGanttFigure(intervals) {
+export function buildGanttFigure(intervals, showAllRegions) {
+  intervals = filterHighlightRows(intervals, showAllRegions);
+
   const order = [];
   for (const interval of intervals) {
     if (!order.includes(interval.region)) order.push(interval.region);
@@ -236,19 +238,17 @@ export function isHighlightRegion(region) {
   return region === "model.integrate" || String(region ?? "").startsWith("prop:");
 }
 
-// True when the payload has at least one highlight region, i.e. when the
-// default filter would leave something to plot.
-export function hasHighlightRegions(bars) {
-  return (bars ?? []).some((bar) => isHighlightRegion(bar.region));
+// Restrict rows to the highlight regions unless the caller asks for
+// everything. Falls back to the full set when a payload has none of them, so a
+// plot is never left empty.
+export function filterHighlightRows(rows, showAllRegions, getRegion = (row) => row.region) {
+  if (showAllRegions || !rows) return rows;
+  const kept = rows.filter((row) => isHighlightRegion(getRegion(row)));
+  return kept.length ? kept : rows;
 }
 
 export function buildDurationsFigure(bars, metric, selectedRanks, showAllRegions) {
-  // Restrict to the highlight regions unless the caller asks for everything.
-  // Fall back to all regions when the payload has none of them, so the plot is
-  // never empty.
-  if (!showAllRegions && hasHighlightRegions(bars)) {
-    bars = bars.filter((bar) => isHighlightRegion(bar.region));
-  }
+  bars = filterHighlightRows(bars, showAllRegions);
 
   // Check if data includes per-rank information
   const hasRankData = bars.some((bar) => bar.rank !== undefined);
@@ -342,7 +342,16 @@ export function buildDurationsFigure(bars, metric, selectedRanks, showAllRegions
 // Compare: grouped bar chart with exactly two series (case A vs case B),
 // one bar pair per region. Used by the compare page to show a chosen metric
 // side by side for two different case instances/runs.
-export function buildComparisonFigure(regions, labelA, valuesA, labelB, valuesB, metric) {
+export function buildComparisonFigure(regions, labelA, valuesA, labelB, valuesB, metric, showAllRegions) {
+  // The three arrays are parallel, so filter them by a shared index list.
+  const keep = filterHighlightRows(
+    regions.map((region, index) => ({ region, index })),
+    showAllRegions,
+  ).map((entry) => entry.index);
+  regions = keep.map((index) => regions[index]);
+  valuesA = keep.map((index) => valuesA[index]);
+  valuesB = keep.map((index) => valuesB[index]);
+
   const colors = assignColors([labelA, labelB]);
 
   const data = [
@@ -377,7 +386,9 @@ export function buildComparisonFigure(regions, labelA, valuesA, labelB, valuesB,
   return { data, layout };
 }
 
-export function buildSpeedupFigure(points) {
+export function buildSpeedupFigure(points, showAllRegions) {
+  points = filterHighlightRows(points, showAllRegions);
+
   const regions = [];
   for (const point of points) {
     if (!regions.includes(point.region)) regions.push(point.region);
@@ -434,17 +445,16 @@ export async function renderFigure(Plotly, container, kind, payload, extra) {
   container.__figureSpec = { kind, payload, extra };
   themedFigures.add(container);
 
+  const allRegions = extra?.allRegions ?? false;
+
   let figure;
-  if (kind === "gantt") figure = buildGanttFigure(payload.intervals);
+  if (kind === "gantt") figure = buildGanttFigure(payload.intervals, allRegions);
+  // The flame chart is a call hierarchy: dropping regions would orphan their
+  // children, so it always shows the full tree.
   else if (kind === "flame") figure = buildFlameFigure(payload.calls);
   else if (kind === "durations")
-    figure = buildDurationsFigure(
-      payload.bars,
-      extra?.metric ?? "total",
-      extra?.ranks,
-      extra?.allRegions ?? false,
-    );
-  else if (kind === "speedup") figure = buildSpeedupFigure(payload.points);
+    figure = buildDurationsFigure(payload.bars, extra?.metric ?? "total", extra?.ranks, allRegions);
+  else if (kind === "speedup") figure = buildSpeedupFigure(payload.points, allRegions);
   else if (kind === "comparison")
     figure = buildComparisonFigure(
       payload.regions,
@@ -453,6 +463,7 @@ export async function renderFigure(Plotly, container, kind, payload, extra) {
       payload.labelB,
       payload.valuesB,
       extra?.metric,
+      allRegions,
     );
   else throw new Error(`Unknown chart kind: ${kind}`);
   await render(Plotly, container, figure.data, figure.layout);

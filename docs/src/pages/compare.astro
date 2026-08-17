@@ -51,6 +51,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           <option value="min">Min</option>
           <option value="max">Max</option>
         </select>
+        <label class="muted region-toggle">
+          <input type="checkbox" id="compare-all-regions" /> All regions
+        </label>
       </div>
       <div id="compare-plot" class="plot-container"></div>
     </article>
@@ -93,6 +96,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   const runBSelect = document.getElementById("run-b-select");
   const swapButton = document.getElementById("compare-swap");
   const metricSelect = document.getElementById("compare-metric-select");
+  const allRegionsToggle = document.getElementById("compare-all-regions");
   const comparePlot = document.getElementById("compare-plot");
   const metadataBody = document.getElementById("compare-metadata-body");
   const metaHeadA = document.getElementById("compare-meta-head-a");
@@ -247,7 +251,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         comparePlot,
         "comparison",
         { regions, labelA, valuesA, labelB, valuesB },
-        { metric },
+        { metric, allRegions: allRegionsToggle.checked },
       );
     }
 
@@ -352,6 +356,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         updateUrl();
       });
       metricSelect.addEventListener("change", renderComparison);
+      allRegionsToggle.addEventListener("change", renderComparison);
       swapButton.addEventListener("click", () => {
         const aCase = caseASelect.value;
         const bCase = caseBSelect.value;

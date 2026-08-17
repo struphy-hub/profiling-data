@@ -29,7 +29,12 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
       <div id="durations-plot" class="plot-container"></div>
     </article>
     <article class="card figure-tile">
-      <h3 id="speedup-title" style="margin-top: 0;">Speedup</h3>
+      <div class="figure-tile-header">
+        <h3 id="speedup-title" style="margin-top: 0;">Speedup</h3>
+        <label class="muted region-toggle">
+          <input type="checkbox" id="speedup-all-regions" /> All regions
+        </label>
+      </div>
       <div id="speedup-plot" class="plot-container"></div>
     </article>
   </section>
@@ -86,6 +91,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
   const speedupPlot = document.getElementById("speedup-plot");
   const durationsMetricSelect = document.getElementById("durations-metric-select");
   const durationsAllRegions = document.getElementById("durations-all-regions");
+  const speedupAllRegions = document.getElementById("speedup-all-regions");
   const caseGallerySection = document.getElementById("case-gallery-section");
   const caseGallerySubtitle = document.getElementById("case-gallery-subtitle");
   const caseGallery = document.getElementById("case-gallery");
@@ -196,7 +202,12 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
     try {
       const speedupPayload = await fetchJson(selectedCase?.plot_data?.speedup);
       if (speedupPayload) {
-        await renderFigure(Plotly, speedupPlot, "speedup", speedupPayload);
+        const draw = () =>
+          renderFigure(Plotly, speedupPlot, "speedup", speedupPayload, {
+            allRegions: speedupAllRegions.checked,
+          });
+        await draw();
+        speedupAllRegions.onchange = draw;
       } else {
         speedupPlot.innerHTML = "<p class='muted'>No speedup data available (requires multiple ranks).</p>";
       }
