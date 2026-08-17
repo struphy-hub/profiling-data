@@ -38,6 +38,21 @@
       "launch_id": 4,
       "folder": "results-run04",
       "run_metadata": "results-run04/run04.json"
+    },
+    {
+      "launch_id": 2,
+      "folder": "results-run02",
+      "run_metadata": "results-run02/run02.json"
+    },
+    {
+      "launch_id": 1,
+      "folder": "results-run01",
+      "run_metadata": "results-run01/run01.json"
+    },
+    {
+      "launch_id": 3,
+      "folder": "results-run03",
+      "run_metadata": "results-run03/run03.json"
     }
   ]
 }
