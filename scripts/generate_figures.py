@@ -211,24 +211,34 @@ def resolve_gallery_files(case_dir: Path, run_parameters: dict) -> list[Path]:
     return [path for path in candidates if path.suffix.lower() in GALLERY_EXTENSIONS and path.is_file()]
 
 
-def get_reader(h5_file: Path, reader_cache: dict[str, ProfilingResults]) -> ProfilingResults:
+def get_reader(
+    h5_file: Path, reader_cache: dict[str, ProfilingResults | None]
+) -> ProfilingResults | None:
     """Load (and cache) the scope-profiler reader for one HDF5 file.
 
     Case-level and run-level post-processing both read some of the same
     files (a run's own file is one of its case's files too), so caching
     avoids parsing the same HDF5 file twice.
+
+    Returns None for a file that cannot be read (truncated or otherwise
+    corrupt HDF5, e.g. a run that died mid-write). The failure is cached too,
+    so a broken file is reported once and then skipped everywhere.
     """
     key = str(h5_file.resolve())
-    reader = reader_cache.get(key)
-    if reader is None:
+    if key in reader_cache:
+        return reader_cache[key]
+    try:
         reader = read_h5(h5_file)
-        reader_cache[key] = reader
+    except Exception as error:  # h5py raises OSError, readers may raise others
+        print(f"Skipping unreadable profiling file {h5_file}: {error}")
+        reader = None
+    reader_cache[key] = reader
     return reader
 
 
 def run_pproc(
     h5_files: list[Path],
-    reader_cache: dict[str, ProfilingResults],
+    reader_cache: dict[str, ProfilingResults | None],
     output_dir: Path,
     dry_run: bool,
     ranks: list[int] | None = None,
@@ -246,7 +256,10 @@ def run_pproc(
         return
 
     ranks = [0] if ranks is None else ranks
-    readers = [get_reader(h5_file, reader_cache) for h5_file in h5_files]
+    readers = [reader for h5_file in h5_files if (reader := get_reader(h5_file, reader_cache))]
+    if not readers:
+        print(f"No readable profiling files for {output_dir}, skipping post-processing.")
+        return
     output_dir.mkdir(parents=True, exist_ok=True)
 
     if export_prof_files:
@@ -404,7 +417,7 @@ def main() -> int:
     aggregated_files: list[dict] = []
     case_summaries: list[dict] = []
     total_files = 0
-    reader_cache: dict[str, ProfilingResults] = {}
+    reader_cache: dict[str, ProfilingResults | None] = {}
 
     for case_dir in case_dirs:
         (
@@ -430,6 +443,14 @@ def main() -> int:
             run_h5_files = resolve_run_h5_files(case_dir, run_parameters)
             if not run_h5_files:
                 print(f"{case_dir.name}: skipping launch {launch_id}, no profiling .h5 file found.")
+                continue
+            # Drop files that cannot be parsed (broken runs) up front, so they
+            # never reach the plotting calls.
+            run_h5_files = [
+                path for path in run_h5_files if get_reader(path, reader_cache) is not None
+            ]
+            if not run_h5_files:
+                print(f"{case_dir.name}: skipping launch {launch_id}, profiling .h5 file unreadable.")
                 continue
             resolved_runs.append(
                 {
