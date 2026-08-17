@@ -1,0 +1,137 @@
+{
+  "name": "GuidingCenter scaling (cupy)",
+  "description": "\nGuiding-centre (5D drift-kinetic) test particles in a homogeneous slab, used as the\nCuPy multi-GPU/multi-rank strong-scaling case (see profiling/submit_guidingcenter_cupy_scaling.py).\n\nThis is a separate, much larger params file from params_GuidingCenter.py (the\nNumPy-vs-CuPy single-GPU comparison): its Np default is 10,000,000, ~50x that case's\n200,000. That matters here specifically because of the marker-exchange cost measured\nwhile validating this case -- at Np=200,000 (50,000/rank at 4 ranks), mpi_sort_markers\n(the device-to-device particle exchange between ranks after each stage) ate 79-89% of\nmodel.integrate, and total wall time got *worse* with more ranks:\n\n    ranks   total (setup to finalize)\n    1       4.48 s\n    2       5.19 s\n    4       5.50 s   (slower than 1 rank)\n\nAt Np=4,000,000 the same 1/2/4-rank comparison did show a clear speedup (9.93 s / 5.88 s\n/ 3.79 s -> 1.7x / 2.6x), because there is enough per-rank compute between exchanges for\nit to outweigh the communication cost.\n\nAt Np=10,000,000, a full 1/2/4/8-rank sweep (8 ranks = 2 Booster nodes) still regressed\nat the 4->8 step (22.87 s -> 24.98 s): `mpi_sort_markers`'s share of the pusher loop grew\nfrom 60.5% (2 ranks) to 65.8% (4 ranks) to 76.5% (8 ranks), while actual GPU kernel compute\nstayed under 5% throughout -- the sort/exchange is latency- (not bandwidth-) bound, so its\nshare keeps growing even as its own average per-call cost keeps shrinking. This file goes\nfurther still (50,000,000) to test whether enough per-rank compute between exchanges can\npush the crossover point past 8 ranks, without changing the sort/BC call frequency itself\n(deliberately not touched -- that would be an algorithmic change, not a scaling-parameter\none). Whether it does, and at what rank count, is what running this case answers.\n\n`num_elements` (the Derham/FEEC grid resolution) was also bumped from (16, 16, 16) to\n(32, 32, 32): a coarser grid means each rank's local sub-grid is small relative to the\nfixed-width ghost/halo padding needed for local spline evaluation, so a larger grid should\nshrink that fixed overhead's share as well -- this is a different mechanism from the\nparticle-exchange cost above (marker sorting is about markers crossing rank sub-domain\nboundaries, not grid ghost cells), tested here as a separate, independent lever since it\nrequires no algorithmic change either.\n\n`GuidingCenter` is used (as in params_GuidingCenter.py) because its whole propagator\nstack (PushGuidingCenterBxEstar, PushGuidingCenterParallel) is CUDA-ported and it carries\nno FEEC field solve, so wall-clock time is dominated by the particle kernels and their\nMPI exchange, not by anything unrelated to the CUDA port.\n",
+  "model": {
+    "model": "GuidingCenter"
+  },
+  "params_path": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/profiling/examples/GuidingCenter/params_GuidingCenter_scaling.py",
+  "env": {
+    "out_folders": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260817T085859Z-92ebc68e/guidingcenter_cupy_scaling",
+    "sim_folder": "sim_01",
+    "sim_label": null,
+    "restart": false,
+    "max_runtime": 300,
+    "save_step": 1,
+    "save_restart": true,
+    "sort_step": 0,
+    "num_clones": 1,
+    "profiling_activated": true,
+    "profiling_label": null
+  },
+  "time_opts": {
+    "dt": 0.01,
+    "Tend": 1.0,
+    "split_algo": "LieTrotter"
+  },
+  "domain": {
+    "type": "Cuboid",
+    "params": {
+      "l1": 0.0,
+      "r1": 1.0,
+      "l2": 0.0,
+      "r2": 1.0,
+      "l3": 0.0,
+      "r3": 1.0
+    }
+  },
+  "equil": {
+    "type": "HomogenSlab",
+    "params": {
+      "B0x": 0.0,
+      "B0y": 0.0,
+      "B0z": 1.0,
+      "beta": 0.1,
+      "n0": 1.0
+    }
+  },
+  "grid": {
+    "num_elements": [
+      32,
+      32,
+      32
+    ],
+    "mpi_dims_mask": [
+      true,
+      true,
+      true
+    ]
+  },
+  "derham_opts": {
+    "degree": [
+      1,
+      1,
+      1
+    ],
+    "bcs": [
+      null,
+      null,
+      null
+    ],
+    "nquads": null,
+    "nquads_proj": null,
+    "polar_splines": false,
+    "local_projectors": false
+  },
+  "model_name": "GuidingCenter",
+  "mpi_ranks": 1,
+  "use_mpi_comm_world": true,
+  "particle_species": {
+    "kinetic_ions": {
+      "var": {
+        "Np": 50000000,
+        "ppc": 1525.87890625,
+        "ppb": 50000000.0
+      }
+    }
+  },
+  "started_at_epoch_s": 1786957435.7089407,
+  "one_time_step": false,
+  "slurm_script": {
+    "pragmas": {
+      "account": "FUSIO_HLST_6",
+      "job_name": "profiling_guidingcenter_cupy_scaling_01",
+      "partition": "boost_fua_dbg",
+      "time": "00:15:00",
+      "error": "myJob_%j.err",
+      "output": "myJob_%j.out",
+      "mail_type": "none",
+      "cpus_per_task": 16,
+      "nodes": 1,
+      "ntasks_per_node": 1,
+      "mem": "480GB",
+      "gres": "gpu:4,tmpfs:10g"
+    },
+    "modules": [],
+    "custom_commands": [
+      "module purge",
+      "source ./setup/modules.sh load",
+      "module list",
+      "set -e",
+      "source /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/.venv/bin/activate",
+      "echo \"----------------------------------------\"",
+      "echo \"Running profiling case: guidingcenter_cupy_scaling (1 MPI ranks)\"",
+      "echo \"Description: 5D guiding-centre test particles (Np=50,000,000) in a homogeneous slab on a 3D cube, run with the CuPy array backend at increasing MPI rank counts (one GPU per rank) to measure strong-scaling speedup and verify the CUDA-ported kernels work correctly under MPI.\"",
+      "echo \"Physics problem: Guiding-centre drift-kinetic particle motion; the particle-push hot loop common to all PIC/drift-kinetic models.\"",
+      "echo \"Struphy model used: GuidingCenter\"",
+      "echo \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260817T085859Z-92ebc68e/guidingcenter_cupy_scaling\"",
+      "echo \"----------------------------------------\"",
+      "mkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260817T085859Z-92ebc68e/guidingcenter_cupy_scaling/sim_01\"",
+      "cp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/profiling/examples/GuidingCenter/params_GuidingCenter_scaling.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260817T085859Z-92ebc68e/guidingcenter_cupy_scaling/parameters.py\"",
+      "",
+      "echo \"Running guidingcenter_cupy_scaling with 1 MPI ranks\"",
+      "cd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260817T085859Z-92ebc68e/guidingcenter_cupy_scaling\"",
+      "srun -n 1 /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/profiling/examples/GuidingCenter/params_GuidingCenter_scaling.py --id 1 --backend cupy > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260817T085859Z-92ebc68e/guidingcenter_cupy_scaling/sim_01/struphy.out\" 2>&1",
+      "",
+      "echo \"----------------------------------------\"",
+      "echo \"Completed profiling case: guidingcenter_cupy_scaling (1 MPI ranks)\"",
+      "echo \"----------------------------------------\""
+    ]
+  },
+  "slurm_script_str": "#!/bin/bash\n########################################################\n#            This script was generated using           #\n#             slurm-script-generator v0.3.7            #\n# https://github.com/max-models/slurm-script-generator #\n#      `pip install slurm-script-generator==0.3.7`     #\n########################################################\n\n########################################################\n# Pragmas for Job Config                               #\n#SBATCH --job-name=profiling_guidingcenter_cupy_scaling_01 # name of job\n#SBATCH --account=FUSIO_HLST_6                         # charge job to specified account\n#SBATCH --partition=boost_fua_dbg                      # partition requested\n#                                                      #\n# Pragmas for Time And Priority                        #\n#SBATCH --time=00:15:00                                # time limit\n#                                                      #\n# Pragmas for Io And Directory                         #\n#SBATCH --output=myJob_%j.out                          # File to redirect output (%%x=jobname, %%j=jobid)\n#SBATCH --error=myJob_%j.err                           # File to redirect error (%%x=jobname, %%j=jobid)\n#                                                      #\n# Pragmas for Notifications                            #\n#SBATCH --mail-type=none                               # notify on state change\n#                                                      #\n# Pragmas for Core Node And Task Allocation            #\n#SBATCH --nodes=1                                      # number of nodes on which to run\n#SBATCH --ntasks-per-node=1                            # number of tasks to invoke on each node\n#SBATCH --cpus-per-task=16                             # number of cpus required per task\n#                                                      #\n# Pragmas for Memory                                   #\n#SBATCH --mem=480GB                                    # minimum amount of real memory\n#                                                      #\n# Pragmas for Generic Resources And Licenses           #\n#SBATCH --gres=gpu:4,tmpfs:10g                         # required generic resources\n########################################################\nmodule purge\nsource ./setup/modules.sh load\nmodule list\nset -e\nsource /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/.venv/bin/activate\necho \"----------------------------------------\"\necho \"Running profiling case: guidingcenter_cupy_scaling (1 MPI ranks)\"\necho \"Description: 5D guiding-centre test particles (Np=50,000,000) in a homogeneous slab on a 3D cube, run with the CuPy array backend at increasing MPI rank counts (one GPU per rank) to measure strong-scaling speedup and verify the CUDA-ported kernels work correctly under MPI.\"\necho \"Physics problem: Guiding-centre drift-kinetic particle motion; the particle-push hot loop common to all PIC/drift-kinetic models.\"\necho \"Struphy model used: GuidingCenter\"\necho \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260817T085859Z-92ebc68e/guidingcenter_cupy_scaling\"\necho \"----------------------------------------\"\nmkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260817T085859Z-92ebc68e/guidingcenter_cupy_scaling/sim_01\"\ncp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/profiling/examples/GuidingCenter/params_GuidingCenter_scaling.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260817T085859Z-92ebc68e/guidingcenter_cupy_scaling/parameters.py\"\n\necho \"Running guidingcenter_cupy_scaling with 1 MPI ranks\"\ncd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260817T085859Z-92ebc68e/guidingcenter_cupy_scaling\"\nsrun -n 1 /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/profiling/examples/GuidingCenter/params_GuidingCenter_scaling.py --id 1 --backend cupy > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260817T085859Z-92ebc68e/guidingcenter_cupy_scaling/sim_01/struphy.out\" 2>&1\n\necho \"----------------------------------------\"\necho \"Completed profiling case: guidingcenter_cupy_scaling (1 MPI ranks)\"\necho \"----------------------------------------\"\n",
+  "packaged_files": {
+    "profiling_data": "results-run01/run01.h5",
+    "additional_profiling_data": [],
+    "results": [],
+    "run_directory": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260817T085859Z-92ebc68e/guidingcenter_cupy_scaling/sim_01"
+  }
+}
