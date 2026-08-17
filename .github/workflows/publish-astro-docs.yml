@@ -12,6 +12,12 @@ permissions:
   pages: write
   id-token: write
 
+# Only the newest run per branch/PR matters: pushing again supersedes whatever
+# is still building, so cancel the older run instead of racing it to Pages.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest

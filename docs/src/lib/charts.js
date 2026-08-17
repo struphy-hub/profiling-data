@@ -2,8 +2,8 @@
 //
 // Colors come from the validated 8-slot categorical palette (light mode) -
 // see the dataviz skill's references/palette.md. Assigned in fixed order to
-// the first 8 distinct series names encountered; anything past that folds to
-// a neutral muted gray rather than repeating a hue.
+// the first 8 distinct series names encountered; series past that get
+// generated hues (see overflowColor) rather than repeating or folding to gray.
 const CATEGORICAL_PALETTE = [
   "#2a78d6", // blue
   "#eb6834", // orange
@@ -14,7 +14,8 @@ const CATEGORICAL_PALETTE = [
   "#4a3aa7", // violet
   "#e34948", // red
 ];
-const OVERFLOW_COLOR = "#898781";
+// Neutral gray for the flame chart's synthetic "All" root node.
+const NEUTRAL_COLOR = "#898781";
 
 const FONT_FAMILY =
   "Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
@@ -32,12 +33,29 @@ function themeColors() {
     : { text: "#111827", muted: "#6b7280", grid: "#e1e0d9", hoverBg: "#ffffff" };
 }
 
+// Past the 8 validated hues (a gantt chart of a deeply instrumented run can
+// need far more), colors are generated instead of folding to one gray. Hues
+// advance by the golden angle so neighbouring slots land far apart on the
+// wheel, and lightness/saturation alternate so hues that do come close still
+// differ in tone. Mid lightness keeps them legible on both backgrounds.
+function overflowColor(index) {
+  const hue = (24 + 137.508 * (index + 1)) % 360;
+  const lightness = [46, 62, 38, 54][index % 4];
+  const saturation = index % 3 === 0 ? 70 : 52;
+  return `hsl(${hue.toFixed(1)}, ${saturation}%, ${lightness}%)`;
+}
+
 export function assignColors(names) {
   const colors = new Map();
   let slot = 0;
   for (const name of names) {
     if (colors.has(name)) continue;
-    colors.set(name, slot < CATEGORICAL_PALETTE.length ? CATEGORICAL_PALETTE[slot] : OVERFLOW_COLOR);
+    colors.set(
+      name,
+      slot < CATEGORICAL_PALETTE.length
+        ? CATEGORICAL_PALETTE[slot]
+        : overflowColor(slot - CATEGORICAL_PALETTE.length),
+    );
     slot += 1;
   }
   return colors;
@@ -149,7 +167,7 @@ export function buildFlameFigure(calls) {
   const labels = ["All"];
   const parents = [""];
   const values = [rootDuration];
-  const markerColors = [OVERFLOW_COLOR];
+  const markerColors = [NEUTRAL_COLOR];
   const hoverTexts = ["All calls"];
 
   // Map each sorted position to its node id so children can reference parents.
