@@ -295,8 +295,8 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
       const outputs = runEntry.run_outputs || {};
       const figureDefs = [
         { key: "durations", title: "Durations", kind: "durations", hasMetric: true, hasRegionFilter: true },
-        { key: "gantt", title: "Gantt", kind: "gantt", hasRegionFilter: true },
-        // Flame is a call hierarchy, so it always shows every region.
+        // Gantt and flame always show every region.
+        { key: "gantt", title: "Gantt", kind: "gantt" },
         { key: "flame", title: "Flame", kind: "flame" },
       ].filter((def) => outputs[def.key]);
 

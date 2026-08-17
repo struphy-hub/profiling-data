@@ -76,9 +76,7 @@ async function render(Plotly, container, data, layout) {
 
 // Gantt: one horizontal-bar trace per region so the legend gets one entry
 // per region and every call for that region shares its color.
-export function buildGanttFigure(intervals, showAllRegions) {
-  intervals = filterHighlightRows(intervals, showAllRegions);
-
+export function buildGanttFigure(intervals) {
   const order = [];
   for (const interval of intervals) {
     if (!order.includes(interval.region)) order.push(interval.region);
@@ -448,9 +446,10 @@ export async function renderFigure(Plotly, container, kind, payload, extra) {
   const allRegions = extra?.allRegions ?? false;
 
   let figure;
-  if (kind === "gantt") figure = buildGanttFigure(payload.intervals, allRegions);
-  // The flame chart is a call hierarchy: dropping regions would orphan their
-  // children, so it always shows the full tree.
+  // Gantt and flame always show every region: the timeline is about how the
+  // whole run interleaves, and flame is a call hierarchy where dropping
+  // regions would orphan their children.
+  if (kind === "gantt") figure = buildGanttFigure(payload.intervals);
   else if (kind === "flame") figure = buildFlameFigure(payload.calls);
   else if (kind === "durations")
     figure = buildDurationsFigure(payload.bars, extra?.metric ?? "total", extra?.ranks, allRegions);
