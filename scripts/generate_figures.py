@@ -28,6 +28,16 @@ from scope_profiler import (
 # need to be present in the export.
 DURATIONS_METRICS = ["avg", "min", "max", "total"]
 
+# Duration of a region's first and last call: how much of a region's cost is
+# one-off warmup (JIT, allocation, first GPU transfer) versus steady state.
+# scope-profiler does not export these yet, so they are derived from the call
+# timings in the gantt export - see add_first_last_metrics.
+FIRST_LAST_METRICS = ["first", "last"]
+FIRST_LAST_STAT_FIELDS = {
+    "first": "first_duration_seconds",
+    "last": "last_duration_seconds",
+}
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -287,7 +297,90 @@ def run_pproc(
 
     write_region_statistics_json(readers, output_dir / "region_statistics.json", ranks=ranks)
 
+    # Order matters: the setup region picks up whatever metrics exist by then.
+    add_first_last_metrics(output_dir)
     add_setup_total(output_dir)
+
+
+def load_gantt_intervals(output_dir: Path) -> list[dict]:
+    """The gantt export is the only one carrying per-call start/end times."""
+    gantt_path = output_dir / "gantt_data.json"
+    if not gantt_path.is_file():
+        return []
+    with gantt_path.open("r", encoding="utf-8") as file:
+        return json.load(file).get("intervals") or []
+
+
+def add_first_last_metrics(output_dir: Path) -> None:
+    """Add `first` and `last` duration metrics to the exports in output_dir.
+
+    They are the duration of a region's first and last call, per file and
+    rank, taken from the gantt intervals. If a future scope-profiler release
+    exports them itself, whatever is already in the payload is left alone.
+    """
+    durations_path = output_dir / "durations_data.json"
+    intervals = load_gantt_intervals(output_dir)
+    if not intervals or not durations_path.is_file():
+        return
+
+    # (file, rank, region) -> [(start, duration), ...]
+    calls: dict[tuple, list[tuple[float, float]]] = {}
+    for interval in intervals:
+        key = (interval.get("file"), interval.get("rank"), interval.get("region"))
+        start = float(interval["start_seconds"])
+        calls.setdefault(key, []).append((start, float(interval["end_seconds"]) - start))
+
+    values: dict[str, dict[tuple, float]] = {"first": {}, "last": {}}
+    for key, spans in calls.items():
+        spans.sort()
+        values["first"][key] = spans[0][1]
+        values["last"][key] = spans[-1][1]
+
+    with durations_path.open("r", encoding="utf-8") as file:
+        durations = json.load(file)
+    bars = durations.get("bars") or []
+    metrics_present = {bar.get("metric") for bar in bars}
+    missing = [metric for metric in FIRST_LAST_METRICS if metric not in metrics_present]
+    if not bars or not missing:
+        return
+
+    has_rank = any("rank" in bar for bar in bars)
+    extra = []
+    for metric in missing:
+        for (file_label, rank, region), value in values[metric].items():
+            bar = {"file": file_label, "region": region, "metric": metric, "value_seconds": value}
+            if has_rank:
+                bar["rank"] = rank
+            elif rank not in (None, 0):
+                # Without a per-rank axis, only rank 0 is plotted (as elsewhere).
+                continue
+            extra.append(bar)
+    durations["bars"] = bars + extra
+    with durations_path.open("w", encoding="utf-8") as file:
+        json.dump(durations, file, indent=1)
+
+    stats_path = output_dir / "region_statistics.json"
+    if not stats_path.is_file():
+        return
+    with stats_path.open("r", encoding="utf-8") as file:
+        stats = json.load(file)
+    for entry in stats.get("files") or []:
+        for region, record in (entry.get("region_statistics") or {}).items():
+            for metric in missing:
+                per_rank = {
+                    str(rank): value
+                    for (file_label, rank, name), value in values[metric].items()
+                    if file_label == entry.get("label") and name == region
+                }
+                if not per_rank:
+                    continue
+                field = FIRST_LAST_STAT_FIELDS[metric]
+                record[field] = per_rank.get("0", next(iter(per_rank.values())))
+                for rank_key, rank_record in (record.get("per_rank") or {}).items():
+                    if rank_key in per_rank:
+                        rank_record[field] = per_rank[rank_key]
+    with stats_path.open("w", encoding="utf-8") as file:
+        json.dump(stats, file, indent=1)
 
 
 SETUP_TOTAL_REGION = "setup: total"
@@ -328,13 +421,10 @@ def add_setup_total(output_dir: Path) -> None:
     every setup region per file and rank, and writes the result back into
     durations_data.json and region_statistics.json as one extra region.
     """
-    gantt_path = output_dir / "gantt_data.json"
     durations_path = output_dir / "durations_data.json"
-    if not gantt_path.is_file():
+    intervals = load_gantt_intervals(output_dir)
+    if not intervals:
         return
-
-    with gantt_path.open("r", encoding="utf-8") as file:
-        intervals = json.load(file).get("intervals") or []
 
     # (file label, rank) -> merged setup wall time
     by_file_rank: dict[tuple[str, int], list[tuple[float, float]]] = {}
@@ -432,6 +522,8 @@ def summarize_setup_total(value: float) -> dict:
         "max_duration_seconds": value,
         "std_duration_seconds": 0.0,
         "total_duration_seconds": value,
+        # One merged span, so every metric is that same span.
+        **{field: value for field in FIRST_LAST_STAT_FIELDS.values()},
     }
 
 

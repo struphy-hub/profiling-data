@@ -50,6 +50,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           <option value="avg">Average</option>
           <option value="min">Min</option>
           <option value="max">Max</option>
+          <option value="first">First call</option>
+          <option value="last">Last call</option>
         </select>
         <input
           id="compare-region-filter"
@@ -144,6 +146,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     min: "min_duration_seconds",
     max: "max_duration_seconds",
     total: "total_duration_seconds",
+    first: "first_duration_seconds",
+    last: "last_duration_seconds",
   };
 
   const caseLabel = (entry) =>

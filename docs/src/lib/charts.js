@@ -239,6 +239,8 @@ const METRIC_LABELS = {
   min: "Minimum duration per call (s)",
   max: "Maximum duration per call (s)",
   total: "Total duration (s)",
+  first: "First call duration (s)",
+  last: "Last call duration (s)",
 };
 
 // Distinct ranks present in a durations payload, sorted ascending. Empty when
