@@ -220,11 +220,11 @@ a:hover {
   flex-wrap: wrap;
 }
 
-/* Comma-separated region filter next to a chart's metric select. */
+/* Comma-separated region filter. Spans the full width of a chart tile's
+   header, wrapping onto its own line below the metric select. */
 .region-filter {
-  flex: 1 1 220px;
-  min-width: 160px;
-  max-width: 320px;
+  flex: 1 1 100%;
+  width: 100%;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
@@ -241,15 +241,6 @@ a:hover {
 .region-filter:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
-}
-
-.region-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.85rem;
-  cursor: pointer;
-  user-select: none;
 }
 
 .gallery-grid {
@@ -580,41 +571,6 @@ thead th {
 
 tbody tr:last-child td {
   border-bottom: none;
-}
-
-.case-description {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-.case-description--clamped {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  overflow: hidden;
-}
-
-.case-description--expanded {
-  display: block;
-  -webkit-line-clamp: unset;
-  line-clamp: unset;
-  overflow: visible;
-}
-
-.desc-toggle {
-  margin-top: 0.35rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface-2);
-  color: var(--heading);
-  padding: 0.2rem 0.5rem;
-  font-size: 0.8rem;
-  cursor: pointer;
-}
-
-.desc-toggle:hover {
-  background: var(--row-hover);
 }
 
 .metadata-grid {

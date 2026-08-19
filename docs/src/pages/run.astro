@@ -80,7 +80,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
 
 <script>
   import Plotly from "plotly.js-dist-min";
-  import { renderFigure } from "../lib/charts.js";
+  import { renderFigure, DEFAULT_REGION_FILTER } from "../lib/charts.js";
   import { groupKeyForCase } from "../lib/cases.js";
   import { renderGallery } from "../lib/gallery.js";
 
@@ -300,7 +300,8 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
           kind: "durations",
           hasMetric: true,
           hasRegionFilter: true,
-          hasAllRegionsToggle: true,
+          // Prefilled; the gantt tile's filter starts empty (it shows all).
+          defaultRegionFilter: true,
         },
         // Gantt shows every region unless explicitly filtered; flame always
         // shows the full call hierarchy.
@@ -338,13 +339,6 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
                         />`
                       : ""
                   }
-                  ${
-                    def.hasAllRegionsToggle
-                      ? `<label class="muted region-toggle">
-                          <input type="checkbox" id="all-regions-${def.key}" /> All regions
-                        </label>`
-                      : ""
-                  }
                 </div>
                 <div id="plot-${def.key}" class="plot-container"></div>
               </article>
@@ -365,22 +359,18 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
             if (!plotRes.ok) throw new Error(`HTTP ${plotRes.status}`);
             const payload = await plotRes.json();
             const select = def.hasMetric ? document.getElementById(`metric-select-${def.key}`) : null;
-            const allRegions = def.hasAllRegionsToggle
-              ? document.getElementById(`all-regions-${def.key}`)
-              : null;
             const regionFilter = def.hasRegionFilter
               ? document.getElementById(`region-filter-${def.key}`)
               : null;
+            if (regionFilter && def.defaultRegionFilter) regionFilter.value = DEFAULT_REGION_FILTER;
             const draw = () =>
               renderFigure(Plotly, container, def.kind, payload, {
                 metric: select?.value,
-                allRegions: allRegions?.checked ?? false,
                 regionFilter: regionFilter?.value ?? "",
                 ranksByFile: ranksByFile,
               });
             await draw();
             select?.addEventListener("change", draw);
-            allRegions?.addEventListener("change", draw);
             // Typing should feel live without re-plotting on every keystroke.
             let filterTimer = null;
             regionFilter?.addEventListener("input", () => {

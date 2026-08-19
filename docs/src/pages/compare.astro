@@ -60,9 +60,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           aria-label="Filter compared regions"
           autocomplete="off"
         />
-        <label class="muted region-toggle">
-          <input type="checkbox" id="compare-all-regions" /> All regions
-        </label>
       </div>
       <div id="compare-plot" class="plot-container"></div>
     </article>
@@ -90,7 +87,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
 <script>
   import Plotly from "plotly.js-dist-min";
-  import { renderFigure } from "../lib/charts.js";
+  import { renderFigure, DEFAULT_REGION_FILTER } from "../lib/charts.js";
   import { groupKeyForCase, groupLabelForCase } from "../lib/cases.js";
 
   const rawBaseUrl = import.meta.env.BASE_URL;
@@ -105,8 +102,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   const runBSelect = document.getElementById("run-b-select");
   const swapButton = document.getElementById("compare-swap");
   const metricSelect = document.getElementById("compare-metric-select");
-  const allRegionsToggle = document.getElementById("compare-all-regions");
   const regionFilterInput = document.getElementById("compare-region-filter");
+  regionFilterInput.value = DEFAULT_REGION_FILTER;
   const comparePlot = document.getElementById("compare-plot");
   const metadataBody = document.getElementById("compare-metadata-body");
   const metaHeadA = document.getElementById("compare-meta-head-a");
@@ -261,7 +258,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         comparePlot,
         "comparison",
         { regions, labelA, valuesA, labelB, valuesB },
-        { metric, allRegions: allRegionsToggle.checked, regionFilter: regionFilterInput.value },
+        { metric, regionFilter: regionFilterInput.value },
       );
     }
 
@@ -366,7 +363,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         updateUrl();
       });
       metricSelect.addEventListener("change", renderComparison);
-      allRegionsToggle.addEventListener("change", renderComparison);
       // Typing should feel live without re-plotting on every keystroke.
       let filterTimer = null;
       regionFilterInput.addEventListener("input", () => {

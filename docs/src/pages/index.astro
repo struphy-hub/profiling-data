@@ -29,7 +29,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         <thead>
           <tr>
             <th>Case title</th>
-            <th>Description</th>
             <th>Physics problem</th>
             <th>Struphy model used</th>
             <th>Instances</th>
@@ -66,24 +65,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     return parsed.toLocaleString();
   };
 
-  const shouldClampDescription = (value) => {
-    const text = String(value ?? "");
-    return text.length > 180 || text.includes("\n");
-  };
-
-  const bindDescriptionToggles = () => {
-    tableBody.querySelectorAll(".desc-toggle").forEach((button) => {
-      button.addEventListener("click", () => {
-        const description = button.parentElement?.querySelector(".case-description");
-        if (!description) return;
-
-        const isExpanded = description.classList.toggle("case-description--expanded");
-        button.setAttribute("aria-expanded", isExpanded ? "true" : "false");
-        button.textContent = isExpanded ? "Collapse" : "Expand";
-      });
-    });
-  };
-
   // Joins the distinct, non-empty values for a field across all instances of
   // a case, since e.g. the struphy model or physics problem is expected to
   // be constant per case but is technically stored per instance.
@@ -103,7 +84,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       const data = await res.json();
       const cases = Array.isArray(data.cases) ? data.cases.slice() : [];
       if (!cases.length) {
-        tableBody.innerHTML = '<tr><td colspan="8" class="muted">No cases found in region_statistics.json.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="7" class="muted">No cases found in region_statistics.json.</td></tr>';
         return;
       }
 
@@ -117,11 +98,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
       tableBody.innerHTML = groups
         .map(({ groupKey, entries, latest }) => {
+          // The description is no longer a column, but still feeds the filter
+          // so searching for words from it finds the case.
           const description = String(latest?.description ?? "");
-          const clampDescription = shouldClampDescription(description);
-          const descriptionClass = clampDescription
-            ? "case-description case-description--clamped"
-            : "case-description";
           const physicsProblems = distinctValues(entries, (entry) => entry.physics_problem);
           const models = distinctValues(entries, (entry) => entry.struphy_model_used);
           const searchText = [
@@ -135,10 +114,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           return `
             <tr data-search="${esc(searchText)}">
               <td><strong>${esc(groupLabelForCase(latest))}</strong></td>
-              <td class="muted">
-                <div class="${descriptionClass}">${esc(description || "-")}</div>
-                ${clampDescription ? '<button type="button" class="desc-toggle" aria-expanded="false">Expand</button>' : ""}
-              </td>
               <td>${esc(physicsProblems.join(", ") || "-")}</td>
               <td>${esc(models.join(", ") || "-")}</td>
               <td>${entries.length}</td>
@@ -149,10 +124,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           `;
         })
         .join("");
-      bindDescriptionToggles();
       setupSearch(groups.length);
     } catch (error) {
-      tableBody.innerHTML = `<tr><td colspan="8" class="muted">Could not load case table: ${esc(error)}</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="7" class="muted">Could not load case table: ${esc(error)}</td></tr>`;
     }
   };
 
@@ -178,7 +152,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         if (!emptyRow) {
           emptyRow = document.createElement("tr");
           emptyRow.className = "empty-row";
-          emptyRow.innerHTML = '<td colspan="8" class="empty-state">No cases match your filter.</td>';
+          emptyRow.innerHTML = '<td colspan="7" class="empty-state">No cases match your filter.</td>';
           tableBody.appendChild(emptyRow);
         }
       } else if (emptyRow) {

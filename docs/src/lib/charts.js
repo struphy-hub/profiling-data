@@ -95,9 +95,9 @@ async function render(Plotly, container, data, layout) {
 // Gantt: one horizontal-bar trace per region so the legend gets one entry
 // per region and every call for that region shares its color.
 export function buildGanttFigure(intervals, regionSelection) {
-  // The timeline shows every region by default - it is about how the whole run
-  // interleaves - so only an explicit filter narrows it.
-  intervals = filterRegionRows(intervals, { all: true, text: regionSelection?.text });
+  // The timeline shows every region unless explicitly filtered - it is about
+  // how the whole run interleaves.
+  intervals = filterRegionRows(intervals, regionSelection);
 
   const order = [];
   for (const interval of intervals) {
@@ -251,13 +251,12 @@ export function durationsRanks(bars) {
   return ranks.sort((a, b) => a - b);
 }
 
-// Regions shown by default: the top-level integration loop, the merged setup
-// span, and the propagators. Kernels and other fine-grained regions are hidden
-// until the viewer opts into the full set.
-export function isHighlightRegion(region) {
-  const name = String(region ?? "");
-  return name === "model.integrate" || name === "setup: total" || name.startsWith("prop:");
-}
+// What the region filter boxes are prefilled with: the top-level integration
+// loop, the merged setup span, and the propagators. Kernels and other
+// fine-grained regions appear once the viewer edits or clears the filter.
+// "^prop:" is anchored so the propagators show up without also dragging in
+// their "setup prop: X" counterparts; drop the ^ to include those too.
+export const DEFAULT_REGION_FILTER = "model.integrate, ^prop:, setup: total";
 
 // A region filter is a comma-separated list of terms, each matched as a
 // case-insensitive substring of the region name: "prop:" keeps every
@@ -279,18 +278,14 @@ export function matchesRegionFilter(region, terms) {
   );
 }
 
-// Pick the rows a chart should draw. A non-empty filter wins outright (it is
-// an explicit request, so an empty result stays empty rather than silently
-// showing something else). With no filter, the default is the highlight
-// regions, unless `all` is set - and that default falls back to the full set
-// when a payload contains none of them, so a plot is never left empty.
+// Pick the rows a chart should draw: everything when the filter is empty,
+// otherwise exactly what the terms match - an empty result stays empty rather
+// than silently showing something else.
 export function filterRegionRows(rows, selection, getRegion = (row) => row.region) {
   if (!rows) return rows;
   const terms = parseRegionFilter(selection?.text);
-  if (terms.length) return rows.filter((row) => matchesRegionFilter(getRegion(row), terms));
-  if (selection?.all) return rows;
-  const kept = rows.filter((row) => isHighlightRegion(getRegion(row)));
-  return kept.length ? kept : rows;
+  if (!terms.length) return rows;
+  return rows.filter((row) => matchesRegionFilter(getRegion(row), terms));
 }
 
 // Shown in place of an empty plot when a filter matches no region.
@@ -526,9 +521,8 @@ export async function renderFigure(Plotly, container, kind, payload, extra) {
   container.__figureSpec = { kind, payload, extra };
   themedFigures.add(container);
 
-  // How each chart picks its regions: an explicit comma-separated filter, or
-  // the highlight-regions default / everything.
-  const regionSelection = { all: extra?.allRegions ?? false, text: extra?.regionFilter ?? "" };
+  // How each chart picks its regions: a comma-separated filter, empty for all.
+  const regionSelection = { text: extra?.regionFilter ?? "" };
 
   let figure;
   // Flame always shows every region: it is a call hierarchy, where dropping
