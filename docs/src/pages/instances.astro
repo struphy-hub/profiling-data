@@ -19,7 +19,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
             <th>Struphy model used</th>
             <th>Cluster name</th>
             <th>Ranks</th>
-            <th>Struphy commit</th>
+            <th>Runs</th>
             <th>Open</th>
           </tr>
         </thead>
@@ -61,6 +61,16 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const cases = Array.isArray(data.cases) ? data.cases.slice() : [];
+      // Run labels live on the files index, keyed by case; ordered by rank
+      // count so a scaling case reads smallest-to-largest.
+      const labelsByCase = new Map();
+      for (const file of Array.isArray(data.files) ? data.files : []) {
+        if (!labelsByCase.has(file.case_id)) labelsByCase.set(file.case_id, []);
+        labelsByCase.get(file.case_id).push(file);
+      }
+      for (const files of labelsByCase.values()) {
+        files.sort((a, b) => (a.num_ranks ?? Number.MAX_SAFE_INTEGER) - (b.num_ranks ?? Number.MAX_SAFE_INTEGER));
+      }
       if (!cases.length) {
         tableBody.innerHTML = '<tr><td colspan="6" class="muted">No cases found in region_statistics.json.</td></tr>';
         return;
@@ -85,15 +95,18 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           const caseId = encodeURIComponent(entry.id ?? "");
           const ranks = Array.isArray(entry.ranks) ? entry.ranks.slice().sort((a, b) => a - b) : [];
           const rankSummary = ranks.length ? ranks.join(", ") : "-";
-          const meta = entry.case_metadata ?? {};
-          const commit = meta.struphy_commit || meta.commit_short || meta.commit || "-";
+          // Labels can contain commas ("pcg, 1 rank"), so they are joined
+          // with a separator that cannot be mistaken for part of a name.
+          const runLabels = (labelsByCase.get(entry.id) ?? [])
+            .map((file) => file.label)
+            .filter(Boolean);
           return `
             <tr>
               <td>${esc(formatDatetime(entry.datetime_utc))}</td>
               <td>${esc(entry.struphy_model_used ?? "-")}</td>
               <td>${esc(entry.cluster_name ?? "-")}</td>
               <td>${esc(rankSummary)}</td>
-              <td><code>${esc(commit)}</code></td>
+              <td>${runLabels.length ? esc(runLabels.join(" · ")) : "-"}</td>
               <td><a href="${baseUrl}figures?case=${caseId}#cases">View details</a></td>
             </tr>
           `;
