@@ -255,20 +255,63 @@ export function isHighlightRegion(region) {
   return name === "model.integrate" || name === "setup: total" || name.startsWith("prop:");
 }
 
-// Restrict rows to the highlight regions unless the caller asks for
-// everything. Falls back to the full set when a payload has none of them, so a
-// plot is never left empty.
-export function filterHighlightRows(rows, showAllRegions, getRegion = (row) => row.region) {
-  if (showAllRegions || !rows) return rows;
+// A region filter is a comma-separated list of terms, each matched as a
+// case-insensitive substring of the region name: "prop:" keeps every
+// propagator, "prop: push, setup: total" keeps those two groups. Empty terms
+// (a trailing comma while typing) are ignored.
+export function parseRegionFilter(text) {
+  return String(text ?? "")
+    .split(",")
+    .map((term) => term.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+export function matchesRegionFilter(region, terms) {
+  const name = String(region ?? "").toLowerCase();
+  // A leading "^" anchors a term to the start of the name: "prop:" also
+  // matches "setup prop: X", "^prop:" does not.
+  return terms.some((term) =>
+    term.startsWith("^") ? name.startsWith(term.slice(1)) : name.includes(term),
+  );
+}
+
+// Pick the rows a chart should draw. A non-empty filter wins outright (it is
+// an explicit request, so an empty result stays empty rather than silently
+// showing something else). With no filter, the default is the highlight
+// regions, unless `all` is set - and that default falls back to the full set
+// when a payload contains none of them, so a plot is never left empty.
+export function filterRegionRows(rows, selection, getRegion = (row) => row.region) {
+  if (!rows) return rows;
+  const terms = parseRegionFilter(selection?.text);
+  if (terms.length) return rows.filter((row) => matchesRegionFilter(getRegion(row), terms));
+  if (selection?.all) return rows;
   const kept = rows.filter((row) => isHighlightRegion(getRegion(row)));
   return kept.length ? kept : rows;
+}
+
+// Shown in place of an empty plot when a filter matches no region.
+const EMPTY_FILTER_ANNOTATION = {
+  text: "No regions match the filter.",
+  showarrow: false,
+  xref: "paper",
+  yref: "paper",
+  x: 0.5,
+  y: 0.5,
+};
+
+function emptyStateLayout(layout, isEmpty) {
+  if (!isEmpty) return layout;
+  return {
+    ...layout,
+    annotations: [{ ...EMPTY_FILTER_ANNOTATION, font: { color: themeColors().muted, size: 13 } }],
+  };
 }
 
 // `ranksByFile` maps a run label to the number of MPI ranks it used, so each
 // bar can be annotated with the rank count it was measured on. The durations
 // export itself does not carry it; the pages take it from region_statistics.
-export function buildDurationsFigure(bars, metric, selectedRanks, showAllRegions, ranksByFile) {
-  bars = filterHighlightRows(bars, showAllRegions);
+export function buildDurationsFigure(bars, metric, selectedRanks, regionSelection, ranksByFile) {
+  bars = filterRegionRows(bars, regionSelection);
   const rankCounts = ranksByFile instanceof Map ? ranksByFile : new Map(Object.entries(ranksByFile ?? {}));
 
   // Check if data includes per-rank information
@@ -370,17 +413,17 @@ export function buildDurationsFigure(bars, metric, selectedRanks, showAllRegions
     yaxis: axisStyle({ title: { text: METRIC_LABELS[metric] ?? "Duration (s)" } }),
   });
 
-  return { data, layout };
+  return { data, layout: emptyStateLayout(layout, regions.length === 0) };
 }
 
 // Compare: grouped bar chart with exactly two series (case A vs case B),
 // one bar pair per region. Used by the compare page to show a chosen metric
 // side by side for two different case instances/runs.
-export function buildComparisonFigure(regions, labelA, valuesA, labelB, valuesB, metric, showAllRegions) {
+export function buildComparisonFigure(regions, labelA, valuesA, labelB, valuesB, metric, regionSelection) {
   // The three arrays are parallel, so filter them by a shared index list.
-  const keep = filterHighlightRows(
+  const keep = filterRegionRows(
     regions.map((region, index) => ({ region, index })),
-    showAllRegions,
+    regionSelection,
   ).map((entry) => entry.index);
   regions = keep.map((index) => regions[index]);
   valuesA = keep.map((index) => valuesA[index]);
@@ -417,11 +460,11 @@ export function buildComparisonFigure(regions, labelA, valuesA, labelB, valuesB,
     yaxis: axisStyle({ title: { text: METRIC_LABELS[metric] ?? "Duration (s)" } }),
   });
 
-  return { data, layout };
+  return { data, layout: emptyStateLayout(layout, regions.length === 0) };
 }
 
-export function buildSpeedupFigure(points, showAllRegions) {
-  points = filterHighlightRows(points, showAllRegions);
+export function buildSpeedupFigure(points, regionSelection) {
+  points = filterRegionRows(points, regionSelection);
 
   const regions = [];
   for (const point of points) {
@@ -464,7 +507,7 @@ export function buildSpeedupFigure(points, showAllRegions) {
     yaxis: axisStyle({ title: { text: "Speedup" } }),
   });
 
-  return { data, layout };
+  return { data, layout: emptyStateLayout(layout, regions.length === 0) };
 }
 
 // Track rendered figures so they can be re-themed when the user toggles dark
@@ -479,7 +522,9 @@ export async function renderFigure(Plotly, container, kind, payload, extra) {
   container.__figureSpec = { kind, payload, extra };
   themedFigures.add(container);
 
-  const allRegions = extra?.allRegions ?? false;
+  // How each chart picks its regions: an explicit comma-separated filter, or
+  // the highlight-regions default / everything.
+  const regionSelection = { all: extra?.allRegions ?? false, text: extra?.regionFilter ?? "" };
 
   let figure;
   // Gantt and flame always show every region: the timeline is about how the
@@ -492,10 +537,10 @@ export async function renderFigure(Plotly, container, kind, payload, extra) {
       payload.bars,
       extra?.metric ?? "total",
       extra?.ranks,
-      allRegions,
+      regionSelection,
       extra?.ranksByFile,
     );
-  else if (kind === "speedup") figure = buildSpeedupFigure(payload.points, allRegions);
+  else if (kind === "speedup") figure = buildSpeedupFigure(payload.points, regionSelection);
   else if (kind === "comparison")
     figure = buildComparisonFigure(
       payload.regions,
@@ -504,7 +549,7 @@ export async function renderFigure(Plotly, container, kind, payload, extra) {
       payload.labelB,
       payload.valuesB,
       extra?.metric,
-      allRegions,
+      regionSelection,
     );
   else throw new Error(`Unknown chart kind: ${kind}`);
   await render(Plotly, container, figure.data, figure.layout);

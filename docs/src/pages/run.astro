@@ -319,7 +319,16 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
                   }
                   ${
                     def.hasRegionFilter
-                      ? `<label class="muted region-toggle">
+                      ? `<input
+                          id="region-filter-${def.key}"
+                          class="region-filter"
+                          type="search"
+                          title="Comma-separated, case-insensitive substring match. Prefix a term with ^ to anchor it to the start of the region name."
+                          placeholder="Filter regions, e.g. prop:, setup: total"
+                          aria-label="Filter regions"
+                          autocomplete="off"
+                        />
+                        <label class="muted region-toggle">
                           <input type="checkbox" id="all-regions-${def.key}" /> All regions
                         </label>`
                       : ""
@@ -347,15 +356,25 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
             const allRegions = def.hasRegionFilter
               ? document.getElementById(`all-regions-${def.key}`)
               : null;
+            const regionFilter = def.hasRegionFilter
+              ? document.getElementById(`region-filter-${def.key}`)
+              : null;
             const draw = () =>
               renderFigure(Plotly, container, def.kind, payload, {
                 metric: select?.value,
                 allRegions: allRegions?.checked ?? false,
+                regionFilter: regionFilter?.value ?? "",
                 ranksByFile: ranksByFile,
               });
             await draw();
             select?.addEventListener("change", draw);
             allRegions?.addEventListener("change", draw);
+            // Typing should feel live without re-plotting on every keystroke.
+            let filterTimer = null;
+            regionFilter?.addEventListener("input", () => {
+              window.clearTimeout(filterTimer);
+              filterTimer = window.setTimeout(draw, 200);
+            });
           } catch (error) {
             container.innerHTML = `<p class="muted">Could not load ${esc(def.title)} data: ${esc(error)}</p>`;
           }

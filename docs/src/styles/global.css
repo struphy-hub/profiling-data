@@ -220,6 +220,29 @@ a:hover {
   flex-wrap: wrap;
 }
 
+/* Comma-separated region filter next to a chart's metric select. */
+.region-filter {
+  flex: 1 1 220px;
+  min-width: 160px;
+  max-width: 320px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 0.3rem 0.55rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+
+.region-filter::placeholder {
+  color: var(--muted);
+}
+
+.region-filter:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 .region-toggle {
   display: inline-flex;
   align-items: center;

@@ -22,6 +22,15 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
           <option value="min">Min</option>
           <option value="max">Max</option>
         </select>
+        <input
+          id="durations-region-filter"
+          class="region-filter"
+          type="search"
+          title="Comma-separated, case-insensitive substring match. Prefix a term with ^ to anchor it to the start of the region name."
+          placeholder="Filter regions, e.g. prop:, setup: total"
+          aria-label="Filter durations regions"
+          autocomplete="off"
+        />
         <label class="muted region-toggle">
           <input type="checkbox" id="durations-all-regions" /> All regions
         </label>
@@ -31,6 +40,15 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
     <article class="card figure-tile">
       <div class="figure-tile-header">
         <h3 id="speedup-title" style="margin-top: 0;">Speedup</h3>
+        <input
+          id="speedup-region-filter"
+          class="region-filter"
+          type="search"
+          title="Comma-separated, case-insensitive substring match. Prefix a term with ^ to anchor it to the start of the region name."
+          placeholder="Filter regions, e.g. prop:, setup: total"
+          aria-label="Filter speedup regions"
+          autocomplete="off"
+        />
         <label class="muted region-toggle">
           <input type="checkbox" id="speedup-all-regions" /> All regions
         </label>
@@ -92,6 +110,17 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
   const durationsMetricSelect = document.getElementById("durations-metric-select");
   const durationsAllRegions = document.getElementById("durations-all-regions");
   const speedupAllRegions = document.getElementById("speedup-all-regions");
+  const durationsRegionFilter = document.getElementById("durations-region-filter");
+  const speedupRegionFilter = document.getElementById("speedup-region-filter");
+
+  // Typing should feel live without re-plotting on every keystroke.
+  const onFilterInput = (input, draw) => {
+    let timer = null;
+    input.oninput = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(draw, 200);
+    };
+  };
   const caseGallerySection = document.getElementById("case-gallery-section");
   const caseGallerySubtitle = document.getElementById("case-gallery-subtitle");
   const caseGallery = document.getElementById("case-gallery");
@@ -192,11 +221,13 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
           renderFigure(Plotly, durationsPlot, "durations", durationsPayload, {
             metric: durationsMetricSelect.value,
             allRegions: durationsAllRegions.checked,
+            regionFilter: durationsRegionFilter.value,
             ranksByFile,
           });
         await draw();
         durationsMetricSelect.onchange = draw;
         durationsAllRegions.onchange = draw;
+        onFilterInput(durationsRegionFilter, draw);
       } else {
         durationsPlot.innerHTML = "<p class='muted'>No durations data available.</p>";
       }
@@ -210,9 +241,11 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
         const draw = () =>
           renderFigure(Plotly, speedupPlot, "speedup", speedupPayload, {
             allRegions: speedupAllRegions.checked,
+            regionFilter: speedupRegionFilter.value,
           });
         await draw();
         speedupAllRegions.onchange = draw;
+        onFilterInput(speedupRegionFilter, draw);
       } else {
         speedupPlot.innerHTML = "<p class='muted'>No speedup data available (requires multiple ranks).</p>";
       }

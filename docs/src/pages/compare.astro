@@ -51,6 +51,15 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           <option value="min">Min</option>
           <option value="max">Max</option>
         </select>
+        <input
+          id="compare-region-filter"
+          class="region-filter"
+          type="search"
+          title="Comma-separated, case-insensitive substring match. Prefix a term with ^ to anchor it to the start of the region name."
+          placeholder="Filter regions, e.g. prop:, setup: total"
+          aria-label="Filter compared regions"
+          autocomplete="off"
+        />
         <label class="muted region-toggle">
           <input type="checkbox" id="compare-all-regions" /> All regions
         </label>
@@ -97,6 +106,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   const swapButton = document.getElementById("compare-swap");
   const metricSelect = document.getElementById("compare-metric-select");
   const allRegionsToggle = document.getElementById("compare-all-regions");
+  const regionFilterInput = document.getElementById("compare-region-filter");
   const comparePlot = document.getElementById("compare-plot");
   const metadataBody = document.getElementById("compare-metadata-body");
   const metaHeadA = document.getElementById("compare-meta-head-a");
@@ -251,7 +261,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         comparePlot,
         "comparison",
         { regions, labelA, valuesA, labelB, valuesB },
-        { metric, allRegions: allRegionsToggle.checked },
+        { metric, allRegions: allRegionsToggle.checked, regionFilter: regionFilterInput.value },
       );
     }
 
@@ -357,6 +367,12 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       });
       metricSelect.addEventListener("change", renderComparison);
       allRegionsToggle.addEventListener("change", renderComparison);
+      // Typing should feel live without re-plotting on every keystroke.
+      let filterTimer = null;
+      regionFilterInput.addEventListener("input", () => {
+        window.clearTimeout(filterTimer);
+        filterTimer = window.setTimeout(renderComparison, 200);
+      });
       swapButton.addEventListener("click", () => {
         const aCase = caseASelect.value;
         const bCase = caseBSelect.value;
