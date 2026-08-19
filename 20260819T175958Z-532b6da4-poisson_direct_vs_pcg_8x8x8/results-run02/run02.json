@@ -1,0 +1,86 @@
+{
+  "name": "Poisson 8x8x8: DirectSolver vs. PCG",
+  "description": "\nSingle-rank Poisson benchmark on an 8x8x8 cuboid grid comparing PCG with the\ncached feectools DirectSolver over repeated solves of the same operator.\n",
+  "model": {
+    "model": "Poisson"
+  },
+  "params_path": "/home/maxlinadmin/git_repos/struphy-hub/struphy/profiling/examples/Poisson/direct_vs_pcg/params_poisson_solver.py",
+  "env": {
+    "out_folders": "/home/maxlinadmin/git_repos/struphy-hub/struphy/_profiling_jobs/20260819T175958Z-532b6da4/poisson_direct_vs_pcg_8x8x8",
+    "sim_folder": "sim_02",
+    "sim_label": null,
+    "restart": false,
+    "max_runtime": 300,
+    "save_step": 1,
+    "save_restart": true,
+    "sort_step": 0,
+    "num_clones": 1,
+    "profiling_activated": true
+  },
+  "time_opts": {
+    "dt": 1.0,
+    "Tend": 100.0,
+    "split_algo": "LieTrotter"
+  },
+  "domain": {
+    "type": "Cuboid",
+    "params": {
+      "l1": 0.0,
+      "r1": 2.0,
+      "l2": -1.5,
+      "r2": 1.5,
+      "l3": 0.0,
+      "r3": 4.0
+    }
+  },
+  "equil": null,
+  "grid": {
+    "num_elements": [
+      8,
+      8,
+      8
+    ],
+    "mpi_dims_mask": [
+      true,
+      true,
+      true
+    ]
+  },
+  "derham_opts": {
+    "degree": [
+      1,
+      2,
+      3
+    ],
+    "bcs": [
+      [
+        "dirichlet",
+        "dirichlet"
+      ],
+      null,
+      null
+    ],
+    "nquads": null,
+    "nquads_proj": null,
+    "polar_splines": false,
+    "local_projectors": false
+  },
+  "model_name": "Poisson",
+  "mpi_ranks": 1,
+  "use_mpi_comm_world": true,
+  "particle_species": {},
+  "started_at_epoch_s": 1787162402.813619,
+  "one_time_step": false,
+  "slurm_script": null,
+  "slurm_script_str": "#!/bin/bash\nset -e\nsource /home/maxlinadmin/git_repos/struphy-hub/struphy/.venv/bin/activate\necho \"----------------------------------------\"\necho \"Running profiling case: poisson_direct_vs_pcg_8x8x8 (1 MPI ranks)\"\necho \"Description: Single-rank repeated Poisson solves on an 8x8x8 grid, comparing cached DirectSolver against PCG.\"\necho \"Physics problem: Small manufactured Poisson field solve on a 3D cuboid.\"\necho \"Struphy model used: Poisson\"\necho \"Case directory: /home/maxlinadmin/git_repos/struphy-hub/struphy/_profiling_jobs/20260819T175958Z-532b6da4/poisson_direct_vs_pcg_8x8x8\"\necho \"----------------------------------------\"\nmkdir -p \"/home/maxlinadmin/git_repos/struphy-hub/struphy/_profiling_jobs/20260819T175958Z-532b6da4/poisson_direct_vs_pcg_8x8x8/sim_02\"\ncp \"/home/maxlinadmin/git_repos/struphy-hub/struphy/profiling/examples/Poisson/direct_vs_pcg/params_poisson_solver.py\" \"/home/maxlinadmin/git_repos/struphy-hub/struphy/_profiling_jobs/20260819T175958Z-532b6da4/poisson_direct_vs_pcg_8x8x8/parameters.py\"\n\necho \"Running poisson_direct_vs_pcg_8x8x8 with 1 MPI ranks\"\ncd \"/home/maxlinadmin/git_repos/struphy-hub/struphy/_profiling_jobs/20260819T175958Z-532b6da4/poisson_direct_vs_pcg_8x8x8\"\nmpirun -n 1 /home/maxlinadmin/git_repos/struphy-hub/struphy/.venv/bin/python /home/maxlinadmin/git_repos/struphy-hub/struphy/profiling/examples/Poisson/direct_vs_pcg/params_poisson_solver.py --id 2 --solver direct --num-elements 8 8 8 --repeats 100 > \"/home/maxlinadmin/git_repos/struphy-hub/struphy/_profiling_jobs/20260819T175958Z-532b6da4/poisson_direct_vs_pcg_8x8x8/sim_02/struphy.out\" 2>&1\n\necho \"----------------------------------------\"\necho \"Completed profiling case: poisson_direct_vs_pcg_8x8x8 (1 MPI ranks)\"\necho \"----------------------------------------\"\n",
+  "packaged_files": {
+    "profiling_data": "results-run02/run02.h5",
+    "additional_profiling_data": [],
+    "results": [
+      "results-run02/rel_err_phi.npy",
+      "results-run02/repeats.npy",
+      "results-run02/resolution.npy"
+    ],
+    "run_directory": "/home/maxlinadmin/git_repos/struphy-hub/struphy/_profiling_jobs/20260819T175958Z-532b6da4/poisson_direct_vs_pcg_8x8x8/sim_02"
+  }
+}
