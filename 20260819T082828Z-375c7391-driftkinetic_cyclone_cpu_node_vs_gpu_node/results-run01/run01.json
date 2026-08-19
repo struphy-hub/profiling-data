@@ -1,0 +1,158 @@
+{
+  "name": "DriftKineticElectrostaticAdiabatic Cyclone (numpy)",
+  "description": "\nCyclone-instability ITG turbulence case for DriftKineticElectrostaticAdiabatic (see\nexamples/DriftKineticElectrostaticAdiabatic/cyclone/params_cyclone.py, the physics case\nthis profiling params file is adapted from), used as the NumPy-vs-CuPy backend\ncomparison case for a real gyrokinetic model rather than a toy one.\n\nUnlike GuidingCenter (profiling/examples/GuidingCenter), this model carries a real FEEC\nfield solve every step (PoissonAdiabaticGyrokinetic, an ImplicitDiffusion subclass: a PCG\nsolve against the H1 mass/stiffness matrices in toroidal geometry with a Fourier filter),\non top of the two CUDA-ported guiding-center pushers (PushGuidingCenterBxEstar,\nPushGuidingCenterParallel). The geometry is a toroidal HollowTorus (not a Cuboid slab),\nand particle weights use the control-variate method. This is the case that answers\nwhether the CUDA port helps a real ITG run end to end, including the parts (Poisson\nsolve, control variates, sorting, HollowTorus mapping evaluation) that were not\nindividually targeted by the port.\n\nGetting this to run under CuPy at all required fixing several real device-portability\nbugs found while validating this case (not toy-model artifacts): a NumPy-vs-CuPy\nscalar-typing trap in the `AdhocTorus` equilibrium (`xp.sqrt` on a plain float silently\nreturns a 0-d CuPy array, which then hit scipy's `UnivariateSpline`/`quad`, both\nhost-only), the Sobol marker-loading sequence (a scalar bit-manipulation algorithm with\nnothing to vectorize, now forced onto plain NumPy instead of CuPy), a full-slice\nNumPy->CuPy assignment in `AverageOperator` that does not auto-convert the way\nboolean/fancy indexing does, CuPy's `einsum` not accepting `out=` at all (unlike\nNumPy's), and (for the `--solver direct` path below) several `tosparse()`/`toarray()`\nstubs and CuPy/NumPy mixing bugs in `feectools` that had never been exercised under\nCuPy before. See the commits touching `fields_background/equils.py`, `pic/sobol_seq.py`,\n`feec/mass.py`, `feec/linear_operators.py`, `pic/accumulation/filter.py`,\n`feectools/feec/derivatives.py`, and `feectools/linalg/{stencil,solvers,direct_solvers}.py`.\n\nOnce it ran under the original iterative solver (`--solver pcg`), the result was a\ngenuine (non-toy) finding: unlike GuidingCenter, this model was *slower end to end* on\nCuPy than on NumPy, because the part the CUDA port never touched -- the per-step\n`PoissonAdiabaticGyrokinetic` PCG solve -- dominated the runtime and was itself slower on\nthe device (with tol=1e-12 it runs close to the full maxiter=3000 on both backends: the\noperator is not well conditioned enough to converge much faster, and each of those\niterations needs a matvec plus a reduction whose result has to be read back to host\nbefore the next iteration can even start -- a hard sequential dependency that is cheap\nper iteration on CPU but not on GPU, where several small kernel launches plus the sync\nadd up to real cost a matrix this size cannot amortize away). Measured at\nnum_elements=(16, 64, 4), ppc=5, 1 step (dt=0.001), single rank, one H100:\n\n    backend   total (setup to finalize)   PCG solve/call (model.integrate)   push_gc_bxe    push_gc_para\n    numpy     62.7 s                      6.90 s                             0.099 s        0.095 s\n    cupy      91.4 s                      14.54 s (2.1x SLOWER)              0.035 s (2.9x)  0.019 s (5.0x)\n\nThe default solver is now `direct` (`feectools.linalg.solvers.DirectSolver`), not `pcg`:\nthe LHS operator this propagator solves against is *constant* across every time step\n(`divide_by_dt=False`, fixed `epsilon`/`Z` -- see `ImplicitDiffusion.__call__`), so\nre-running an iterative solve close to `maxiter` every single call was pure waste on\neither backend. `DirectSolver` factorizes once (lazily, on the first `solve()` call) via\na cached sparse LU (`feectools.linalg.direct_solvers.SparseSolver`) and reuses that\nfactorization for every later call, which needs only a triangular solve -- a small, fixed\nnumber of kernel launches regardless of the operator's conditioning, which is exactly\nwhat removes the GPU sync penalty above. Measured at the same configuration, 5 steps\n(dt=0.001, Tend=0.005), single rank, one H100 -- `direct`'s first call pays the one-time\nfactorization, every later call is the pure solve:\n\n    backend   solver   total (setup to finalize)   solve/call: 1st (factorize)   solve/call: later (solve only)\n    numpy     pcg      108.7 s                      n/a (iterative every call)   6.9 s (unchanged)\n    numpy     direct   52.5 s                        3.4 s                       0.008 s   (~860x vs pcg)\n    cupy      pcg      n/a (>500s for 1 step alone, node-contended -- see below)\n    cupy      direct   75.7 s                         2.4 s                       0.0076 s (~1900x vs the clean\n                                                                                    14.54 s/solve pcg number above)\n\nBoth `pcg` and `direct` were verified to produce matching physics (`en_phi`/`en_tot`/\n`phi_integral` scalars agree to ~1e-10, consistent with `pcg` simply not having fully\nconverged at `maxiter` while `direct` solves exactly). The `cupy pcg` 5-step number above\nis intentionally omitted rather than reported: a rerun on this shared login-node GPU took\n174.55 s for a *single* step (vs the clean, isolated 14.54 s/solve measured earlier the\nsame session), evidently due to GPU contention from other jobs -- worth knowing if you\nreproduce this yourself, but not a number to trust as `pcg`'s true cost.\n\nWith `direct` removing the field-solve bottleneck, one more non-obvious cost stayed\nhidden until the field solve itself got fast: `ImplicitDiffusion.__call__` runs a\n*second*, completely separate solve every step when `diagnostic is not None`\n(`proj = L2Projector(\"H1\", self.mass_ops); self.diagnostic.spline.vector = proj.solve(rhs)`)\n-- a fresh, uncached `L2Projector` with the default `\"pcg\"` solver, untouched by\n`--solver direct` above since it is a different `InverseLinearOperator` entirely. The\nphysics case this file is adapted from enables it (`use_diagnostic_poisson=True`), but it\nonly feeds `self.diagnostics.rho`, an extra saved diagnostic field nothing else in this\nmodel reads back (the `phi_integral` scalar uses `phi` directly) -- disabled here\n(`use_diagnostic_poisson=False`) since it was otherwise the dominant per-step cost left\nafter fixing the main solve.\n\n## CuPy actually winning end to end\n\nAt the tiny `ppc=5` used to validate correctness above, CuPy still loses in total wall\ntime even with `direct` and the diagnostic-solve fix: setup (CUDA context/kernel\ncompilation, done once) is a larger fixed cost on CuPy than on NumPy, and there isn't\nenough per-step *work* -- the whole point of `direct` and disabling the diagnostic\nsolve -- for the CUDA-ported pushers to out-earn that fixed cost. Scaling up `ppc` (more\nmarkers per cell, i.e. more actual particle-push/accumulation work, which is exactly what\nwas CUDA-ported) is what tips the balance, not a bigger grid. Measured at\nnum_elements=(16, 64, 4), **ppc=200** (the physics case's own suggested minimum), 10\nsteps (dt=0.001, Tend=0.01), single rank, one H100, `--solver direct` (the default),\n`use_diagnostic_poisson=False`:\n\n    backend   total (setup to finalize)   model.integrate/step   push_gc_bxe/step   push_gc_para/step\n    numpy     145.5 s                     8.71 s                 3.84 s             4.37 s\n    cupy       80.0 s (1.82x FASTER)      0.59 s (14.8x)          0.14 s (28x)       0.14 s (32x)\n\n`en_phi`/`en_tot`/`phi_integral` scalars match to ~1e-21 (round-off) between the two\nruns. This is now the default configuration (`ppc=200`, `Tend=0.01`); override with\n`--ppc`/`--Tend`/`--num-elements` to explore further (e.g. a larger grid should shift\nthe crossover point the other way, back toward NumPy, per the still-open question below).\n\nWhether a larger, more production-scale grid (num_elements=(32, 135, 5), the physics\ncase's own default) changes any of this is open -- `direct`'s one-time factorization cost\nshould grow with problem size (the setup-phase matrix assembly alone took 226 s on NumPy\nat that size when this case was first validated), so whether CuPy still wins at scale,\nand by how much, needs its own longer-budget run; pass a larger --num-elements (with a\nlonger SLURM walltime) to check.\n\n`num_elements`/`ppc`/`Tend` default to the validated configuration above (a\nspeed/coverage tradeoff against the physics case's own (32, 135, 5)/50/0.01); override\nwith --num-elements/--ppc/--Tend for a larger run.\n",
+  "model": {
+    "model": "DriftKineticElectrostaticAdiabatic"
+  },
+  "params_path": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/profiling/examples/DriftKineticElectrostaticAdiabatic/params_cyclone.py",
+  "env": {
+    "out_folders": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260819T082828Z-375c7391/driftkinetic_cyclone_cpu_node_vs_gpu_node",
+    "sim_folder": "sim_01",
+    "sim_label": null,
+    "restart": false,
+    "max_runtime": 300,
+    "save_step": 1,
+    "save_restart": false,
+    "sort_step": 0,
+    "num_clones": 1,
+    "profiling_activated": true,
+    "profiling_label": null
+  },
+  "time_opts": {
+    "dt": 0.001,
+    "Tend": 0.01,
+    "split_algo": "LieTrotter"
+  },
+  "domain": {
+    "type": "HollowTorus",
+    "params": {
+      "a1": 0.01,
+      "a2": 0.36,
+      "R0": 1.0,
+      "sfl": true,
+      "pol_period": 1,
+      "tor_period": 19
+    }
+  },
+  "equil": {
+    "type": "AdhocTorus",
+    "params": {
+      "a": 0.36,
+      "R0": 1.0,
+      "B0": 1.0,
+      "q_kind": 2,
+      "q0": 0.86,
+      "q1": 3.38,
+      "l": -0.16,
+      "n1": 2.0,
+      "n2": 1.0,
+      "na": 0.2,
+      "p_kind": 1,
+      "p0": 1.0,
+      "p1": 0.1,
+      "p2": 0.1,
+      "beta": 0.179,
+      "psi_k": 5,
+      "psi_nel": 200
+    }
+  },
+  "grid": {
+    "num_elements": [
+      64,
+      128,
+      4
+    ],
+    "mpi_dims_mask": [
+      true,
+      true,
+      false
+    ]
+  },
+  "derham_opts": {
+    "degree": [
+      3,
+      3,
+      3
+    ],
+    "bcs": [
+      [
+        "dirichlet",
+        "dirichlet"
+      ],
+      null,
+      null
+    ],
+    "nquads": null,
+    "nquads_proj": null,
+    "polar_splines": false,
+    "local_projectors": false
+  },
+  "model_name": "DriftKineticElectrostaticAdiabatic",
+  "mpi_ranks": 256,
+  "use_mpi_comm_world": true,
+  "particle_species": {
+    "kinetic_ions": {
+      "var": {
+        "Np": 6553600,
+        "ppc": 200,
+        "ppb": 4266.666666666667
+      }
+    }
+  },
+  "started_at_epoch_s": 1787128149.5940912,
+  "one_time_step": false,
+  "slurm_script": {
+    "pragmas": {
+      "account": "FUSIO_HLST_7",
+      "job_name": "profiling_driftkinetic_cyclone_cpu_node_vs_gpu_node_01",
+      "partition": "dcgp_fua_dbg",
+      "time": "00:30:00",
+      "error": "./%x.%j.err",
+      "output": "./%x.%j.out",
+      "mail_type": "none",
+      "cpus_per_task": 1,
+      "nodes": 1,
+      "ntasks_per_node": 256,
+      "mem": "480GB"
+    },
+    "modules": [],
+    "custom_commands": [
+      "module purge",
+      "source ./setup/modules.sh load",
+      "module list",
+      "set -e",
+      "source /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/.venv/bin/activate",
+      "echo \"----------------------------------------\"",
+      "echo \"Running profiling case: driftkinetic_cyclone_cpu_node_vs_gpu_node (256 MPI ranks)\"",
+      "echo \"Description: Cyclone-instability ITG turbulence case for DriftKineticElectrostaticAdiabatic, run once with the NumPy array backend across every core of one CPU node and once with the CuPy array backend across every GPU of one GPU node, at the same grid/marker configuration, to compare realistic full-node throughput rather than single-rank kernel speed. The field solve is pinned to solver='pcg' on both sides -- DirectSolver (params_cyclone.py's own default) does not support more than one MPI rank.\"",
+      "echo \"Physics problem: Electrostatic drift-kinetic ITG turbulence with adiabatic electrons in toroidal geometry.\"",
+      "echo \"Struphy model used: DriftKineticElectrostaticAdiabatic\"",
+      "echo \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260819T082828Z-375c7391/driftkinetic_cyclone_cpu_node_vs_gpu_node\"",
+      "echo \"----------------------------------------\"",
+      "mkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260819T082828Z-375c7391/driftkinetic_cyclone_cpu_node_vs_gpu_node/sim_01\"",
+      "cp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/profiling/examples/DriftKineticElectrostaticAdiabatic/params_cyclone.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260819T082828Z-375c7391/driftkinetic_cyclone_cpu_node_vs_gpu_node/parameters.py\"",
+      "",
+      "echo \"Running driftkinetic_cyclone_cpu_node_vs_gpu_node with 256 MPI ranks\"",
+      "cd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260819T082828Z-375c7391/driftkinetic_cyclone_cpu_node_vs_gpu_node\"",
+      "srun -n 256 /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/profiling/examples/DriftKineticElectrostaticAdiabatic/params_cyclone.py --id 1 --backend numpy --solver pcg --num-elements 64 128 4 > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260819T082828Z-375c7391/driftkinetic_cyclone_cpu_node_vs_gpu_node/sim_01/struphy.out\" 2>&1",
+      "",
+      "echo \"----------------------------------------\"",
+      "echo \"Completed profiling case: driftkinetic_cyclone_cpu_node_vs_gpu_node (256 MPI ranks)\"",
+      "echo \"----------------------------------------\""
+    ]
+  },
+  "slurm_script_str": "#!/bin/bash\n########################################################\n#            This script was generated using           #\n#             slurm-script-generator v0.3.7            #\n# https://github.com/max-models/slurm-script-generator #\n#      `pip install slurm-script-generator==0.3.7`     #\n########################################################\n\n########################################################\n# Pragmas for Job Config                               #\n#SBATCH --job-name=profiling_driftkinetic_cyclone_cpu_node_vs_gpu_node_01 # name of job\n#SBATCH --account=FUSIO_HLST_7                         # charge job to specified account\n#SBATCH --partition=dcgp_fua_dbg                       # partition requested\n#                                                      #\n# Pragmas for Time And Priority                        #\n#SBATCH --time=00:30:00                                # time limit\n#                                                      #\n# Pragmas for Io And Directory                         #\n#SBATCH --output=./%x.%j.out                           # File to redirect output (%%x=jobname, %%j=jobid)\n#SBATCH --error=./%x.%j.err                            # File to redirect error (%%x=jobname, %%j=jobid)\n#                                                      #\n# Pragmas for Notifications                            #\n#SBATCH --mail-type=none                               # notify on state change\n#                                                      #\n# Pragmas for Core Node And Task Allocation            #\n#SBATCH --nodes=1                                      # number of nodes on which to run\n#SBATCH --ntasks-per-node=256                          # number of tasks to invoke on each node\n#SBATCH --cpus-per-task=1                              # number of cpus required per task\n#                                                      #\n# Pragmas for Memory                                   #\n#SBATCH --mem=480GB                                    # minimum amount of real memory\n########################################################\nmodule purge\nsource ./setup/modules.sh load\nmodule list\nset -e\nsource /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/.venv/bin/activate\necho \"----------------------------------------\"\necho \"Running profiling case: driftkinetic_cyclone_cpu_node_vs_gpu_node (256 MPI ranks)\"\necho \"Description: Cyclone-instability ITG turbulence case for DriftKineticElectrostaticAdiabatic, run once with the NumPy array backend across every core of one CPU node and once with the CuPy array backend across every GPU of one GPU node, at the same grid/marker configuration, to compare realistic full-node throughput rather than single-rank kernel speed. The field solve is pinned to solver='pcg' on both sides -- DirectSolver (params_cyclone.py's own default) does not support more than one MPI rank.\"\necho \"Physics problem: Electrostatic drift-kinetic ITG turbulence with adiabatic electrons in toroidal geometry.\"\necho \"Struphy model used: DriftKineticElectrostaticAdiabatic\"\necho \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260819T082828Z-375c7391/driftkinetic_cyclone_cpu_node_vs_gpu_node\"\necho \"----------------------------------------\"\nmkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260819T082828Z-375c7391/driftkinetic_cyclone_cpu_node_vs_gpu_node/sim_01\"\ncp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/profiling/examples/DriftKineticElectrostaticAdiabatic/params_cyclone.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260819T082828Z-375c7391/driftkinetic_cyclone_cpu_node_vs_gpu_node/parameters.py\"\n\necho \"Running driftkinetic_cyclone_cpu_node_vs_gpu_node with 256 MPI ranks\"\ncd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260819T082828Z-375c7391/driftkinetic_cyclone_cpu_node_vs_gpu_node\"\nsrun -n 256 /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/profiling/examples/DriftKineticElectrostaticAdiabatic/params_cyclone.py --id 1 --backend numpy --solver pcg --num-elements 64 128 4 > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260819T082828Z-375c7391/driftkinetic_cyclone_cpu_node_vs_gpu_node/sim_01/struphy.out\" 2>&1\n\necho \"----------------------------------------\"\necho \"Completed profiling case: driftkinetic_cyclone_cpu_node_vs_gpu_node (256 MPI ranks)\"\necho \"----------------------------------------\"\n",
+  "packaged_files": {
+    "profiling_data": "results-run01/run01.h5",
+    "additional_profiling_data": [],
+    "results": [
+      "results-run01/density_e1e2.png",
+      "results-run01/phi_integral_evolution.png",
+      "results-run01/phi_integral_growth_rate.npy",
+      "results-run01/phi_slice.png",
+      "results-run01/resolution.npy",
+      "results-run01/spline_degree.npy"
+    ],
+    "run_directory": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260819T082828Z-375c7391/driftkinetic_cyclone_cpu_node_vs_gpu_node/sim_01"
+  }
+}
