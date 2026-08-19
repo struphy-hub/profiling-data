@@ -111,12 +111,15 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           ]
             .join(" ")
             .toLowerCase();
+          const modelTags = models.length
+            ? models.map((model) => `<span class="tag">${esc(model)}</span>`).join("")
+            : "-";
           return `
             <tr data-search="${esc(searchText)}">
               <td>${esc(formatDatetime(latest?.datetime_utc))}</td>
               <td><strong>${esc(groupLabelForCase(latest))}</strong></td>
               <td>${esc(physicsProblems.join(", ") || "-")}</td>
-              <td>${esc(models.join(", ") || "-")}</td>
+              <td>${modelTags}</td>
               <td>${entries.length}</td>
               <td><a href="${baseUrl}instances?group=${encodeURIComponent(groupKey)}">View instances</a></td>
               <td><a href="${baseUrl}compare?a=${encodeURIComponent(latest?.id ?? "")}">Compare</a></td>
