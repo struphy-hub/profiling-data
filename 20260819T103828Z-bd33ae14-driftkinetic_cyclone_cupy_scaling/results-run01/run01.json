@@ -1,0 +1,159 @@
+{
+  "name": "DriftKineticElectrostaticAdiabatic Cyclone (cupy)",
+  "description": "\nCyclone-instability ITG turbulence case for DriftKineticElectrostaticAdiabatic (see\nexamples/DriftKineticElectrostaticAdiabatic/cyclone/params_cyclone.py, the physics case\nthis profiling params file is adapted from), used as the NumPy-vs-CuPy backend\ncomparison case for a real gyrokinetic model rather than a toy one.\n",
+  "model": {
+    "model": "DriftKineticElectrostaticAdiabatic"
+  },
+  "params_path": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/profiling/examples/DriftKineticElectrostaticAdiabatic/params_cyclone.py",
+  "env": {
+    "out_folders": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260819T103828Z-bd33ae14/driftkinetic_cyclone_cupy_scaling",
+    "sim_folder": "sim_01",
+    "sim_label": null,
+    "restart": false,
+    "max_runtime": 300,
+    "save_step": 1,
+    "save_restart": false,
+    "sort_step": 0,
+    "num_clones": 1,
+    "profiling_activated": true,
+    "profiling_label": null
+  },
+  "time_opts": {
+    "dt": 0.001,
+    "Tend": 0.003,
+    "split_algo": "LieTrotter"
+  },
+  "domain": {
+    "type": "HollowTorus",
+    "params": {
+      "a1": 0.01,
+      "a2": 0.36,
+      "R0": 1.0,
+      "sfl": true,
+      "pol_period": 1,
+      "tor_period": 19
+    }
+  },
+  "equil": {
+    "type": "AdhocTorus",
+    "params": {
+      "a": 0.36,
+      "R0": 1.0,
+      "B0": 1.0,
+      "q_kind": 2,
+      "q0": 0.86,
+      "q1": 3.38,
+      "l": -0.16,
+      "n1": 2.0,
+      "n2": 1.0,
+      "na": 0.2,
+      "p_kind": 1,
+      "p0": 1.0,
+      "p1": 0.1,
+      "p2": 0.1,
+      "beta": 0.179,
+      "psi_k": 5,
+      "psi_nel": 200
+    }
+  },
+  "grid": {
+    "num_elements": [
+      8,
+      8,
+      4
+    ],
+    "mpi_dims_mask": [
+      true,
+      true,
+      false
+    ]
+  },
+  "derham_opts": {
+    "degree": [
+      3,
+      3,
+      3
+    ],
+    "bcs": [
+      [
+        "dirichlet",
+        "dirichlet"
+      ],
+      null,
+      null
+    ],
+    "nquads": null,
+    "nquads_proj": null,
+    "polar_splines": false,
+    "local_projectors": false
+  },
+  "model_name": "DriftKineticElectrostaticAdiabatic",
+  "mpi_ranks": 1,
+  "use_mpi_comm_world": true,
+  "particle_species": {
+    "kinetic_ions": {
+      "var": {
+        "Np": 1280,
+        "ppc": 5,
+        "ppb": 0.8333333333333334
+      }
+    }
+  },
+  "started_at_epoch_s": 1787135914.603256,
+  "one_time_step": false,
+  "slurm_script": {
+    "pragmas": {
+      "account": "FUSIO_HLST_6",
+      "job_name": "profiling_driftkinetic_cyclone_cupy_scaling_01",
+      "partition": "boost_fua_dbg",
+      "time": "00:15:00",
+      "error": "myJob_%j.err",
+      "output": "myJob_%j.out",
+      "mail_type": "none",
+      "cpus_per_task": 1,
+      "nodes": 1,
+      "ntasks_per_node": 1,
+      "mem": "480GB",
+      "gres": "gpu:4,tmpfs:10g"
+    },
+    "modules": [],
+    "custom_commands": [
+      "module purge",
+      "source ./setup/modules.sh load",
+      "module list",
+      "set -e",
+      "source /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/.venv/bin/activate",
+      "echo \"----------------------------------------\"",
+      "echo \"Running profiling case: driftkinetic_cyclone_cupy_scaling (1 MPI ranks)\"",
+      "echo \"Description: Cyclone-instability ITG turbulence case for DriftKineticElectrostaticAdiabatic, run with the CuPy array backend at increasing MPI rank counts (one GPU per rank) on a fixed grid/marker configuration, to measure strong-scaling speedup and verify the CUDA-ported kernels and MPI exchange paths work correctly for this model under multi-rank/multi-GPU. Uses params_cyclone.py's own default solver='direct' (feectools.linalg.solvers.DirectSolver) at every rank count, now that DirectSolver supports nprocs > 1 via a replicated global-matrix assembly.\"",
+      "echo \"Physics problem: Electrostatic drift-kinetic ITG turbulence with adiabatic electrons in toroidal geometry.\"",
+      "echo \"Struphy model used: DriftKineticElectrostaticAdiabatic\"",
+      "echo \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260819T103828Z-bd33ae14/driftkinetic_cyclone_cupy_scaling\"",
+      "echo \"----------------------------------------\"",
+      "mkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260819T103828Z-bd33ae14/driftkinetic_cyclone_cupy_scaling/sim_01\"",
+      "cp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/profiling/examples/DriftKineticElectrostaticAdiabatic/params_cyclone.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260819T103828Z-bd33ae14/driftkinetic_cyclone_cupy_scaling/parameters.py\"",
+      "",
+      "echo \"Running driftkinetic_cyclone_cupy_scaling with 1 MPI ranks\"",
+      "cd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260819T103828Z-bd33ae14/driftkinetic_cyclone_cupy_scaling\"",
+      "srun -n 1 /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/profiling/examples/DriftKineticElectrostaticAdiabatic/params_cyclone.py --id 1 --backend cupy --Tend 0.003 --ppc 5 --num-elements 8 8 4 > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260819T103828Z-bd33ae14/driftkinetic_cyclone_cupy_scaling/sim_01/struphy.out\" 2>&1",
+      "",
+      "echo \"----------------------------------------\"",
+      "echo \"Completed profiling case: driftkinetic_cyclone_cupy_scaling (1 MPI ranks)\"",
+      "echo \"----------------------------------------\""
+    ]
+  },
+  "slurm_script_str": "#!/bin/bash\n########################################################\n#            This script was generated using           #\n#             slurm-script-generator v0.3.7            #\n# https://github.com/max-models/slurm-script-generator #\n#      `pip install slurm-script-generator==0.3.7`     #\n########################################################\n\n########################################################\n# Pragmas for Job Config                               #\n#SBATCH --job-name=profiling_driftkinetic_cyclone_cupy_scaling_01 # name of job\n#SBATCH --account=FUSIO_HLST_6                         # charge job to specified account\n#SBATCH --partition=boost_fua_dbg                      # partition requested\n#                                                      #\n# Pragmas for Time And Priority                        #\n#SBATCH --time=00:15:00                                # time limit\n#                                                      #\n# Pragmas for Io And Directory                         #\n#SBATCH --output=myJob_%j.out                          # File to redirect output (%%x=jobname, %%j=jobid)\n#SBATCH --error=myJob_%j.err                           # File to redirect error (%%x=jobname, %%j=jobid)\n#                                                      #\n# Pragmas for Notifications                            #\n#SBATCH --mail-type=none                               # notify on state change\n#                                                      #\n# Pragmas for Core Node And Task Allocation            #\n#SBATCH --nodes=1                                      # number of nodes on which to run\n#SBATCH --ntasks-per-node=1                            # number of tasks to invoke on each node\n#SBATCH --cpus-per-task=1                              # number of cpus required per task\n#                                                      #\n# Pragmas for Memory                                   #\n#SBATCH --mem=480GB                                    # minimum amount of real memory\n#                                                      #\n# Pragmas for Generic Resources And Licenses           #\n#SBATCH --gres=gpu:4,tmpfs:10g                         # required generic resources\n########################################################\nmodule purge\nsource ./setup/modules.sh load\nmodule list\nset -e\nsource /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/.venv/bin/activate\necho \"----------------------------------------\"\necho \"Running profiling case: driftkinetic_cyclone_cupy_scaling (1 MPI ranks)\"\necho \"Description: Cyclone-instability ITG turbulence case for DriftKineticElectrostaticAdiabatic, run with the CuPy array backend at increasing MPI rank counts (one GPU per rank) on a fixed grid/marker configuration, to measure strong-scaling speedup and verify the CUDA-ported kernels and MPI exchange paths work correctly for this model under multi-rank/multi-GPU. Uses params_cyclone.py's own default solver='direct' (feectools.linalg.solvers.DirectSolver) at every rank count, now that DirectSolver supports nprocs > 1 via a replicated global-matrix assembly.\"\necho \"Physics problem: Electrostatic drift-kinetic ITG turbulence with adiabatic electrons in toroidal geometry.\"\necho \"Struphy model used: DriftKineticElectrostaticAdiabatic\"\necho \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260819T103828Z-bd33ae14/driftkinetic_cyclone_cupy_scaling\"\necho \"----------------------------------------\"\nmkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260819T103828Z-bd33ae14/driftkinetic_cyclone_cupy_scaling/sim_01\"\ncp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/profiling/examples/DriftKineticElectrostaticAdiabatic/params_cyclone.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260819T103828Z-bd33ae14/driftkinetic_cyclone_cupy_scaling/parameters.py\"\n\necho \"Running driftkinetic_cyclone_cupy_scaling with 1 MPI ranks\"\ncd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260819T103828Z-bd33ae14/driftkinetic_cyclone_cupy_scaling\"\nsrun -n 1 /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/profiling/examples/DriftKineticElectrostaticAdiabatic/params_cyclone.py --id 1 --backend cupy --Tend 0.003 --ppc 5 --num-elements 8 8 4 > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260819T103828Z-bd33ae14/driftkinetic_cyclone_cupy_scaling/sim_01/struphy.out\" 2>&1\n\necho \"----------------------------------------\"\necho \"Completed profiling case: driftkinetic_cyclone_cupy_scaling (1 MPI ranks)\"\necho \"----------------------------------------\"\n",
+  "packaged_files": {
+    "profiling_data": "results-run01/run01.h5",
+    "additional_profiling_data": [],
+    "results": [
+      "results-run01/density_e1e2.png",
+      "results-run01/phi_integral_evolution.png",
+      "results-run01/phi_integral_growth_rate.npy",
+      "results-run01/phi_slice.png",
+      "results-run01/resolution.npy",
+      "results-run01/spline_degree.npy"
+    ],
+    "run_directory": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260819T103828Z-bd33ae14/driftkinetic_cyclone_cupy_scaling/sim_01"
+  }
+}
