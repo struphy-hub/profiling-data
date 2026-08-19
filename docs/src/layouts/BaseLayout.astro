@@ -13,6 +13,7 @@ const {
 const baseUrl = import.meta.env.BASE_URL.endsWith("/")
   ? import.meta.env.BASE_URL
   : `${import.meta.env.BASE_URL}/`;
+const buildTime = new Date().toISOString();
 ---
 
 <!doctype html>
@@ -71,7 +72,10 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
       <slot />
     </main>
     <footer class="site-footer">
-      <div class="shell">Struphy profiling dashboard — generated from scope-profiler exports.</div>
+      <div class="shell">
+        Struphy profiling dashboard — generated from scope-profiler exports.
+        <span class="build-time">Built {buildTime}</span>
+      </div>
     </footer>
     <script is:inline>
       (() => {
