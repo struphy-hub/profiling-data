@@ -94,7 +94,11 @@ async function render(Plotly, container, data, layout) {
 
 // Gantt: one horizontal-bar trace per region so the legend gets one entry
 // per region and every call for that region shares its color.
-export function buildGanttFigure(intervals) {
+export function buildGanttFigure(intervals, regionSelection) {
+  // The timeline shows every region by default - it is about how the whole run
+  // interleaves - so only an explicit filter narrows it.
+  intervals = filterRegionRows(intervals, { all: true, text: regionSelection?.text });
+
   const order = [];
   for (const interval of intervals) {
     if (!order.includes(interval.region)) order.push(interval.region);
@@ -139,7 +143,7 @@ export function buildGanttFigure(intervals) {
     yaxis: axisStyle({ autorange: "reversed", categoryorder: "array", categoryarray: order }),
   });
 
-  return { data, layout };
+  return { data, layout: emptyStateLayout(layout, order.length === 0) };
 }
 
 // Flame: icicle chart showing call hierarchy with proper parent-child relationships.
@@ -527,10 +531,9 @@ export async function renderFigure(Plotly, container, kind, payload, extra) {
   const regionSelection = { all: extra?.allRegions ?? false, text: extra?.regionFilter ?? "" };
 
   let figure;
-  // Gantt and flame always show every region: the timeline is about how the
-  // whole run interleaves, and flame is a call hierarchy where dropping
+  // Flame always shows every region: it is a call hierarchy, where dropping
   // regions would orphan their children.
-  if (kind === "gantt") figure = buildGanttFigure(payload.intervals);
+  if (kind === "gantt") figure = buildGanttFigure(payload.intervals, regionSelection);
   else if (kind === "flame") figure = buildFlameFigure(payload.calls);
   else if (kind === "durations")
     figure = buildDurationsFigure(

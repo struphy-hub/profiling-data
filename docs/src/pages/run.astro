@@ -294,9 +294,17 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
 
       const outputs = runEntry.run_outputs || {};
       const figureDefs = [
-        { key: "durations", title: "Durations", kind: "durations", hasMetric: true, hasRegionFilter: true },
-        // Gantt and flame always show every region.
-        { key: "gantt", title: "Gantt", kind: "gantt" },
+        {
+          key: "durations",
+          title: "Durations",
+          kind: "durations",
+          hasMetric: true,
+          hasRegionFilter: true,
+          hasAllRegionsToggle: true,
+        },
+        // Gantt shows every region unless explicitly filtered; flame always
+        // shows the full call hierarchy.
+        { key: "gantt", title: "Gantt", kind: "gantt", hasRegionFilter: true },
         { key: "flame", title: "Flame", kind: "flame" },
       ].filter((def) => outputs[def.key]);
 
@@ -327,8 +335,12 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
                           placeholder="Filter regions, e.g. prop:, setup: total"
                           aria-label="Filter regions"
                           autocomplete="off"
-                        />
-                        <label class="muted region-toggle">
+                        />`
+                      : ""
+                  }
+                  ${
+                    def.hasAllRegionsToggle
+                      ? `<label class="muted region-toggle">
                           <input type="checkbox" id="all-regions-${def.key}" /> All regions
                         </label>`
                       : ""
@@ -353,7 +365,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
             if (!plotRes.ok) throw new Error(`HTTP ${plotRes.status}`);
             const payload = await plotRes.json();
             const select = def.hasMetric ? document.getElementById(`metric-select-${def.key}`) : null;
-            const allRegions = def.hasRegionFilter
+            const allRegions = def.hasAllRegionsToggle
               ? document.getElementById(`all-regions-${def.key}`)
               : null;
             const regionFilter = def.hasRegionFilter
