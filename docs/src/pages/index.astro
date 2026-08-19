@@ -28,11 +28,11 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       <table>
         <thead>
           <tr>
+            <th>Latest run</th>
             <th>Case title</th>
             <th>Physics problem</th>
             <th>Struphy model used</th>
             <th>Instances</th>
-            <th>Latest run</th>
             <th>Open</th>
             <th>Compare</th>
           </tr>
@@ -113,11 +113,11 @@ import BaseLayout from "../layouts/BaseLayout.astro";
             .toLowerCase();
           return `
             <tr data-search="${esc(searchText)}">
+              <td>${esc(formatDatetime(latest?.datetime_utc))}</td>
               <td><strong>${esc(groupLabelForCase(latest))}</strong></td>
               <td>${esc(physicsProblems.join(", ") || "-")}</td>
               <td>${esc(models.join(", ") || "-")}</td>
               <td>${entries.length}</td>
-              <td>${esc(formatDatetime(latest?.datetime_utc))}</td>
               <td><a href="${baseUrl}instances?group=${encodeURIComponent(groupKey)}">View instances</a></td>
               <td><a href="${baseUrl}compare?a=${encodeURIComponent(latest?.id ?? "")}">Compare</a></td>
             </tr>
