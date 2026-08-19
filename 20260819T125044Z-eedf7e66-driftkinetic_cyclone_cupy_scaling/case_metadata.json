@@ -43,6 +43,11 @@
       "launch_id": 1,
       "folder": "results-run01",
       "run_metadata": "results-run01/run01.json"
+    },
+    {
+      "launch_id": 2,
+      "folder": "results-run02",
+      "run_metadata": "results-run02/run02.json"
     }
   ]
 }
