@@ -16,6 +16,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         <thead>
           <tr>
             <th>Datetime</th>
+            <th>Instance</th>
             <th>Cluster name</th>
             <th>Runs</th>
             <th>Open</th>
@@ -70,7 +71,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         files.sort((a, b) => (a.num_ranks ?? Number.MAX_SAFE_INTEGER) - (b.num_ranks ?? Number.MAX_SAFE_INTEGER));
       }
       if (!cases.length) {
-        tableBody.innerHTML = '<tr><td colspan="4" class="muted">No cases found in region_statistics.json.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="5" class="muted">No cases found in region_statistics.json.</td></tr>';
         return;
       }
 
@@ -84,7 +85,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       subtitleEl.textContent = entries[0]?.description ?? "";
 
       if (!entries.length) {
-        tableBody.innerHTML = '<tr><td colspan="4" class="muted">No instances found for this case.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="5" class="muted">No instances found for this case.</td></tr>';
         return;
       }
 
@@ -110,6 +111,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           return `
             <tr>
               <td>${esc(formatDatetime(entry.datetime_utc))}</td>
+              <td><code>${esc(entry.id ?? "-")}</code></td>
               <td>${esc(entry.cluster_name ?? "-")}</td>
               <td title="${esc(runLabels.join(" · "))}">${esc(runSummary)}</td>
               <td><a href="${baseUrl}figures?case=${caseId}#cases">View details</a></td>
@@ -118,7 +120,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         })
         .join("");
     } catch (error) {
-      tableBody.innerHTML = `<tr><td colspan="4" class="muted">Could not load instances table: ${esc(error)}</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="5" class="muted">Could not load instances table: ${esc(error)}</td></tr>`;
     }
   };
 
