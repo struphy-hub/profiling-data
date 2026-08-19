@@ -162,7 +162,13 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
   // Nested objects/arrays (domain, grid, derham_opts, time_opts, ...) are
   // flattened to one compact "key: value, key: value" line instead of a
   // pretty-printed JSON blob - short enough to scan at a glance.
-  const IGNORED_PARAMETER_KEYS = new Set(["env", "started_at_epoch_s"]);
+  // `slurm_script` is the parsed form of `slurm_script_str`; showing both is
+  // pure duplication, so only the script itself is kept.
+  const IGNORED_PARAMETER_KEYS = new Set(["env", "started_at_epoch_s", "slurm_script"]);
+
+  // Anything past this (or spanning several lines, like a submit script) is
+  // collapsed behind a disclosure so it does not dominate the table.
+  const FOLD_VALUE_LENGTH = 200;
 
   const compactValue = (value) => {
     if (value === null || value === undefined) return "-";
@@ -178,11 +184,29 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
     return String(value);
   };
 
+  const parameterValueHtml = (value) => {
+    const text = compactValue(value);
+    const lines = text.split("\n");
+    if (text.length <= FOLD_VALUE_LENGTH && lines.length === 1) {
+      return `<code class="parameter-value">${esc(text)}</code>`;
+    }
+    const summary =
+      lines.length > 1
+        ? `${lines.length} lines`
+        : `${text.length} characters`;
+    return `
+      <details class="parameter-fold">
+        <summary>Show value <span class="muted">(${summary})</span></summary>
+        <pre class="code-block"><code>${esc(text)}</code></pre>
+      </details>
+    `;
+  };
+
   const parameterRows = (runParameters) => {
     if (!runParameters || typeof runParameters !== "object") return [];
     return Object.entries(runParameters)
       .filter(([key]) => !IGNORED_PARAMETER_KEYS.has(key))
-      .map(([key, value]) => [key, `<code class="parameter-value">${esc(compactValue(value))}</code>`]);
+      .map(([key, value]) => [key, parameterValueHtml(value)]);
   };
 
   // Shows the rank 0 flameprof SVG. The SVG is inlined rather than used as an

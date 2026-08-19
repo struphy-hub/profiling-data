@@ -581,6 +581,23 @@ tbody tr:last-child td {
   border-bottom: none;
 }
 
+/* Long parameter values (submit scripts, big nested dicts) fold away. */
+.parameter-fold > summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 0.85rem;
+}
+
+.parameter-fold > summary::marker {
+  color: var(--muted);
+}
+
+.parameter-fold pre.code-block {
+  margin: 0.5rem 0 0;
+  max-height: 26rem;
+  overflow: auto;
+}
+
 .metadata-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
