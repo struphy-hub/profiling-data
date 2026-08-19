@@ -59,7 +59,10 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
   </section>
 
   <section class="card" style="margin-top: 1rem;">
-    <h2 style="margin-top: 0;">Region statistics</h2>
+    <div class="figure-tile-header">
+      <h2 style="margin-top: 0;">Region statistics</h2>
+      <div id="run-regions-filter"></div>
+    </div>
     <div class="table-wrap">
       <table>
         <thead>
@@ -81,6 +84,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
 <script>
   import Plotly from "plotly.js-dist-min";
   import { renderFigure, DEFAULT_REGION_FILTER } from "../lib/charts.js";
+  import { regionFilterMarkup, bindRegionTableFilter } from "../lib/regionTable.js";
   import { groupKeyForCase } from "../lib/cases.js";
   import { renderGallery } from "../lib/gallery.js";
 
@@ -401,7 +405,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
           const s = stats[region];
           if (!s) return "";
           return `
-            <tr>
+            <tr data-region="${esc(region)}">
               <td>${esc(region)}</td>
               <td>${s.count ?? "-"}</td>
               <td>${fmt(s.average_duration_seconds)}</td>
@@ -414,6 +418,14 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
         .join("");
       if (!runRegionsBody.innerHTML) {
         runRegionsBody.innerHTML = '<tr><td colspan="6">No region statistics available.</td></tr>';
+      } else {
+        const filterHost = document.getElementById("run-regions-filter");
+        filterHost.innerHTML = regionFilterMarkup("run-regions-region-filter");
+        bindRegionTableFilter(
+          document.getElementById("run-regions-region-filter"),
+          runRegionsBody,
+          6,
+        );
       }
     } catch (error) {
       runMetaPanel.innerHTML = `<p class="muted">Could not load run metadata: ${esc(error)}</p>`;

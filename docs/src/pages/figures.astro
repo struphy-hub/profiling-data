@@ -90,6 +90,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
   import Prism from "prismjs";
   import "prismjs/components/prism-python";
   import { renderFigure, DEFAULT_REGION_FILTER } from "../lib/charts.js";
+  import { regionFilterMarkup, bindRegionTableFilter } from "../lib/regionTable.js";
   import { groupKeyForCase } from "../lib/cases.js";
   import { renderGallery } from "../lib/gallery.js";
 
@@ -159,7 +160,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
         const s = stats[region];
         if (!s) return "";
         return `
-          <tr>
+          <tr data-region="${esc(region)}">
             <td>${esc(region)}</td>
             <td>${s.count ?? "-"}</td>
             <td>${fmt(s.average_duration_seconds)}</td>
@@ -172,7 +173,10 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
       .join("");
 
     casePanel.innerHTML = `
-      <h3 style="margin-top:0;">${esc(entry.label ?? "Unnamed run")}</h3>
+      <div class="figure-tile-header">
+        <h3 style="margin-top:0;">${esc(entry.label ?? "Unnamed run")}</h3>
+        ${regionFilterMarkup("case-regions-region-filter")}
+      </div>
       <p class="muted" style="margin-top:0;">
         <strong>Ranks:</strong> ${entry.num_ranks ?? "-"}
       </p>
@@ -192,6 +196,12 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
         </table>
       </div>
     `;
+
+    bindRegionTableFilter(
+      document.getElementById("case-regions-region-filter"),
+      casePanel.querySelector("tbody"),
+      6,
+    );
   };
 
   const fetchJson = async (path) => {

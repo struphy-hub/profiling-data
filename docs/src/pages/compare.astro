@@ -90,6 +90,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 <script>
   import Plotly from "plotly.js-dist-min";
   import { renderFigure, DEFAULT_REGION_FILTER } from "../lib/charts.js";
+  import { applyRegionTableFilter } from "../lib/regionTable.js";
   import { groupKeyForCase, groupLabelForCase } from "../lib/cases.js";
 
   const rawBaseUrl = import.meta.env.BASE_URL;
@@ -275,7 +276,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         const pct = hasBoth && a !== 0 ? (delta / a) * 100 : null;
         const deltaClass = hasBoth ? (delta > 0 ? "compare-slower" : delta < 0 ? "compare-faster" : "") : "";
         return `
-          <tr>
+          <tr data-region="${esc(region)}">
             <td>${esc(region)}</td>
             <td>${fmt(a)}</td>
             <td>${fmt(b)}</td>
@@ -285,6 +286,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         `;
       })
       .join("");
+
+    // One box drives both the chart and the delta table on this page.
+    applyRegionTableFilter(regionFilterInput, tableBody, 5);
   };
 
   const updateUrl = () => {
