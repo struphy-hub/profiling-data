@@ -18,8 +18,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         id="cases-search"
         class="search-input"
         type="search"
-        placeholder="Filter by title, description, physics problem, or model…"
-        aria-label="Filter cases"
+        placeholder="Search case titles, physics problem, or model…"
+        aria-label="Search cases"
         autocomplete="off"
       />
       <span id="cases-result-count" class="result-count"></span>
@@ -139,9 +139,13 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
     const applyFilter = () => {
       const query = searchInput.value.trim().toLowerCase();
+      // Space-separated words all have to match, in any order, so "cyclone
+      // cupy" finds the case whose title contains both.
+      const terms = query.split(/\s+/).filter(Boolean);
       let visible = 0;
       for (const row of rows) {
-        const match = !query || (row.dataset.search ?? "").includes(query);
+        const haystack = row.dataset.search ?? "";
+        const match = terms.every((term) => haystack.includes(term));
         row.style.display = match ? "" : "none";
         if (match) visible += 1;
       }

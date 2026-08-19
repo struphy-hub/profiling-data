@@ -64,8 +64,16 @@ a:hover {
 }
 
 .shell {
-  width: min(1120px, 100% - 2rem);
+  /* Grows with the viewport so charts and wide tables get the room they need
+     on a widescreen, while prose blocks keep their own max-width below. */
+  width: min(1600px, 100% - 3rem);
   margin: 0 auto;
+}
+
+@media (max-width: 900px) {
+  .shell {
+    width: min(1120px, 100% - 2rem);
+  }
 }
 
 .site-header {
@@ -487,18 +495,18 @@ h3 {
 
 .metric-select,
 .search-input {
+  flex: 1 1 320px;
+  max-width: 560px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
   color: var(--text);
-  padding: 0.3rem 0.5rem;
-  font-size: 0.85rem;
-}
-
-.search-input {
-  width: min(340px, 100%);
   padding: 0.5rem 0.7rem;
   font-size: 0.9rem;
+}
+
+.search-input::placeholder {
+  color: var(--muted);
 }
 
 .search-input:focus-visible,
