@@ -511,6 +511,61 @@ export function buildSpeedupFigure(points, regionSelection) {
   return { data, layout: emptyStateLayout(layout, regions.length === 0) };
 }
 
+export function buildWeakScalingEfficiencyFigure(points, regionSelection) {
+  points = filterRegionRows(points, regionSelection);
+
+  const regions = [];
+  for (const point of points) {
+    if (!regions.includes(point.region)) regions.push(point.region);
+  }
+  const colors = assignColors(regions);
+  const rankCounts = [...new Set(points.map((point) => point.num_ranks))].sort((a, b) => a - b);
+
+  const data = regions.map((region) => {
+    const rows = points
+      .filter((point) => point.region === region)
+      .sort((a, b) => a.num_ranks - b.num_ranks);
+    return {
+      type: "scatter",
+      mode: "lines+markers",
+      name: region,
+      x: rows.map((row) => row.num_ranks),
+      y: rows.map((row) => row.efficiency * 100),
+      customdata: rows.map((row) => [
+        row.duration_seconds,
+        row.baseline_duration_seconds,
+        row.cells_per_rank,
+        row.total_cells,
+      ]),
+      line: { color: colors.get(region), width: 2 },
+      marker: { color: colors.get(region), size: 8 },
+      hovertemplate:
+        "<b>%{x} ranks</b><br>" +
+        region.replace(/[&<>]/g, "") +
+        ": %{y:.1f}%<br>duration: %{customdata[0]:.4f}s<br>baseline: %{customdata[1]:.4f}s<br>cells/rank: %{customdata[2]:.0f}<br>total cells: %{customdata[3]:.0f}<extra></extra>",
+    };
+  });
+
+  data.push({
+    type: "scatter",
+    mode: "lines",
+    name: "Ideal efficiency",
+    x: rankCounts,
+    y: rankCounts.map(() => 100),
+    line: { color: themeColors().muted, width: 1.5, dash: "dash" },
+    hoverinfo: "skip",
+  });
+
+  const layout = baseLayout({
+    height: 420,
+    margin: { l: 72, r: 24, t: 16, b: 48 },
+    xaxis: axisStyle({ title: { text: "MPI ranks" }, tickvals: rankCounts }),
+    yaxis: axisStyle({ title: { text: "Efficiency (%)" }, rangemode: "tozero" }),
+  });
+
+  return { data, layout: emptyStateLayout(layout, regions.length === 0) };
+}
+
 // Track rendered figures so they can be re-themed when the user toggles dark
 // mode. Each container remembers its last render spec (including the current
 // metric), so a refresh re-renders with the latest state under the new theme.
@@ -540,6 +595,8 @@ export async function renderFigure(Plotly, container, kind, payload, extra) {
       extra?.ranksByFile,
     );
   else if (kind === "speedup") figure = buildSpeedupFigure(payload.points, regionSelection);
+  else if (kind === "weak_scaling_efficiency")
+    figure = buildWeakScalingEfficiencyFigure(payload.points, regionSelection);
   else if (kind === "comparison")
     figure = buildComparisonFigure(
       payload.regions,

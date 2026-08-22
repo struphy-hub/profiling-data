@@ -51,6 +51,21 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
       </div>
       <div id="speedup-plot" class="plot-container"></div>
     </article>
+    <article class="card figure-tile" id="weak-scaling-section" style="display: none;">
+      <div class="figure-tile-header">
+        <h3 id="weak-scaling-title" style="margin-top: 0;">Weak scaling efficiency</h3>
+        <input
+          id="weak-scaling-region-filter"
+          class="region-filter"
+          type="search"
+          title="Comma-separated, case-insensitive substring match. Prefix a term with ^ to anchor it to the start of the region name."
+          placeholder="Filter regions, e.g. prop:, setup: total"
+          aria-label="Filter weak scaling efficiency regions"
+          autocomplete="off"
+        />
+      </div>
+      <div id="weak-scaling-plot" class="plot-container"></div>
+    </article>
   </section>
 
   <section class="card" id="case-gallery-section" style="margin-top: 1rem; display: none;">
@@ -102,13 +117,18 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
   const figuresBreadcrumb = document.getElementById("figures-breadcrumb");
   const durationsTitle = document.getElementById("durations-title");
   const speedupTitle = document.getElementById("speedup-title");
+  const weakScalingTitle = document.getElementById("weak-scaling-title");
   const durationsPlot = document.getElementById("durations-plot");
   const speedupPlot = document.getElementById("speedup-plot");
+  const weakScalingSection = document.getElementById("weak-scaling-section");
+  const weakScalingPlot = document.getElementById("weak-scaling-plot");
   const durationsMetricSelect = document.getElementById("durations-metric-select");
   const durationsRegionFilter = document.getElementById("durations-region-filter");
   const speedupRegionFilter = document.getElementById("speedup-region-filter");
+  const weakScalingRegionFilter = document.getElementById("weak-scaling-region-filter");
   durationsRegionFilter.value = DEFAULT_REGION_FILTER;
   speedupRegionFilter.value = DEFAULT_REGION_FILTER;
+  weakScalingRegionFilter.value = DEFAULT_REGION_FILTER;
 
   // Typing should feel live without re-plotting on every keystroke.
   const onFilterInput = (input, draw) => {
@@ -219,6 +239,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
     );
     durationsTitle.textContent = `Durations (${caseId})`;
     speedupTitle.textContent = `Speedup (${caseId})`;
+    weakScalingTitle.textContent = `Weak scaling efficiency (${caseId})`;
 
     try {
       const durationsPayload = await fetchJson(selectedCase?.plot_data?.durations);
@@ -253,6 +274,25 @@ const baseUrl = import.meta.env.BASE_URL.endsWith("/")
       }
     } catch (error) {
       speedupPlot.innerHTML = `<p class="muted">Could not load speedup data: ${esc(error)}</p>`;
+    }
+
+    try {
+      const weakScalingPayload = await fetchJson(selectedCase?.plot_data?.weak_scaling_efficiency);
+      if (weakScalingPayload) {
+        weakScalingSection.style.display = "";
+        const draw = () =>
+          renderFigure(Plotly, weakScalingPlot, "weak_scaling_efficiency", weakScalingPayload, {
+            regionFilter: weakScalingRegionFilter.value,
+          });
+        await draw();
+        onFilterInput(weakScalingRegionFilter, draw);
+      } else {
+        weakScalingSection.style.display = "none";
+        weakScalingPlot.innerHTML = "";
+      }
+    } catch (error) {
+      weakScalingSection.style.display = "";
+      weakScalingPlot.innerHTML = `<p class="muted">Could not load weak scaling efficiency data: ${esc(error)}</p>`;
     }
   };
 
