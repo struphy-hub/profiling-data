@@ -1,0 +1,17 @@
+{
+  "mpi_ranks": 8,
+  "slurm_script": null,
+  "slurm_script_str": "#!/bin/bash\nset -e\nsource /home/maxlinadmin/git_repos/struphy-hub/struphy/.venv/bin/activate\necho \"----------------------------------------\"\necho \"Running profiling case: domain_decomposition (8 MPI ranks)\"\necho \"Description: Anisotropic 512x16 ToyDrift diocotron case comparing automatic MPI decomposition against (True, True, True).\"\necho \"Physics problem: Diocotron instability in a non-neutral plasma.\"\necho \"Struphy model used: ToyDrift\"\necho \"Case directory: /home/maxlinadmin/git_repos/struphy-hub/struphy/_profiling_jobs/20260825T084124Z-55797b3b/domain_decomposition\"\necho \"----------------------------------------\"\nmkdir -p \"/home/maxlinadmin/git_repos/struphy-hub/struphy/_profiling_jobs/20260825T084124Z-55797b3b/domain_decomposition/sim_01\"\ncp \"/home/maxlinadmin/git_repos/struphy-hub/struphy/profiling/examples/ToyGyrokinetic/diocotron_instability/benchmark_domain_decomposition.py\" \"/home/maxlinadmin/git_repos/struphy-hub/struphy/_profiling_jobs/20260825T084124Z-55797b3b/domain_decomposition/parameters.py\"\n\necho \"Running domain_decomposition with 8 MPI ranks\"\ncd \"/home/maxlinadmin/git_repos/struphy-hub/struphy/_profiling_jobs/20260825T084124Z-55797b3b/domain_decomposition\"\nmpirun -n 8 /home/maxlinadmin/git_repos/struphy-hub/struphy/.venv/bin/python /home/maxlinadmin/git_repos/struphy-hub/struphy/profiling/examples/ToyGyrokinetic/diocotron_instability/benchmark_domain_decomposition.py --id 1 --radial-elements 64 --warmups 0 --repetitions 1 > \"/home/maxlinadmin/git_repos/struphy-hub/struphy/_profiling_jobs/20260825T084124Z-55797b3b/domain_decomposition/sim_01/struphy.out\" 2>&1\n\necho \"----------------------------------------\"\necho \"Completed profiling case: domain_decomposition (8 MPI ranks)\"\necho \"----------------------------------------\"\n",
+  "packaged_files": {
+    "profiling_data": "results-run01/run01.h5",
+    "additional_profiling_data": [
+      "results-run01/run01-1.h5",
+      "results-run01/run01-2.h5",
+      "results-run01/run01-3.h5",
+      "results-run01/run01-4.h5",
+      "results-run01/run01-5.h5"
+    ],
+    "results": [],
+    "run_directory": "/home/maxlinadmin/git_repos/struphy-hub/struphy/_profiling_jobs/20260825T084124Z-55797b3b/domain_decomposition/sim_01"
+  }
+}
