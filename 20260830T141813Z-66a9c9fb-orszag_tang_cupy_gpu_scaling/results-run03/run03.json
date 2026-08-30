@@ -1,0 +1,143 @@
+{
+  "name": "",
+  "description": "",
+  "model": {
+    "model": "ViscoResistiveMHD"
+  },
+  "params_path": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/profiling/examples/ViscoResistiveMHD/params_orszag_tang_cupy_scaling.py",
+  "env": {
+    "out_folders": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260830T141813Z-66a9c9fb/orszag_tang_cupy_gpu_scaling",
+    "sim_folder": "sim_03",
+    "sim_label": null,
+    "restart": false,
+    "max_runtime": 300,
+    "save_step": 1,
+    "save_restart": true,
+    "sort_step": 0,
+    "num_clones": 1
+  },
+  "time_opts": {
+    "dt": 0.001,
+    "Tend": 0.005,
+    "split_algo": "LieTrotter"
+  },
+  "domain": {
+    "type": "Cuboid",
+    "params": {
+      "l1": 0.0,
+      "r1": 6.283185307179586,
+      "l2": 0.0,
+      "r2": 6.283185307179586,
+      "l3": 0.0,
+      "r3": 1.0
+    }
+  },
+  "equil": {
+    "type": "OrszagTangInitialState",
+    "params": {
+      "rho0": 2.777777777777778,
+      "p0": 1.6666666666666667,
+      "velocity_amplitude": 1.0,
+      "magnetic_amplitude": 1.0
+    }
+  },
+  "grid": {
+    "num_elements": [
+      288,
+      288,
+      1
+    ],
+    "mpi_dims_mask": [
+      true,
+      true,
+      true
+    ]
+  },
+  "derham_opts": {
+    "degree": [
+      3,
+      3,
+      1
+    ],
+    "bcs": [
+      null,
+      null,
+      null
+    ],
+    "nquads": null,
+    "nquads_proj": null,
+    "polar_splines": false,
+    "local_projectors": false
+  },
+  "profiling_opts": {
+    "deactivate_file_output": null,
+    "use_likwid": null,
+    "use_line_profiler": null,
+    "use_nvtx": null,
+    "use_gpu_timing": null,
+    "gpu_timing_backend": null,
+    "recursive_profile": null,
+    "buffer_limit": null,
+    "file_path": null,
+    "capture_region_source": null,
+    "config_path": null,
+    "verbose": false,
+    "return_results": true,
+    "native_traces": null
+  },
+  "model_name": "ViscoResistiveMHD",
+  "mpi_ranks": 8,
+  "use_mpi_comm_world": true,
+  "particle_species": {},
+  "started_at_epoch_s": 1788099506.4644053,
+  "one_time_step": false,
+  "profiling_activated": true,
+  "slurm_script": {
+    "pragmas": {
+      "account": "FUSIO_HLST_6",
+      "job_name": "profiling_orszag_tang_cupy_gpu_scaling_03",
+      "partition": "boost_fua_prod",
+      "time": "00:30:00",
+      "error": "myJob_%j.err",
+      "output": "myJob_%j.out",
+      "mail_type": "none",
+      "cpus_per_task": 1,
+      "nodes": 2,
+      "ntasks_per_node": 4,
+      "mem": "100GB",
+      "gres": "gpu:4,tmpfs:10g"
+    },
+    "modules": [],
+    "custom_commands": [
+      "module purge",
+      "source ./setup/modules.sh load",
+      "module list",
+      "set -e",
+      "source /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/.venv/bin/activate",
+      "echo \"----------------------------------------\"",
+      "echo \"Running profiling case: orszag_tang_cupy_gpu_scaling (8 MPI ranks)\"",
+      "echo \"Description: Fixed 288x288x1 Orszag--Tang run for 5 timesteps on CuPy, strong-scaled across 2-8 GPUs.\"",
+      "echo \"Physics problem: Regularized ideal-MHD Orszag--Tang vortex.\"",
+      "echo \"Struphy model used: ViscoResistiveMHD\"",
+      "echo \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260830T141813Z-66a9c9fb/orszag_tang_cupy_gpu_scaling\"",
+      "echo \"----------------------------------------\"",
+      "mkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260830T141813Z-66a9c9fb/orszag_tang_cupy_gpu_scaling/sim_03\"",
+      "cp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/profiling/examples/ViscoResistiveMHD/params_orszag_tang_cupy_scaling.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260830T141813Z-66a9c9fb/orszag_tang_cupy_gpu_scaling/parameters.py\"",
+      "",
+      "echo \"Running orszag_tang_cupy_gpu_scaling with 8 MPI ranks\"",
+      "cd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260830T141813Z-66a9c9fb/orszag_tang_cupy_gpu_scaling\"",
+      "srun -n 8 /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/profiling/examples/ViscoResistiveMHD/params_orszag_tang_cupy_scaling.py --id 3 --backend cupy > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260830T141813Z-66a9c9fb/orszag_tang_cupy_gpu_scaling/sim_03/struphy.out\" 2>&1",
+      "",
+      "echo \"----------------------------------------\"",
+      "echo \"Completed profiling case: orszag_tang_cupy_gpu_scaling (8 MPI ranks)\"",
+      "echo \"----------------------------------------\""
+    ]
+  },
+  "slurm_script_str": "#!/bin/bash\n########################################################\n#            This script was generated using           #\n#             slurm-script-generator v0.3.7            #\n# https://github.com/max-models/slurm-script-generator #\n#      `pip install slurm-script-generator==0.3.7`     #\n########################################################\n\n########################################################\n# Pragmas for Job Config                               #\n#SBATCH --job-name=profiling_orszag_tang_cupy_gpu_scaling_03 # name of job\n#SBATCH --account=FUSIO_HLST_6                         # charge job to specified account\n#SBATCH --partition=boost_fua_prod                     # partition requested\n#                                                      #\n# Pragmas for Time And Priority                        #\n#SBATCH --time=00:30:00                                # time limit\n#                                                      #\n# Pragmas for Io And Directory                         #\n#SBATCH --output=myJob_%j.out                          # File to redirect output (%%x=jobname, %%j=jobid)\n#SBATCH --error=myJob_%j.err                           # File to redirect error (%%x=jobname, %%j=jobid)\n#                                                      #\n# Pragmas for Notifications                            #\n#SBATCH --mail-type=none                               # notify on state change\n#                                                      #\n# Pragmas for Core Node And Task Allocation            #\n#SBATCH --nodes=2                                      # number of nodes on which to run\n#SBATCH --ntasks-per-node=4                            # number of tasks to invoke on each node\n#SBATCH --cpus-per-task=1                              # number of cpus required per task\n#                                                      #\n# Pragmas for Memory                                   #\n#SBATCH --mem=100GB                                    # minimum amount of real memory\n#                                                      #\n# Pragmas for Generic Resources And Licenses           #\n#SBATCH --gres=gpu:4,tmpfs:10g                         # required generic resources\n########################################################\nmodule purge\nsource ./setup/modules.sh load\nmodule list\nset -e\nsource /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/.venv/bin/activate\necho \"----------------------------------------\"\necho \"Running profiling case: orszag_tang_cupy_gpu_scaling (8 MPI ranks)\"\necho \"Description: Fixed 288x288x1 Orszag--Tang run for 5 timesteps on CuPy, strong-scaled across 2-8 GPUs.\"\necho \"Physics problem: Regularized ideal-MHD Orszag--Tang vortex.\"\necho \"Struphy model used: ViscoResistiveMHD\"\necho \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260830T141813Z-66a9c9fb/orszag_tang_cupy_gpu_scaling\"\necho \"----------------------------------------\"\nmkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260830T141813Z-66a9c9fb/orszag_tang_cupy_gpu_scaling/sim_03\"\ncp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/profiling/examples/ViscoResistiveMHD/params_orszag_tang_cupy_scaling.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260830T141813Z-66a9c9fb/orszag_tang_cupy_gpu_scaling/parameters.py\"\n\necho \"Running orszag_tang_cupy_gpu_scaling with 8 MPI ranks\"\ncd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260830T141813Z-66a9c9fb/orszag_tang_cupy_gpu_scaling\"\nsrun -n 8 /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/profiling/examples/ViscoResistiveMHD/params_orszag_tang_cupy_scaling.py --id 3 --backend cupy > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260830T141813Z-66a9c9fb/orszag_tang_cupy_gpu_scaling/sim_03/struphy.out\" 2>&1\n\necho \"----------------------------------------\"\necho \"Completed profiling case: orszag_tang_cupy_gpu_scaling (8 MPI ranks)\"\necho \"----------------------------------------\"\n",
+  "packaged_files": {
+    "profiling_data": "results-run03/run03.h5",
+    "additional_profiling_data": [],
+    "results": [],
+    "run_directory": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260830T141813Z-66a9c9fb/orszag_tang_cupy_gpu_scaling/sim_03"
+  }
+}
