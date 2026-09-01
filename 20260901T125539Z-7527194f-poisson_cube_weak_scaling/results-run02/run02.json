@@ -1,0 +1,106 @@
+{
+  "name": "Poisson weak scaling on 3D cuboid",
+  "description": "\nWeak scaling test for Poisson equation on a 3D cuboid.\nThe manufactured solution is a simple product of sines and cosines.\nHomogeneous Dirichlet boundary conditions are set in direction x.\n",
+  "model": {
+    "model": "Poisson"
+  },
+  "params_path": "/home/maxlinadmin/git_repos/struphy-hub/struphy/profiling/examples/Poisson/cube_weak_scaling/params_poisson.py",
+  "env": {
+    "out_folders": "/home/maxlinadmin/git_repos/struphy-hub/struphy/_profiling_jobs/20260901T125539Z-7527194f/poisson_cube_weak_scaling",
+    "sim_folder": "sim_02",
+    "sim_label": null,
+    "restart": false,
+    "max_runtime": 300,
+    "save_step": 1,
+    "save_restart": true,
+    "sort_step": 0,
+    "num_clones": 1
+  },
+  "time_opts": {
+    "dt": 0.01,
+    "Tend": 0.03,
+    "split_algo": "LieTrotter"
+  },
+  "domain": {
+    "type": "Cuboid",
+    "params": {
+      "l1": 0.0,
+      "r1": 4.0,
+      "l2": -1.5,
+      "r2": 1.5,
+      "l3": 0.0,
+      "r3": 4.0
+    }
+  },
+  "equil": null,
+  "grid": {
+    "num_elements": [
+      128,
+      64,
+      64
+    ],
+    "mpi_dims_mask": [
+      true,
+      false,
+      false
+    ]
+  },
+  "derham_opts": {
+    "degree": [
+      1,
+      2,
+      3
+    ],
+    "bcs": [
+      [
+        "dirichlet",
+        "dirichlet"
+      ],
+      null,
+      null
+    ],
+    "nquads": null,
+    "nquads_proj": null,
+    "polar_splines": false,
+    "local_projectors": false
+  },
+  "profiling_opts": {
+    "file_path": null,
+    "label": "<bound method StruphyModel.name of <class 'struphy.models.poisson.Poisson'>>_weak_scaling_2ranks",
+    "use_likwid": null,
+    "use_line_profiler": true,
+    "deactivate_profiling": null,
+    "use_nvtx": null,
+    "use_gpu_timing": null,
+    "gpu_timing_backend": null,
+    "deactivate_file_output": null,
+    "recursive_profile": null,
+    "aggregation_mode": null,
+    "capture_region_source": null,
+    "buffer_limit": null,
+    "output_mode": null,
+    "hdf5_compression": null,
+    "hdf5_compression_level": null,
+    "hdf5_chunk_size": null
+  },
+  "model_name": "Poisson",
+  "mpi_ranks": 2,
+  "use_mpi_comm_world": true,
+  "particle_species": {},
+  "started_at_epoch_s": 1788267356.9672618,
+  "one_time_step": true,
+  "profiling_activated": true,
+  "slurm_script": null,
+  "slurm_script_str": "#!/bin/bash\nset -e\nsource /home/maxlinadmin/git_repos/struphy-hub/struphy/.venv/bin/activate\necho \"----------------------------------------\"\necho \"Running profiling case: poisson_cube_weak_scaling (2 MPI ranks)\"\necho \"Description: Weak scaling of the Poisson model with a manufactured solution on a 3D cuboid. The grid grows in x with the MPI rank count.\"\necho \"Physics problem: Occurs in many plasma applications.\"\necho \"Struphy model used: Poisson\"\necho \"Case directory: /home/maxlinadmin/git_repos/struphy-hub/struphy/_profiling_jobs/20260901T125539Z-7527194f/poisson_cube_weak_scaling\"\necho \"----------------------------------------\"\nmkdir -p \"/home/maxlinadmin/git_repos/struphy-hub/struphy/_profiling_jobs/20260901T125539Z-7527194f/poisson_cube_weak_scaling/sim_02\"\ncp \"/home/maxlinadmin/git_repos/struphy-hub/struphy/profiling/examples/Poisson/cube_weak_scaling/params_poisson.py\" \"/home/maxlinadmin/git_repos/struphy-hub/struphy/_profiling_jobs/20260901T125539Z-7527194f/poisson_cube_weak_scaling/parameters.py\"\n\necho \"Running poisson_cube_weak_scaling with 2 MPI ranks\"\ncd \"/home/maxlinadmin/git_repos/struphy-hub/struphy/_profiling_jobs/20260901T125539Z-7527194f/poisson_cube_weak_scaling\"\nmpirun -n 2 /home/maxlinadmin/git_repos/struphy-hub/struphy/.venv/bin/python /home/maxlinadmin/git_repos/struphy-hub/struphy/profiling/examples/Poisson/cube_weak_scaling/params_poisson.py --id 2 --cells-per-rank 64 > \"/home/maxlinadmin/git_repos/struphy-hub/struphy/_profiling_jobs/20260901T125539Z-7527194f/poisson_cube_weak_scaling/sim_02/struphy.out\" 2>&1\n\necho \"----------------------------------------\"\necho \"Completed profiling case: poisson_cube_weak_scaling (2 MPI ranks)\"\necho \"----------------------------------------\"\n",
+  "packaged_files": {
+    "profiling_data": "results-run02/run02.h5",
+    "additional_profiling_data": [],
+    "results": [
+      "results-run02/cells_per_rank.npy",
+      "results-run02/mpi_size.npy",
+      "results-run02/resolution.npy",
+      "results-run02/spline_degree.npy"
+    ],
+    "run_directory": "/home/maxlinadmin/git_repos/struphy-hub/struphy/_profiling_jobs/20260901T125539Z-7527194f/poisson_cube_weak_scaling/sim_02"
+  }
+}
