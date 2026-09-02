@@ -29,20 +29,25 @@ jobs:
           persist-credentials: true
           fetch-depth: 0
 
+      # Figure JSON is generated from the current scope-profiler source.
+      # The browser chart code itself is installed from npm below.
+      - name: Checkout scope-profiler
+        uses: actions/checkout@v4
+        with:
+          repository: max-models/scope-profiler
+          ref: devel
+          path: vendor/scope-profiler
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
 
-      # - name: Install scope-profiler
-      #   run: |
-      #     python -m pip install --upgrade pip
-      #     pip install scope-profiler
-
       - name: Generate figures
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install "./vendor/scope-profiler[pproc]"
+          pip install flameprof
           python scripts/generate_figures.py
 
       - name: Setup Node.js

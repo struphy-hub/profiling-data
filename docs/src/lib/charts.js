@@ -1,4 +1,11 @@
 // Shared Plotly chart builders for the profiling figures pages.
+import {
+  buildDurationsFigure as buildScopeDurationsFigure,
+  buildFlameFigure as buildScopeFlameFigure,
+  buildGanttFigure as buildScopeGanttFigure,
+  buildSpeedupFigure as buildScopeSpeedupFigure,
+  renderFigure as renderScopeFigure,
+} from "@scope-profiler/plotly";
 //
 // Colors come from the validated 8-slot categorical palette (light mode) -
 // see the dataviz skill's references/palette.md. Assigned in fixed order to
@@ -584,17 +591,17 @@ export async function renderFigure(Plotly, container, kind, payload, extra) {
   let figure;
   // Flame always shows every region: it is a call hierarchy, where dropping
   // regions would orphan their children.
-  if (kind === "gantt") figure = buildGanttFigure(payload.intervals, regionSelection);
-  else if (kind === "flame") figure = buildFlameFigure(payload.calls);
+  const filterTerms = parseRegionFilter(regionSelection.text);
+  // The package deliberately knows nothing about this site's filter syntax.
+  // Do not supply a predicate for an empty box: empty means every region.
+  const packageOptions = filterTerms.length
+    ? { filterRegion: (region) => matchesRegionFilter(region, filterTerms) }
+    : {};
+  if (kind === "gantt") figure = buildScopeGanttFigure(payload, packageOptions);
+  else if (kind === "flame") figure = buildScopeFlameFigure(payload, packageOptions);
   else if (kind === "durations")
-    figure = buildDurationsFigure(
-      payload.bars,
-      extra?.metric ?? "total",
-      extra?.ranks,
-      regionSelection,
-      extra?.ranksByFile,
-    );
-  else if (kind === "speedup") figure = buildSpeedupFigure(payload.points, regionSelection);
+    figure = buildScopeDurationsFigure(payload, { ...packageOptions, metric: extra?.metric ?? "total" });
+  else if (kind === "speedup") figure = buildScopeSpeedupFigure(payload, packageOptions);
   else if (kind === "weak_scaling_efficiency")
     figure = buildWeakScalingEfficiencyFigure(payload.points, regionSelection);
   else if (kind === "comparison")
@@ -608,7 +615,7 @@ export async function renderFigure(Plotly, container, kind, payload, extra) {
       regionSelection,
     );
   else throw new Error(`Unknown chart kind: ${kind}`);
-  await render(Plotly, container, figure.data, figure.layout);
+  await renderScopeFigure(Plotly, container, figure, plotConfig);
 }
 
 // Re-render every known figure using the current theme colors.
