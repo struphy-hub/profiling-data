@@ -21,9 +21,6 @@ const CATEGORICAL_PALETTE = [
   "#4a3aa7", // violet
   "#e34948", // red
 ];
-// Neutral gray for the flame chart's synthetic "All" root node.
-const NEUTRAL_COLOR = "#898781";
-
 const FONT_FAMILY =
   "Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
 
@@ -95,152 +92,6 @@ const axisStyle = (overrides = {}) => {
 
 const plotConfig = { responsive: true, displaylogo: false, modeBarButtonsToRemove: ["lasso2d", "select2d"] };
 
-async function render(Plotly, container, data, layout) {
-  await Plotly.newPlot(container, data, layout, plotConfig);
-}
-
-// Gantt: one horizontal-bar trace per region so the legend gets one entry
-// per region and every call for that region shares its color.
-export function buildGanttFigure(intervals, regionSelection) {
-  // The timeline shows every region unless explicitly filtered - it is about
-  // how the whole run interleaves.
-  intervals = filterRegionRows(intervals, regionSelection);
-
-  const order = [];
-  for (const interval of intervals) {
-    if (!order.includes(interval.region)) order.push(interval.region);
-  }
-
-  // Sort regions by their first start time
-  const regionFirstStartMap = new Map();
-  for (const interval of intervals) {
-    if (interval.region) {
-      const existing = regionFirstStartMap.get(interval.region);
-      if (existing === undefined || interval.start_seconds < existing) {
-        regionFirstStartMap.set(interval.region, interval.start_seconds);
-      }
-    }
-  }
-  order.sort((a, b) => (regionFirstStartMap.get(a) ?? 0) - (regionFirstStartMap.get(b) ?? 0));
-
-  const colors = assignColors(order);
-
-  const data = order.map((region) => {
-    const rows = intervals.filter((interval) => interval.region === region);
-    return {
-      type: "bar",
-      orientation: "h",
-      name: region,
-      y: rows.map(() => region),
-      x: rows.map((row) => row.end_seconds - row.start_seconds),
-      base: rows.map((row) => row.start_seconds),
-      marker: { color: colors.get(region) },
-      hovertemplate:
-        "<b>%{y}</b><br>start: %{base:.4f}s<br>duration: %{x:.4f}s<extra></extra>",
-    };
-  });
-
-  const layout = baseLayout({
-    height: Math.max(260, 60 * order.length + 140),
-    margin: { l: 160, r: 24, t: 16, b: 110 },
-    barmode: "overlay",
-    showlegend: order.length > 1,
-    legend: { orientation: "h", y: -0.3, font: { color: themeColors().muted, size: 11 } },
-    xaxis: axisStyle({ title: { text: "Time (s)", standoff: 12 } }),
-    yaxis: axisStyle({ autorange: "reversed", categoryorder: "array", categoryarray: order }),
-  });
-
-  return { data, layout: emptyStateLayout(layout, order.length === 0) };
-}
-
-// Flame: icicle chart showing call hierarchy with proper parent-child relationships.
-// Nodes are matched by a unique `ids` array (not by label), so repeated region
-// names don't collide. `branchvalues: "total"` is required because each node's
-// value is its own duration and a parent's duration already includes its
-// children's — without it Plotly would double-count and overflow the parent.
-export function buildFlameFigure(calls) {
-  const regions = [];
-  for (const call of calls) {
-    if (!regions.includes(call.region)) regions.push(call.region);
-  }
-  const colors = assignColors(regions);
-
-  // Sort by start time (then depth) so a parent always precedes its children.
-  const sortedCalls = [...calls]
-    .map((call, index) => ({ ...call, index }))
-    .sort((a, b) => a.start_seconds - b.start_seconds || a.depth - b.depth);
-
-  const rootDuration = sortedCalls
-    .filter((call) => call.depth === 0)
-    .reduce((sum, call) => sum + (call.end_seconds - call.start_seconds), 0);
-
-  const ids = ["All"];
-  const labels = ["All"];
-  const parents = [""];
-  const values = [rootDuration];
-  const markerColors = [NEUTRAL_COLOR];
-  const hoverTexts = ["All calls"];
-
-  // Map each sorted position to its node id so children can reference parents.
-  const idBySortedPos = new Map();
-
-  for (let i = 0; i < sortedCalls.length; i++) {
-    const call = sortedCalls[i];
-    const duration = call.end_seconds - call.start_seconds;
-    const id = `node_${i}`;
-    idBySortedPos.set(i, id);
-
-    // Parent: most recent shallower call whose time range contains this one.
-    let parentId = "All";
-    if (call.depth > 0) {
-      for (let j = i - 1; j >= 0; j--) {
-        const candidate = sortedCalls[j];
-        if (
-          candidate.depth === call.depth - 1 &&
-          candidate.start_seconds <= call.start_seconds &&
-          candidate.end_seconds >= call.end_seconds
-        ) {
-          parentId = idBySortedPos.get(j);
-          break;
-        }
-      }
-    }
-
-    ids.push(id);
-    labels.push(call.region);
-    parents.push(parentId);
-    values.push(duration);
-    markerColors.push(colors.get(call.region));
-    hoverTexts.push(
-      `<b>${call.region}</b><br>depth: ${call.depth}<br>start: ${call.start_seconds.toFixed(4)}s<br>duration: ${duration.toFixed(4)}s`
-    );
-  }
-
-  const data = [
-    {
-      type: "icicle",
-      ids: ids,
-      labels: labels,
-      parents: parents,
-      values: values,
-      branchvalues: "total",
-      tiling: { orientation: "h" },
-      marker: { colors: markerColors, line: { color: themeColors().grid, width: 1 } },
-      textposition: "middle center",
-      textfont: { color: themeColors().text, size: 11 },
-      hovertext: hoverTexts,
-      hoverinfo: "text",
-    },
-  ];
-
-  const layout = baseLayout({
-    height: 500,
-    margin: { l: 24, r: 24, t: 16, b: 24 },
-  });
-
-  return { data, layout };
-}
-
 const METRIC_LABELS = {
   avg: "Average duration per call (s)",
   min: "Minimum duration per call (s)",
@@ -249,16 +100,6 @@ const METRIC_LABELS = {
   first: "First call duration (s)",
   last: "Last call duration (s)",
 };
-
-// Distinct ranks present in a durations payload, sorted ascending. Empty when
-// the data has no per-rank breakdown (older single-rank exports).
-export function durationsRanks(bars) {
-  const ranks = [];
-  for (const bar of bars ?? []) {
-    if (bar.rank !== undefined && !ranks.includes(bar.rank)) ranks.push(bar.rank);
-  }
-  return ranks.sort((a, b) => a - b);
-}
 
 // What the region filter boxes are prefilled with: the top-level integration
 // loop, the merged setup span, and the propagators. Kernels and other
@@ -315,115 +156,6 @@ function emptyStateLayout(layout, isEmpty) {
   };
 }
 
-// `ranksByFile` maps a run label to the number of MPI ranks it used, so each
-// bar can be annotated with the rank count it was measured on. The durations
-// export itself does not carry it; the pages take it from region_statistics.
-export function buildDurationsFigure(bars, metric, selectedRanks, regionSelection, ranksByFile) {
-  bars = filterRegionRows(bars, regionSelection);
-  const rankCounts = ranksByFile instanceof Map ? ranksByFile : new Map(Object.entries(ranksByFile ?? {}));
-
-  // Check if data includes per-rank information
-  const hasRankData = bars.some((bar) => bar.rank !== undefined);
-
-  // Capture the full rank set before any filtering so each rank keeps a stable
-  // color as others are toggled on/off.
-  const allRanks = durationsRanks(bars);
-
-  // When rank data is present and a selection is given, keep only those ranks.
-  // A null/undefined selection means "show all"; an empty array shows none.
-  const rankFilter =
-    hasRankData && Array.isArray(selectedRanks) ? new Set(selectedRanks) : null;
-  const visibleBars = rankFilter
-    ? bars.filter((bar) => bar.rank === undefined || rankFilter.has(bar.rank))
-    : bars;
-
-  let groupBy, colors;
-  if (hasRankData) {
-    colors = assignColors(allRanks.map((r) => `Rank ${r}`));
-    groupBy = durationsRanks(visibleBars);
-  } else {
-    // Group by file (original behavior)
-    const files = [];
-    for (const bar of visibleBars) {
-      if (!files.includes(bar.file)) files.push(bar.file);
-    }
-    groupBy = files;
-    colors = assignColors(files);
-  }
-
-  const regions = [];
-  for (const bar of visibleBars) {
-    if (!regions.includes(bar.region)) regions.push(bar.region);
-  }
-
-  // Extract MPI rank count from filename and sort regions by rank count
-  const extractRankCount = (filename) => {
-    const match = filename.match(/ranks(\d+)/);
-    return match ? parseInt(match[1], 10) : 0;
-  };
-  const fileRankMap = new Map(
-    [...new Set(visibleBars.map((b) => b.file))]
-      .map((file) => [file, extractRankCount(file)])
-  );
-  const regionRankMap = new Map();
-  for (const bar of visibleBars) {
-    if (bar.region && bar.file) {
-      const rankCount = fileRankMap.get(bar.file);
-      if (rankCount !== undefined) {
-        const existing = regionRankMap.get(bar.region);
-        if (existing === undefined || rankCount < existing) {
-          regionRankMap.set(bar.region, rankCount);
-        }
-      }
-    }
-  }
-  regions.sort((a, b) => (regionRankMap.get(a) ?? 0) - (regionRankMap.get(b) ?? 0));
-
-  const data = groupBy.map((group) => {
-    let rows;
-    if (hasRankData) {
-      rows = visibleBars.filter((bar) => bar.rank === group && bar.metric === metric);
-    } else {
-      rows = visibleBars.filter((bar) => bar.file === group && bar.metric === metric);
-    }
-    const byRegion = new Map(rows.map((row) => [row.region, row.value_seconds]));
-    const label = hasRankData ? `Rank ${group}` : group;
-    // Rank count above each bar: the run's own rank count when grouping by
-    // file, the rank itself when the payload is a per-rank breakdown.
-    const ranks = hasRankData ? undefined : rankCounts.get(group);
-    const barText =
-      ranks === undefined
-        ? undefined
-        : regions.map((region) =>
-            byRegion.has(region) ? `${ranks} rank${ranks === 1 ? "" : "s"}` : "",
-          );
-    return {
-      type: "bar",
-      name: label,
-      x: regions,
-      y: regions.map((region) => byRegion.get(region) ?? null),
-      marker: { color: colors.get(label) },
-      text: barText,
-      textposition: barText ? "outside" : undefined,
-      textfont: { color: themeColors().muted, size: 10 },
-      cliponaxis: false,
-      hovertemplate: "<b>%{x}</b><br>" + label.replace(/[&<>]/g, "") + ": %{y:.4f}s<extra></extra>",
-    };
-  });
-
-  const layout = baseLayout({
-    height: Math.max(360, 42 * regions.length + 180),
-    margin: { l: 160, r: 24, t: groupBy.length > 1 ? 56 : 16, b: 140 },
-    barmode: "group",
-    showlegend: groupBy.length > 1,
-    legend: { orientation: "h", y: 1.12, x: 0, font: { color: themeColors().muted, size: 11 } },
-    xaxis: axisStyle({ tickangle: -35 }),
-    yaxis: axisStyle({ title: { text: METRIC_LABELS[metric] ?? "Duration (s)" } }),
-  });
-
-  return { data, layout: emptyStateLayout(layout, regions.length === 0) };
-}
-
 // Compare: grouped bar chart with exactly two series (case A vs case B),
 // one bar pair per region. Used by the compare page to show a chosen metric
 // side by side for two different case instances/runs.
@@ -466,53 +198,6 @@ export function buildComparisonFigure(regions, labelA, valuesA, labelB, valuesB,
     legend: { orientation: "h", y: 1.08, x: 0, font: { color: themeColors().muted, size: 11 } },
     xaxis: axisStyle({ tickangle: -35 }),
     yaxis: axisStyle({ title: { text: METRIC_LABELS[metric] ?? "Duration (s)" } }),
-  });
-
-  return { data, layout: emptyStateLayout(layout, regions.length === 0) };
-}
-
-export function buildSpeedupFigure(points, regionSelection) {
-  points = filterRegionRows(points, regionSelection);
-
-  const regions = [];
-  for (const point of points) {
-    if (!regions.includes(point.region)) regions.push(point.region);
-  }
-  const colors = assignColors(regions);
-  const rankCounts = [...new Set(points.map((point) => point.num_ranks))].sort((a, b) => a - b);
-  const baseline = rankCounts[0] ?? 1;
-
-  const data = regions.map((region) => {
-    const rows = points
-      .filter((point) => point.region === region)
-      .sort((a, b) => a.num_ranks - b.num_ranks);
-    return {
-      type: "scatter",
-      mode: "lines+markers",
-      name: region,
-      x: rows.map((row) => row.num_ranks),
-      y: rows.map((row) => row.speedup),
-      line: { color: colors.get(region), width: 2 },
-      marker: { color: colors.get(region), size: 8 },
-      hovertemplate: "<b>%{x} ranks</b><br>" + region.replace(/[&<>]/g, "") + ": %{y:.2f}x<extra></extra>",
-    };
-  });
-
-  data.push({
-    type: "scatter",
-    mode: "lines",
-    name: "Optimal speedup",
-    x: rankCounts,
-    y: rankCounts.map((count) => count / baseline),
-    line: { color: themeColors().muted, width: 1.5, dash: "dash" },
-    hoverinfo: "skip",
-  });
-
-  const layout = baseLayout({
-    height: 420,
-    margin: { l: 64, r: 24, t: 16, b: 48 },
-    xaxis: axisStyle({ title: { text: "MPI ranks" }, tickvals: rankCounts }),
-    yaxis: axisStyle({ title: { text: "Speedup" } }),
   });
 
   return { data, layout: emptyStateLayout(layout, regions.length === 0) };
