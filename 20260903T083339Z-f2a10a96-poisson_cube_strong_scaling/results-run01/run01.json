@@ -1,0 +1,140 @@
+{
+  "name": "Poisson strong scaling on 3D cube",
+  "description": "\nStrong scaling test for Poisson equation on a 3D cube.\nThe manufactured solution is a simple product of sines and cosines.\nHomogeneous Dirichlet boundary conditions are set in direction x.\n",
+  "model": {
+    "model": "Poisson"
+  },
+  "params_path": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/profiling/examples/Poisson/cube_strong_scaling/params_poisson.py",
+  "env": {
+    "out_folders": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260903T083339Z-f2a10a96/poisson_cube_strong_scaling",
+    "sim_folder": "sim_01",
+    "sim_label": null,
+    "restart": false,
+    "max_runtime": 300,
+    "save_step": 1,
+    "save_restart": true,
+    "sort_step": 0,
+    "num_clones": 1
+  },
+  "time_opts": {
+    "dt": 0.01,
+    "Tend": 0.03,
+    "split_algo": "LieTrotter"
+  },
+  "domain": {
+    "type": "Cuboid",
+    "params": {
+      "l1": 0.0,
+      "r1": 2.0,
+      "l2": -1.5,
+      "r2": 1.5,
+      "l3": 0.0,
+      "r3": 4.0
+    }
+  },
+  "equil": null,
+  "grid": {
+    "num_elements": [
+      256,
+      256,
+      256
+    ],
+    "mpi_dims_mask": [
+      true,
+      true,
+      true
+    ]
+  },
+  "derham_opts": {
+    "degree": [
+      1,
+      2,
+      3
+    ],
+    "bcs": [
+      [
+        "dirichlet",
+        "dirichlet"
+      ],
+      null,
+      null
+    ],
+    "nquads": null,
+    "nquads_proj": null,
+    "polar_splines": false,
+    "local_projectors": false
+  },
+  "profiling_opts": {
+    "file_path": null,
+    "label": "Poisson-3D",
+    "use_likwid": null,
+    "use_line_profiler": null,
+    "deactivate_profiling": null,
+    "use_nvtx": null,
+    "use_gpu_timing": null,
+    "gpu_timing_backend": null,
+    "deactivate_file_output": null,
+    "recursive_profile": null,
+    "aggregation_mode": null,
+    "capture_region_source": null,
+    "buffer_limit": null,
+    "output_mode": null,
+    "hdf5_compression": null,
+    "hdf5_compression_level": null,
+    "hdf5_chunk_size": null
+  },
+  "model_name": "Poisson",
+  "mpi_ranks": 1,
+  "use_mpi_comm_world": false,
+  "particle_species": {},
+  "started_at_epoch_s": 1788424429.8974926,
+  "one_time_step": true,
+  "profiling_activated": true,
+  "slurm_script": {
+    "pragmas": {
+      "account": "FUSIO_HLST_7",
+      "job_name": "profiling_poisson_cube_strong_scaling_01",
+      "partition": "dcgp_fua_dbg",
+      "time": "00:15:00",
+      "error": "./%x.%j.err",
+      "output": "./%x.%j.out",
+      "mail_type": "none",
+      "cpus_per_task": 1,
+      "nodes": 1,
+      "ntasks_per_node": 1,
+      "mem": "480GB"
+    },
+    "modules": [],
+    "custom_commands": [
+      "module purge",
+      "source ./setup/modules.sh load",
+      "module list",
+      "set -e",
+      "source /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/.venv/bin/activate",
+      "echo \"----------------------------------------\"",
+      "echo \"Running profiling case: poisson_cube_strong_scaling (1 MPI ranks)\"",
+      "echo \"Description: Strong scaling of the Poisson model with manufactured solution on 3D cube.\"",
+      "echo \"Physics problem: Occurs in many plasma applications.\"",
+      "echo \"Struphy model used: Poisson\"",
+      "echo \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260903T083339Z-f2a10a96/poisson_cube_strong_scaling\"",
+      "echo \"----------------------------------------\"",
+      "mkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260903T083339Z-f2a10a96/poisson_cube_strong_scaling/sim_01\"",
+      "cp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/profiling/examples/Poisson/cube_strong_scaling/params_poisson.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260903T083339Z-f2a10a96/poisson_cube_strong_scaling/parameters.py\"",
+      "",
+      "echo \"Running poisson_cube_strong_scaling with 1 MPI ranks\"",
+      "cd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260903T083339Z-f2a10a96/poisson_cube_strong_scaling\"",
+      "STRUPHY_LOG_FILE=\"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260903T083339Z-f2a10a96/poisson_cube_strong_scaling/sim_01/struphy.log\" srun -n 1 /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/profiling/examples/Poisson/cube_strong_scaling/params_poisson.py --id 1 > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260903T083339Z-f2a10a96/poisson_cube_strong_scaling/sim_01/struphy.out\" 2>&1",
+      "",
+      "echo \"----------------------------------------\"",
+      "echo \"Completed profiling case: poisson_cube_strong_scaling (1 MPI ranks)\"",
+      "echo \"----------------------------------------\""
+    ]
+  },
+  "slurm_script_str": "#!/bin/bash\n########################################################\n#            This script was generated using           #\n#             slurm-script-generator v0.5.0            #\n# https://github.com/max-models/slurm-script-generator #\n#      `pip install slurm-script-generator==0.5.0`     #\n########################################################\n\n########################################################\n# Pragmas for Job Config                               #\n#SBATCH --job-name=profiling_poisson_cube_strong_scaling_01 # name of job\n#SBATCH --account=FUSIO_HLST_7                         # charge job to specified account\n#SBATCH --partition=dcgp_fua_dbg                       # partition requested\n#                                                      #\n# Pragmas for Time And Priority                        #\n#SBATCH --time=00:15:00                                # time limit\n#                                                      #\n# Pragmas for Io And Directory                         #\n#SBATCH --output=./%x.%j.out                           # File to redirect output (%%x=jobname, %%j=jobid)\n#SBATCH --error=./%x.%j.err                            # File to redirect error (%%x=jobname, %%j=jobid)\n#                                                      #\n# Pragmas for Notifications                            #\n#SBATCH --mail-type=none                               # notify on state change\n#                                                      #\n# Pragmas for Core Node And Task Allocation            #\n#SBATCH --nodes=1                                      # number of nodes on which to run\n#SBATCH --ntasks-per-node=1                            # number of tasks to invoke on each node\n#SBATCH --cpus-per-task=1                              # number of cpus required per task\n#                                                      #\n# Pragmas for Memory                                   #\n#SBATCH --mem=480GB                                    # minimum amount of real memory\n########################################################\nmodule purge\nsource ./setup/modules.sh load\nmodule list\nset -e\nsource /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/.venv/bin/activate\necho \"----------------------------------------\"\necho \"Running profiling case: poisson_cube_strong_scaling (1 MPI ranks)\"\necho \"Description: Strong scaling of the Poisson model with manufactured solution on 3D cube.\"\necho \"Physics problem: Occurs in many plasma applications.\"\necho \"Struphy model used: Poisson\"\necho \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260903T083339Z-f2a10a96/poisson_cube_strong_scaling\"\necho \"----------------------------------------\"\nmkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260903T083339Z-f2a10a96/poisson_cube_strong_scaling/sim_01\"\ncp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/profiling/examples/Poisson/cube_strong_scaling/params_poisson.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260903T083339Z-f2a10a96/poisson_cube_strong_scaling/parameters.py\"\n\necho \"Running poisson_cube_strong_scaling with 1 MPI ranks\"\ncd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260903T083339Z-f2a10a96/poisson_cube_strong_scaling\"\nSTRUPHY_LOG_FILE=\"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260903T083339Z-f2a10a96/poisson_cube_strong_scaling/sim_01/struphy.log\" srun -n 1 /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/profiling/examples/Poisson/cube_strong_scaling/params_poisson.py --id 1 > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260903T083339Z-f2a10a96/poisson_cube_strong_scaling/sim_01/struphy.out\" 2>&1\n\necho \"----------------------------------------\"\necho \"Completed profiling case: poisson_cube_strong_scaling (1 MPI ranks)\"\necho \"----------------------------------------\"\n",
+  "packaged_files": {
+    "profiling_data": "results-run01/run01.h5",
+    "additional_profiling_data": [],
+    "results": [],
+    "run_directory": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy-2/_profiling_jobs/20260903T083339Z-f2a10a96/poisson_cube_strong_scaling/sim_01"
+  }
+}
