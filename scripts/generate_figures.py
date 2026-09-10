@@ -3,17 +3,14 @@
 from __future__ import annotations
 
 import argparse
-import inspect
 import json
-import math
 import re
 import shutil
-import subprocess
-import sys
 from pathlib import Path
 
 from scope_profiler import (
     ProfilingResults,
+    export_flamegraph_svg,
     export_prof,
     export_speedscope,
     plot_duration_timeseries,
@@ -21,23 +18,17 @@ from scope_profiler import (
     plot_flame,
     plot_gantt,
     plot_speedup,
+    plot_weak_scaling_efficiency,
     read_h5,
     write_region_statistics_json,
 )
 
-# scope-profiler's durations bar plot only exports "total" by default; the
-# durations page lets visitors switch between avg/min/max/total, so all four
-# need to be present in the export.
-DURATIONS_METRICS = ["avg", "min", "max", "total"]
-
-# Duration of a region's first and last call: how much of a region's cost is
-# one-off warmup (JIT, allocation, first GPU transfer) versus steady state.
-# scope-profiler reports these in its region statistics; see add_first_last_bars.
-FIRST_LAST_METRICS = ["first", "last"]
-FIRST_LAST_STAT_FIELDS = {
-    "first": "first_duration_seconds",
-    "last": "last_duration_seconds",
-}
+# The metrics the durations page lets a visitor switch between. They all go
+# into one export, which is what scope-profiler's `metrics=` writes.
+# "first"/"last" are the durations of a region's first and last call: how much
+# of its cost is one-off warmup (JIT, allocation, first GPU transfer) rather
+# than steady state.
+DURATIONS_METRICS = ["avg", "min", "max", "total", "first", "last"]
 
 
 def parse_args() -> argparse.Namespace:
@@ -255,6 +246,7 @@ def run_pproc(
     ranks: list[int] | None = None,
     export_prof_files: bool = False,
     export_speedscope_files: bool = False,
+    export_flamegraph_files: bool = False,
 ) -> None:
     """Post-process a set of HDF5 profiling files, in place of shelling out
     to `scope-profiler pproc`: read them, then write the same JSON exports
@@ -280,7 +272,13 @@ def run_pproc(
 
     plot_gantt(readers, ranks=ranks, data_filepath=output_dir / "gantt_data.json", data_format="json")
     plot_flame(readers, ranks=ranks, data_filepath=output_dir / "flame_data.json", data_format="json")
-    write_durations_data(readers, ranks, output_dir / "durations_data.json")
+    plot_durations(
+        readers,
+        ranks=ranks,
+        metrics=DURATIONS_METRICS,
+        data_filepath=output_dir / "durations_data.json",
+        data_format="json",
+    )
     plot_duration_timeseries(
         readers,
         ranks=ranks,
@@ -292,136 +290,15 @@ def run_pproc(
 
     write_region_statistics_json(readers, output_dir / "region_statistics.json", ranks=ranks)
 
-    add_first_last_bars(output_dir)
-
-
-def write_durations_data(
-    readers: list[ProfilingResults], ranks: list[int], output_path: Path
-) -> None:
-    if "metrics" in inspect.signature(plot_durations).parameters:
-        plot_durations(
+    if export_flamegraph_files:
+        # Rendered from the same reconstruction as the .prof, but rewritten to
+        # scale to the card it is inlined into; see the README.
+        export_flamegraph_svg(
             readers,
+            output_dir / "flamegraph.svg",
             ranks=ranks,
-            metrics=DURATIONS_METRICS,
-            data_filepath=output_path,
-            data_format="json",
+            verbose=False,
         )
-        return
-
-    merged: dict | None = None
-    bars = []
-    temp_path = output_path.with_name(f"{output_path.stem}.tmp{output_path.suffix}")
-    for metric in DURATIONS_METRICS:
-        plot_durations(
-            readers,
-            ranks=ranks,
-            metric=metric,
-            data_filepath=temp_path,
-            data_format="json",
-        )
-        with temp_path.open("r", encoding="utf-8") as file:
-            payload = json.load(file)
-        if merged is None:
-            merged = payload
-        bars.extend(payload.get("bars") or [])
-
-    if temp_path.exists():
-        temp_path.unlink()
-    if merged is None:
-        return
-    merged["bars"] = bars
-    with output_path.open("w", encoding="utf-8") as file:
-        json.dump(merged, file, indent=1)
-        file.write("\n")
-
-
-def add_first_last_bars(output_dir: Path) -> None:
-    """Mirror scope-profiler's first/last call statistics into the bar export.
-
-    `write_region_statistics_json` reports `first_duration_seconds` and
-    `last_duration_seconds` per region, but `plot_durations` does not accept
-    those as metrics yet, so the durations page would have nothing to plot for
-    them. This copies the values the library already computed into
-    durations_data.json as two more metrics.
-    """
-    durations_path = output_dir / "durations_data.json"
-    stats_path = output_dir / "region_statistics.json"
-    if not durations_path.is_file() or not stats_path.is_file():
-        return
-
-    with durations_path.open("r", encoding="utf-8") as file:
-        durations = json.load(file)
-    bars = durations.get("bars") or []
-    metrics_present = {bar.get("metric") for bar in bars}
-    missing = [metric for metric in FIRST_LAST_METRICS if metric not in metrics_present]
-    if not bars or not missing:
-        # A future release exporting these itself needs no help here.
-        return
-
-    with stats_path.open("r", encoding="utf-8") as file:
-        stats = json.load(file)
-
-    extra = []
-    for entry in stats.get("files") or []:
-        for region, record in (entry.get("region_statistics") or {}).items():
-            for metric in missing:
-                value = record.get(FIRST_LAST_STAT_FIELDS[metric])
-                if value is None:
-                    continue
-                extra.append(
-                    {
-                        "file": entry.get("label"),
-                        "region": region,
-                        "metric": metric,
-                        "value_seconds": value,
-                    }
-                )
-    if not extra:
-        return
-    durations["bars"] = bars + extra
-    with durations_path.open("w", encoding="utf-8") as file:
-        json.dump(durations, file, indent=1)
-
-
-SVG_HEADER_PATTERN = re.compile(
-    r'^.*?<svg version="1.1" width="(?P<width>[\d.]+)" height="(?P<height>[\d.]+)"',
-    re.DOTALL,
-)
-
-
-def render_flamegraph(prof_path: Path, output_path: Path) -> bool:
-    """Render a .prof file to an SVG flame graph with flameprof.
-
-    The console script shipped by flameprof has an unusable shebang, so it is
-    invoked as a module. The SVG it emits is a fixed 1200px wide document; the
-    header is rewritten to carry a viewBox instead so the page can scale it.
-    """
-    try:
-        result = subprocess.run(
-            [sys.executable, "-m", "flameprof", str(prof_path)],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-    except (subprocess.CalledProcessError, OSError) as error:
-        print(f"Could not render a flame graph for {prof_path}: {error}")
-        return False
-
-    svg = result.stdout
-    match = SVG_HEADER_PATTERN.match(svg)
-    if match is None:
-        print(f"Unexpected flameprof SVG header for {prof_path}; leaving it as-is.")
-    else:
-        # Drop the XML prolog and DOCTYPE too: the SVG is inlined into the run
-        # page, where only the <svg> element itself is meaningful.
-        svg = (
-            f'<svg version="1.1" viewBox="0 0 {match["width"]} {match["height"]}"'
-            + svg[match.end() :]
-        )
-
-    with output_path.open("w", encoding="utf-8") as file:
-        file.write(svg)
-    return True
 
 
 def slugify(value: str) -> str:
@@ -516,66 +393,53 @@ def add_weak_scaling_metadata(entry: dict, run_parameters: dict) -> None:
     }
 
 
-def write_weak_scaling_efficiency_json(case_stats: dict, output_path: Path) -> bool:
-    files = [
+def write_weak_scaling_efficiency(
+    case_stats: dict,
+    reader_cache: dict[str, ProfilingResults | None],
+    output_path: Path,
+) -> bool:
+    """Plot-data for a case's weak-scaling efficiency, when it is one.
+
+    Only a case whose runs all keep the same work per rank is a weak-scaling
+    study, and only this repo can say what "work" means for a struphy run --
+    it is the grid, which lives in the run metadata (see
+    :func:`add_weak_scaling_metadata`), not in the profile. scope-profiler
+    does the rest: given the cells per rank it checks that the runs agree and
+    refuses to plot if they do not, rather than drawing a curve that compares
+    runs doing different amounts of work.
+    """
+    entries = [
         entry
         for entry in case_stats.get("files", [])
         if isinstance(entry.get("num_ranks"), (int, float)) and entry.get("weak_scaling")
     ]
-    if len(files) < 2:
+    if len(entries) < 2:
         return False
 
-    files.sort(key=lambda entry: (entry["num_ranks"], str(entry.get("label") or "")))
-    cells_per_rank = [entry["weak_scaling"]["cells_per_rank"] for entry in files]
-    baseline_cells = cells_per_rank[0]
-    if baseline_cells <= 0 or any(
-        not math.isclose(value, baseline_cells, rel_tol=1e-9, abs_tol=1e-9)
-        for value in cells_per_rank
-    ):
-        return False
-
-    common_regions = case_stats.get("common_regions") or []
-    if not common_regions:
-        region_sets = [set((entry.get("region_statistics") or {}).keys()) for entry in files]
-        common_regions = sorted(set.intersection(*region_sets)) if region_sets else []
-
-    points = []
-    for region in common_regions:
-        baseline_stats = (files[0].get("region_statistics") or {}).get(region) or {}
-        baseline_duration = baseline_stats.get("total_duration_seconds")
-        if not isinstance(baseline_duration, (int, float)) or baseline_duration <= 0:
+    entries.sort(key=lambda entry: (entry["num_ranks"], str(entry.get("label") or "")))
+    readers, work_per_rank = [], []
+    for entry in entries:
+        reader = get_reader(Path(str(entry["file_path"])), reader_cache)
+        if reader is None:
             continue
-        for entry in files:
-            stats = (entry.get("region_statistics") or {}).get(region) or {}
-            duration = stats.get("total_duration_seconds")
-            if not isinstance(duration, (int, float)) or duration <= 0:
-                continue
-            points.append(
-                {
-                    "file": entry.get("label"),
-                    "region": region,
-                    "num_ranks": int(entry["num_ranks"]),
-                    "duration_seconds": duration,
-                    "baseline_duration_seconds": baseline_duration,
-                    "efficiency": baseline_duration / duration,
-                    "cells_per_rank": entry["weak_scaling"]["cells_per_rank"],
-                    "total_cells": entry["weak_scaling"]["total_cells"],
-                    "num_elements": entry["weak_scaling"]["num_elements"],
-                }
-            )
-
-    if not points:
+        readers.append(reader)
+        work_per_rank.append(entry["weak_scaling"]["cells_per_rank"])
+    if len(readers) < 2:
         return False
 
-    payload = {
-        "baseline_file": files[0].get("label"),
-        "baseline_num_ranks": int(files[0]["num_ranks"]),
-        "cells_per_rank": baseline_cells,
-        "points": points,
-    }
-    with output_path.open("w", encoding="utf-8") as file:
-        json.dump(payload, file, indent=1)
-        file.write("\n")
+    try:
+        plot_weak_scaling_efficiency(
+            readers,
+            work_per_rank=work_per_rank,
+            data_filepath=output_path,
+            data_format="json",
+            verbose=False,
+        )
+    except ValueError as error:
+        # Not a weak-scaling study (the runs scale the problem too), or no
+        # region is common to every run. Either way there is no curve to draw.
+        print(f"No weak-scaling efficiency for this case: {error}")
+        return False
     return True
 
 
@@ -731,6 +595,7 @@ def main() -> int:
                 args.dry_run,
                 export_prof_files=True,
                 export_speedscope_files=True,
+                export_flamegraph_files=True,
             )
 
             run_outputs = {"id": run_id}
@@ -748,7 +613,7 @@ def main() -> int:
 
             prof_path = run_output_dir / "profile_rank0.prof"
             svg_path = run_output_dir / "flamegraph_rank0.svg"
-            if prof_path.exists() and render_flamegraph(prof_path, svg_path):
+            if prof_path.exists() and svg_path.exists():
                 run_outputs["flamegraph"] = f"cases/{case_dir.name}/runs/{run_id}/{svg_path.name}"
                 run_outputs["profile"] = f"cases/{case_dir.name}/runs/{run_id}/{prof_path.name}"
 
@@ -770,8 +635,8 @@ def main() -> int:
             entry["run_outputs"] = run_outputs
             aggregated_files.append(entry)
 
-        if write_weak_scaling_efficiency_json(
-            case_stats, case_output_dir / "weak_scaling_efficiency_data.json"
+        if write_weak_scaling_efficiency(
+            case_stats, reader_cache, case_output_dir / "weak_scaling_efficiency_data.json"
         ):
             case_summary["plot_data"][
                 "weak_scaling_efficiency"

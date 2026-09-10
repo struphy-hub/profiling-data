@@ -36,3 +36,6 @@ docs/public/figures/
 
 # Vendored speedscope app (copied from node_modules by npm run copy-speedscope)
 docs/public/speedscope/
+
+# Python bytecode
+__pycache__/

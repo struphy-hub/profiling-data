@@ -23,20 +23,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # The scope-profiler submodule comes with it, pinned to one commit.
+      # Both halves of the chart pipeline are built from that commit: the
+      # figure JSON by scripts/generate_figures.py, and the browser chart
+      # code by npm, which resolves @scope-profiler/plotly to the package
+      # inside the submodule. Tracking a branch instead let the two drift.
       - name: Checkout
         uses: actions/checkout@v4
         with:
           persist-credentials: true
           fetch-depth: 0
-
-      # Figure JSON is generated from the current scope-profiler source.
-      # The browser chart code itself is installed from npm below.
-      - name: Checkout scope-profiler
-        uses: actions/checkout@v4
-        with:
-          repository: max-models/scope-profiler
-          ref: devel
-          path: vendor/scope-profiler
+          submodules: true
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -46,8 +43,7 @@ jobs:
       - name: Generate figures
         run: |
           python -m pip install --upgrade pip
-          pip install "./vendor/scope-profiler[pproc]"
-          pip install flameprof
+          pip install -r requirements.txt
           python scripts/generate_figures.py
 
       - name: Setup Node.js

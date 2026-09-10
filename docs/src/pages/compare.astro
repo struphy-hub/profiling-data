@@ -142,15 +142,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     return parsed.toLocaleString();
   };
 
-  const METRIC_FIELD = {
-    avg: "average_duration_seconds",
-    min: "min_duration_seconds",
-    max: "max_duration_seconds",
-    total: "total_duration_seconds",
-    first: "first_duration_seconds",
-    last: "last_duration_seconds",
-  };
-
   const caseLabel = (entry) =>
     `${groupLabelForCase(entry)} — ${formatDatetime(entry.datetime_utc)}${
       entry.cluster_name ? ` (${entry.cluster_name})` : ""
@@ -251,18 +242,25 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     const regions = [...new Set([...Object.keys(statsA), ...Object.keys(statsB)])].sort();
 
     const metric = metricSelect.value;
-    const field = METRIC_FIELD[metric];
-    const valuesA = regions.map((region) => statsA[region]?.[field] ?? null);
-    const valuesB = regions.map((region) => statsB[region]?.[field] ?? null);
 
     if (!regions.length) {
       comparePlot.innerHTML = "<p class='muted'>No overlapping region data to compare.</p>";
     } else {
+      // The chart takes the same shape scope-profiler writes for a whole
+      // run -- a `files` array of region_statistics -- so the two runs go in
+      // as they came out of region_statistics.json, relabelled with the case
+      // name the page shows. It draws only the regions both runs recorded;
+      // the table below still lists the union of the two.
       await renderFigure(
         Plotly,
         comparePlot,
         "comparison",
-        { regions, labelA, valuesA, labelB, valuesB },
+        {
+          files: [
+            { ...fileA, label: labelA },
+            { ...fileB, label: labelB },
+          ],
+        },
         { metric, regionFilter: regionFilterInput.value },
       );
     }

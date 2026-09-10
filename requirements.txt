@@ -1,2 +1,6 @@
-scope-profiler[pproc] @ git+https://github.com/max-models/scope-profiler.git@devel
-flameprof
+# scope-profiler comes from the pinned submodule in vendor/, not from a branch
+# name: a branch moves, so the figures on the site and the library that drew
+# them could drift apart between builds. Bump it with:
+#   git -C vendor/scope-profiler fetch && git -C vendor/scope-profiler checkout <sha>
+#   git add vendor/scope-profiler
+./vendor/scope-profiler[pproc]

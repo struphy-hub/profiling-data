@@ -1,0 +1,4 @@
+[submodule "vendor/scope-profiler"]
+	path = vendor/scope-profiler
+	url = https://github.com/max-models/scope-profiler.git
+	branch = roofline

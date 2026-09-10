@@ -2,7 +2,11 @@
 // comma-separated syntax and defaults as the chart filter boxes: each term is
 // a case-insensitive substring of the region name, "^" anchors a term to the
 // start, and an empty box shows every region.
-import { DEFAULT_REGION_FILTER, parseRegionFilter, matchesRegionFilter } from "./charts.js";
+import { DEFAULT_REGION_FILTER } from "./charts.js";
+import {
+  matchesRegionFilter,
+  parseRegionFilter,
+} from "@scope-profiler/plotly/dashboard";
 
 export { DEFAULT_REGION_FILTER };
 
