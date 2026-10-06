@@ -1,0 +1,237 @@
+{
+  "name": "Poisson strong scaling on 3D cube, no preconditioner",
+  "description": "\nStrong scaling test for Poisson equation on a 3D cube.\nThe manufactured solution is a Gaussian bump times sin(pi*x/Lx), exciting the full spectrum.\nHomogeneous Dirichlet boundary conditions are set in direction x.\nThe linear system is solved with unpreconditioned CG.\n",
+  "model": {
+    "model": "Poisson",
+    "params": {
+      "base_units": {
+        "BaseUnits": {
+          "x": 1.0,
+          "B": 1.0,
+          "n": 1.0,
+          "kBT": null
+        }
+      },
+      "with_t_dep_source": false
+    },
+    "species": {
+      "em_fields": {
+        "class": "EMFields",
+        "charge_number": 0,
+        "mass_number": 0,
+        "alpha": null,
+        "epsilon": null,
+        "kappa": null,
+        "variables": {
+          "phi": {
+            "class": "FEECVariable",
+            "space": "H1",
+            "save_data": true,
+            "initial_conditions": {
+              "backgrounds": null,
+              "perturbations": null
+            }
+          },
+          "source": {
+            "class": "FEECVariable",
+            "space": "H1",
+            "save_data": true,
+            "initial_conditions": {
+              "backgrounds": null,
+              "perturbations": {
+                "type": "python_class",
+                "name": "GenericPerturbation",
+                "module": "struphy.initial.base",
+                "params": {
+                  "fun": {
+                    "type": "python_function",
+                    "name": "rhs_fun",
+                    "source": "def rhs_fun(x, y, z):\n    # -Laplace(s*g) = -(s'' g + 2 s' dg/dx + s Laplace(g))\n    r2 = (x - x0) ** 2 + (y - y0) ** 2 + (z - z0) ** 2\n    gauss = np.exp(-r2 / w**2)\n    s = np.sin(np.pi / Lx * x)\n    ds = np.pi / Lx * np.cos(np.pi / Lx * x)\n    lap_gauss = (4 * r2 / w**4 - 6 / w**2) * gauss\n    dgauss_dx = -2 * (x - x0) / w**2 * gauss\n    return (np.pi / Lx) ** 2 * s * gauss - 2 * ds * dgauss_dx - s * lap_gauss\n",
+                    "source_sha256": "bc9a6e7a650ae6d9fe7b09d4415ffcfcf2568e64cc48c10cfb6f37413e42bcfd",
+                    "globals": {
+                      "Lx": {
+                        "type": "value",
+                        "value": 2.0
+                      },
+                      "np": {
+                        "type": "module",
+                        "name": "numpy"
+                      },
+                      "w": {
+                        "type": "value",
+                        "value": 0.3
+                      },
+                      "x0": {
+                        "type": "value",
+                        "value": 1.0
+                      },
+                      "y0": {
+                        "type": "value",
+                        "value": 0.0
+                      },
+                      "z0": {
+                        "type": "value",
+                        "value": 2.0
+                      }
+                    }
+                  },
+                  "given_in_basis": "physical",
+                  "comp": 0
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "propagator_options": {
+      "poisson": {
+        "stab_eps": 0.0,
+        "stab_mat": "Id",
+        "diffusion_mat": "M1",
+        "x0": null,
+        "solver": "pcg",
+        "precond": null,
+        "multigrid": {
+          "smoother": "chebyshev",
+          "smoother_precond": "mass",
+          "smoother_degree": 3,
+          "n_pre": 1,
+          "n_post": 1,
+          "jacobi_omega": 0.6666666666666666,
+          "chebyshev_bounds": [
+            0.1,
+            1.1
+          ],
+          "eig_iter": 15,
+          "max_levels": null,
+          "min_cells": 2,
+          "coarse_solver": "direct",
+          "coarse_tol": 1e-10,
+          "nullspace": null,
+          "matrix_free_mass": false
+        },
+        "solver_params": {
+          "tol": 1e-08,
+          "maxiter": 3000,
+          "info": true,
+          "recycle": false
+        },
+        "filter_params": null
+      }
+    },
+    "initial_conditions_schema_version": 1
+  },
+  "params_path": "/home/IPP-AD/spossann/git_repos/struphy/profiling/examples/Poisson/cube_strong_scaling/params_poisson.py",
+  "env": {
+    "out_folders": "/home/IPP-AD/spossann/git_repos/struphy/_profiling_jobs/20261006T133255Z-12425735/poisson_cube_strong_scaling",
+    "sim_folder": "sim_03",
+    "sim_label": null,
+    "restart": false,
+    "max_runtime": 300,
+    "save_step": 1,
+    "save_restart": true,
+    "sort_step": 0,
+    "num_clones": 1
+  },
+  "time_opts": {
+    "dt": 0.01,
+    "Tend": 0.03,
+    "split_algo": "LieTrotter"
+  },
+  "domain": {
+    "type": "Cuboid",
+    "params": {
+      "l1": 0.0,
+      "r1": 2.0,
+      "l2": -1.5,
+      "r2": 1.5,
+      "l3": 0.0,
+      "r3": 4.0
+    }
+  },
+  "equil": null,
+  "grid": {
+    "num_elements": [
+      64,
+      64,
+      64
+    ],
+    "mpi_dims_mask": [
+      true,
+      true,
+      true
+    ]
+  },
+  "derham_opts": {
+    "degree": [
+      1,
+      2,
+      3
+    ],
+    "bcs": [
+      [
+        "dirichlet",
+        "dirichlet"
+      ],
+      null,
+      null
+    ],
+    "nquads": null,
+    "nquads_proj": null,
+    "polar_splines": false,
+    "local_projectors": false
+  },
+  "profiling_opts": {
+    "file_path": null,
+    "label": null,
+    "use_likwid": null,
+    "perf_events": null,
+    "use_line_profiler": true,
+    "use_memray": null,
+    "memory_profile_path": null,
+    "memray_native_traces": null,
+    "memray_trace_python_allocators": null,
+    "memray_follow_fork": null,
+    "deactivate_profiling": null,
+    "use_nvtx": null,
+    "use_gpu_timing": null,
+    "gpu_timing_backend": null,
+    "deactivate_file_output": null,
+    "recursive_profile": null,
+    "aggregation_mode": null,
+    "profile_mpi_calls": null,
+    "track_threads": null,
+    "track_async": null,
+    "capture_region_source": null,
+    "metadata_detail": null,
+    "buffer_limit": null,
+    "output_mode": null,
+    "hdf5_compression": null,
+    "hdf5_compression_level": null,
+    "hdf5_chunk_size": null,
+    "memray": null,
+    "gpu": null,
+    "hdf5": null
+  },
+  "mpi_ranks": 4,
+  "use_mpi_comm_world": true,
+  "started_at_epoch_s": 1791293671.106519,
+  "one_time_step": true,
+  "profiling_activated": true,
+  "slurm_script": null,
+  "slurm_script_str": "#!/bin/bash\nset -e\nsource /home/IPP-AD/spossann/git_repos/struphy/env/bin/activate\necho \"----------------------------------------\"\necho \"Running profiling case: poisson_cube_strong_scaling (4 MPI ranks)\"\necho \"Description: Strong scaling of the Poisson model with manufactured solution on 3D cube, solved with unpreconditioned CG.\"\necho \"Physics problem: Occurs in many plasma applications.\"\necho \"Struphy model used: Poisson\"\necho \"Case directory: /home/IPP-AD/spossann/git_repos/struphy/_profiling_jobs/20261006T133255Z-12425735/poisson_cube_strong_scaling\"\necho \"----------------------------------------\"\nmkdir -p \"/home/IPP-AD/spossann/git_repos/struphy/_profiling_jobs/20261006T133255Z-12425735/poisson_cube_strong_scaling/sim_03\"\ncp \"/home/IPP-AD/spossann/git_repos/struphy/profiling/examples/Poisson/cube_strong_scaling/params_poisson.py\" \"/home/IPP-AD/spossann/git_repos/struphy/_profiling_jobs/20261006T133255Z-12425735/poisson_cube_strong_scaling/parameters.py\"\n\necho \"Running poisson_cube_strong_scaling with 4 MPI ranks\"\ncd \"/home/IPP-AD/spossann/git_repos/struphy/_profiling_jobs/20261006T133255Z-12425735/poisson_cube_strong_scaling\"\nSTRUPHY_LOG_FILE=\"/home/IPP-AD/spossann/git_repos/struphy/_profiling_jobs/20261006T133255Z-12425735/poisson_cube_strong_scaling/sim_03/struphy.log\" mpirun -n 4 /home/IPP-AD/spossann/git_repos/struphy/env/bin/python /home/IPP-AD/spossann/git_repos/struphy/profiling/examples/Poisson/cube_strong_scaling/params_poisson.py --id 3 > \"/home/IPP-AD/spossann/git_repos/struphy/_profiling_jobs/20261006T133255Z-12425735/poisson_cube_strong_scaling/sim_03/struphy.out\" 2>&1\n\necho \"----------------------------------------\"\necho \"Completed profiling case: poisson_cube_strong_scaling (4 MPI ranks)\"\necho \"----------------------------------------\"\n",
+  "packaged_files": {
+    "profiling_data": "results-run03/run03.h5",
+    "additional_profiling_data": [],
+    "results": [
+      "results-run03/phi_slices.png",
+      "results-run03/rel_err_phi.npy",
+      "results-run03/rel_err_rhs.npy",
+      "results-run03/resolution.npy",
+      "results-run03/rhs_slices.png",
+      "results-run03/spline_degree.npy"
+    ],
+    "run_directory": "/home/IPP-AD/spossann/git_repos/struphy/_profiling_jobs/20261006T133255Z-12425735/poisson_cube_strong_scaling/sim_03"
+  }
+}
