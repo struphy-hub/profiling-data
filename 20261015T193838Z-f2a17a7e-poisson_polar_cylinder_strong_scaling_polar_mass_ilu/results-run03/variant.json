@@ -1,0 +1,1 @@
+{"splines": "polar", "precond": "PolarMassMatrixPreconditioner", "poloidal_solver": "ilu", "hole_bc": "free"}
