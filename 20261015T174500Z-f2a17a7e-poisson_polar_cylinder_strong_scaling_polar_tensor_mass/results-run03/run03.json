@@ -1,0 +1,292 @@
+{
+  "name": "Poisson on a cylinder, polar splines, preconditioner MassMatrixPreconditioner",
+  "description": "\nPoisson equation on a cylinder of radius 1 and length 4, comparing C1 polar splines\n(IGAPolarCylinder, no hole) with tensor-product splines on a cylinder with a hole (HollowCylinder, a1=1e-2).\nThe manufactured solution is a Gaussian whose gradient is largest on the axis r=0.\nHomogeneous Dirichlet boundary conditions are set at r=1 (boundary condition free at the hole).\nThe linear system is solved with CG, preconditioner MassMatrixPreconditioner (poloidal solver schur).\n",
+  "model": {
+    "model": "Poisson",
+    "params": {
+      "base_units": {
+        "BaseUnits": {
+          "x": 1.0,
+          "B": 1.0,
+          "n": 1.0,
+          "kBT": null
+        }
+      },
+      "with_t_dep_source": false
+    },
+    "species": {
+      "em_fields": {
+        "class": "EMFields",
+        "charge_number": 0,
+        "mass_number": 0,
+        "alpha": null,
+        "epsilon": null,
+        "kappa": null,
+        "variables": {
+          "phi": {
+            "class": "FEECVariable",
+            "space": "H1",
+            "save_data": true,
+            "projection": "commuting",
+            "initial_conditions": {
+              "backgrounds": null,
+              "perturbations": null
+            }
+          },
+          "source": {
+            "class": "FEECVariable",
+            "space": "H1",
+            "save_data": true,
+            "projection": "commuting",
+            "initial_conditions": {
+              "backgrounds": null,
+              "perturbations": {
+                "type": "python_class",
+                "name": "GenericPerturbation",
+                "module": "struphy.initial.base",
+                "params": {
+                  "fun": {
+                    "type": "python_function",
+                    "name": "rhs_fun",
+                    "source": "def rhs_fun(x, y, z):\n    return rhs_lam(x, y, z) + 0.0 * x\n",
+                    "source_sha256": "6d15348954d72fbd191ecc830073fd2633b95fa7027ada3028330dde2741e89e",
+                    "globals": {
+                      "rhs_lam": {
+                        "type": "python_function",
+                        "name": "_lambdifygenerated",
+                        "source": "def _lambdifygenerated(x, y, z):\n    return -(2500.0*y**2 - 50.0)*((1/2)*cos((1/2)*pi*z) + 1)*exp(-25.0*y**2 - 25.0*(x - 0.14142135623731)**2) - ((50.0*x - 7.07106781186547)**2 - 50.0)*((1/2)*cos((1/2)*pi*z) + 1)*exp(-25.0*y**2 - 25.0*(x - 0.14142135623731)**2) + (1/8)*pi**2*exp(-25.0*y**2 - 25.0*(x - 0.14142135623731)**2)*cos((1/2)*pi*z)\n",
+                        "source_sha256": "0b14c0caa251a2b570f9ec9a34347b0d76100ee76e9e7d3fdd72f1ff9df11fa9",
+                        "globals": {
+                          "pi": {
+                            "type": "value",
+                            "value": 3.141592653589793
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "given_in_basis": "physical",
+                  "comp": 0
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "propagator_options": {
+      "poisson": {
+        "stab_eps": 0.0,
+        "stab_mat": "M0",
+        "stab_average": null,
+        "diffusion_mat": "M1",
+        "x0": null,
+        "solver": "pcg",
+        "precond": "MassMatrixPreconditioner",
+        "precond_params": {},
+        "multigrid": {
+          "smoother": "chebyshev",
+          "smoother_precond": "mass",
+          "smoother_degree": 3,
+          "n_pre": 1,
+          "n_post": 1,
+          "jacobi_omega": 0.6666666666666666,
+          "chebyshev_bounds": [
+            0.1,
+            1.1
+          ],
+          "eig_iter": 15,
+          "max_levels": null,
+          "min_cells": 2,
+          "coarse_solver": "direct",
+          "coarse_tol": 1e-10,
+          "nullspace": null,
+          "matrix_free_mass": false,
+          "hiptmair": false
+        },
+        "solver_params": {
+          "tol": 1e-08,
+          "maxiter": 3000,
+          "info": true,
+          "recycle": false
+        },
+        "enforce_compatibility": true,
+        "filter_params": null
+      }
+    },
+    "initial_conditions_schema_version": 1
+  },
+  "params_path": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/Poisson/gaussian_on_axis_cylinder/params_gaussian_on_axis_cylinder.py",
+  "env": {
+    "out_folders": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T174500Z-f2a17a7e/poisson_polar_cylinder_strong_scaling_polar_tensor_mass",
+    "sim_folder": "sim_03",
+    "sim_label": null,
+    "restart": false,
+    "max_runtime": 300,
+    "save_step": 1,
+    "save_restart": true,
+    "sort_step": 0,
+    "num_clones": 1
+  },
+  "time_opts": {
+    "dt": 0.01,
+    "Tend": 0.03,
+    "split_algo": "LieTrotter"
+  },
+  "domain": {
+    "type": "IGAPolarCylinder",
+    "params": {
+      "num_elements": [
+        64,
+        66
+      ],
+      "degree": [
+        3,
+        3
+      ],
+      "a": 1.0,
+      "Lz": 4.0
+    }
+  },
+  "equil": null,
+  "grid": {
+    "num_elements": [
+      64,
+      66,
+      64
+    ],
+    "mpi_dims_mask": [
+      true,
+      true,
+      true
+    ]
+  },
+  "derham_opts": {
+    "degree": [
+      3,
+      3,
+      3
+    ],
+    "bcs": [
+      [
+        "free",
+        "dirichlet"
+      ],
+      null,
+      null
+    ],
+    "nquads": null,
+    "nquads_proj": null,
+    "polar_splines": true,
+    "local_projectors": false,
+    "polar_poloidal_solver": "schur"
+  },
+  "profiling_opts": {
+    "file_path": null,
+    "label": null,
+    "use_likwid": null,
+    "perf_events": null,
+    "use_line_profiler": true,
+    "use_memray": null,
+    "memory_profile_path": null,
+    "memray_native_traces": null,
+    "memray_trace_python_allocators": null,
+    "memray_follow_fork": null,
+    "deactivate_profiling": null,
+    "use_nvtx": null,
+    "use_gpu_timing": null,
+    "gpu_timing_backend": null,
+    "deactivate_file_output": null,
+    "recursive_profile": null,
+    "aggregation_mode": null,
+    "profile_mpi_calls": null,
+    "track_threads": null,
+    "track_async": null,
+    "capture_region_source": null,
+    "metadata_detail": null,
+    "buffer_limit": null,
+    "output_mode": null,
+    "hdf5_compression": null,
+    "hdf5_compression_level": null,
+    "hdf5_chunk_size": null,
+    "memray": null,
+    "gpu": null,
+    "hdf5": null,
+    "gpu_sync_on_exit": null
+  },
+  "mpi_ranks": 4,
+  "use_mpi_comm_world": true,
+  "started_at_epoch_s": 1792086963.9759254,
+  "one_time_step": true,
+  "profiling_activated": true,
+  "backend": "numpy",
+  "slurm_script": {
+    "pragmas": {
+      "account": "FUSIO_HLST_7",
+      "job_name": "profiling_poisson_polar_cylinder_strong_scaling_polar_tensor_mass_03",
+      "partition": "dcgp_fua_dbg",
+      "time": "00:15:00",
+      "error": "./%x.%j.err",
+      "output": "./%x.%j.out",
+      "mail_type": "none",
+      "cpus_per_task": 1,
+      "nodes": 1,
+      "ntasks_per_node": 4,
+      "mem": "480GB"
+    },
+    "modules": [],
+    "custom_commands": [
+      "module purge",
+      "source ./setup/modules.sh load",
+      "module list",
+      "set -e",
+      "source /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/activate",
+      "export CUNUMPY_BACKEND=numpy",
+      "echo \"----------------------------------------\"",
+      "echo \"Running profiling case: poisson_polar_cylinder_strong_scaling_polar_tensor_mass (4 MPI ranks)\"",
+      "echo \"Description: Strong scaling of the Poisson model with a manufactured solution whose gradient is largest on the axis, comparing C1 polar splines (IGAPolarCylinder) with tensor-product splines on a cylinder with a hole (HollowCylinder, a1=1e-2): polar splines, tensor-product mass matrix preconditioner.\"",
+      "echo \"Physics problem: Occurs in many plasma applications.\"",
+      "echo \"Struphy model used: Poisson\"",
+      "echo \"cunumpy backend: numpy\"",
+      "echo \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T174500Z-f2a17a7e/poisson_polar_cylinder_strong_scaling_polar_tensor_mass\"",
+      "echo \"----------------------------------------\"",
+      "mkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T174500Z-f2a17a7e/poisson_polar_cylinder_strong_scaling_polar_tensor_mass/sim_03\"",
+      "cp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/Poisson/gaussian_on_axis_cylinder/params_gaussian_on_axis_cylinder.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T174500Z-f2a17a7e/poisson_polar_cylinder_strong_scaling_polar_tensor_mass/parameters.py\"",
+      "",
+      "echo \"Running poisson_polar_cylinder_strong_scaling_polar_tensor_mass with 4 MPI ranks\"",
+      "cd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T174500Z-f2a17a7e/poisson_polar_cylinder_strong_scaling_polar_tensor_mass\"",
+      "STRUPHY_LOG_FILE=\"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T174500Z-f2a17a7e/poisson_polar_cylinder_strong_scaling_polar_tensor_mass/sim_03/struphy.log\" srun -n 4 /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/Poisson/gaussian_on_axis_cylinder/params_gaussian_on_axis_cylinder.py --out-folder /pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T174500Z-f2a17a7e/poisson_polar_cylinder_strong_scaling_polar_tensor_mass --sim-folder sim_03 --splines polar --precond MassMatrixPreconditioner > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T174500Z-f2a17a7e/poisson_polar_cylinder_strong_scaling_polar_tensor_mass/sim_03/struphy.out\" 2>&1",
+      "",
+      "echo \"Post-processing poisson_polar_cylinder_strong_scaling_polar_tensor_mass with /pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/Poisson/gaussian_on_axis_cylinder/pproc_gaussian_on_axis_cylinder.py\"",
+      "STRUPHY_LOG_FILE=\"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T174500Z-f2a17a7e/poisson_polar_cylinder_strong_scaling_polar_tensor_mass/sim_03/struphy.log\" /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/Poisson/gaussian_on_axis_cylinder/pproc_gaussian_on_axis_cylinder.py \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T174500Z-f2a17a7e/poisson_polar_cylinder_strong_scaling_polar_tensor_mass/sim_03\" --splines polar --precond MassMatrixPreconditioner > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T174500Z-f2a17a7e/poisson_polar_cylinder_strong_scaling_polar_tensor_mass/sim_03/pproc.out\" 2>&1",
+      "",
+      "echo \"----------------------------------------\"",
+      "echo \"Completed profiling case: poisson_polar_cylinder_strong_scaling_polar_tensor_mass (4 MPI ranks)\"",
+      "echo \"----------------------------------------\""
+    ]
+  },
+  "slurm_script_str": "#!/bin/bash\n########################################################\n#            This script was generated using           #\n#             slurm-script-generator v0.3.7            #\n# https://github.com/max-models/slurm-script-generator #\n#      `pip install slurm-script-generator==0.3.7`     #\n########################################################\n\n########################################################\n# Pragmas for Job Config                               #\n#SBATCH --job-name=profiling_poisson_polar_cylinder_strong_scaling_polar_tensor_mass_03 # name of job\n#SBATCH --account=FUSIO_HLST_7                         # charge job to specified account\n#SBATCH --partition=dcgp_fua_dbg                       # partition requested\n#                                                      #\n# Pragmas for Time And Priority                        #\n#SBATCH --time=00:15:00                                # time limit\n#                                                      #\n# Pragmas for Io And Directory                         #\n#SBATCH --output=./%x.%j.out                           # File to redirect output (%%x=jobname, %%j=jobid)\n#SBATCH --error=./%x.%j.err                            # File to redirect error (%%x=jobname, %%j=jobid)\n#                                                      #\n# Pragmas for Notifications                            #\n#SBATCH --mail-type=none                               # notify on state change\n#                                                      #\n# Pragmas for Core Node And Task Allocation            #\n#SBATCH --nodes=1                                      # number of nodes on which to run\n#SBATCH --ntasks-per-node=4                            # number of tasks to invoke on each node\n#SBATCH --cpus-per-task=1                              # number of cpus required per task\n#                                                      #\n# Pragmas for Memory                                   #\n#SBATCH --mem=480GB                                    # minimum amount of real memory\n########################################################\nmodule purge\nsource ./setup/modules.sh load\nmodule list\nset -e\nsource /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/activate\nexport CUNUMPY_BACKEND=numpy\necho \"----------------------------------------\"\necho \"Running profiling case: poisson_polar_cylinder_strong_scaling_polar_tensor_mass (4 MPI ranks)\"\necho \"Description: Strong scaling of the Poisson model with a manufactured solution whose gradient is largest on the axis, comparing C1 polar splines (IGAPolarCylinder) with tensor-product splines on a cylinder with a hole (HollowCylinder, a1=1e-2): polar splines, tensor-product mass matrix preconditioner.\"\necho \"Physics problem: Occurs in many plasma applications.\"\necho \"Struphy model used: Poisson\"\necho \"cunumpy backend: numpy\"\necho \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T174500Z-f2a17a7e/poisson_polar_cylinder_strong_scaling_polar_tensor_mass\"\necho \"----------------------------------------\"\nmkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T174500Z-f2a17a7e/poisson_polar_cylinder_strong_scaling_polar_tensor_mass/sim_03\"\ncp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/Poisson/gaussian_on_axis_cylinder/params_gaussian_on_axis_cylinder.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T174500Z-f2a17a7e/poisson_polar_cylinder_strong_scaling_polar_tensor_mass/parameters.py\"\n\necho \"Running poisson_polar_cylinder_strong_scaling_polar_tensor_mass with 4 MPI ranks\"\ncd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T174500Z-f2a17a7e/poisson_polar_cylinder_strong_scaling_polar_tensor_mass\"\nSTRUPHY_LOG_FILE=\"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T174500Z-f2a17a7e/poisson_polar_cylinder_strong_scaling_polar_tensor_mass/sim_03/struphy.log\" srun -n 4 /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/Poisson/gaussian_on_axis_cylinder/params_gaussian_on_axis_cylinder.py --out-folder /pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T174500Z-f2a17a7e/poisson_polar_cylinder_strong_scaling_polar_tensor_mass --sim-folder sim_03 --splines polar --precond MassMatrixPreconditioner > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T174500Z-f2a17a7e/poisson_polar_cylinder_strong_scaling_polar_tensor_mass/sim_03/struphy.out\" 2>&1\n\necho \"Post-processing poisson_polar_cylinder_strong_scaling_polar_tensor_mass with /pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/Poisson/gaussian_on_axis_cylinder/pproc_gaussian_on_axis_cylinder.py\"\nSTRUPHY_LOG_FILE=\"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T174500Z-f2a17a7e/poisson_polar_cylinder_strong_scaling_polar_tensor_mass/sim_03/struphy.log\" /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/Poisson/gaussian_on_axis_cylinder/pproc_gaussian_on_axis_cylinder.py \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T174500Z-f2a17a7e/poisson_polar_cylinder_strong_scaling_polar_tensor_mass/sim_03\" --splines polar --precond MassMatrixPreconditioner > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T174500Z-f2a17a7e/poisson_polar_cylinder_strong_scaling_polar_tensor_mass/sim_03/pproc.out\" 2>&1\n\necho \"----------------------------------------\"\necho \"Completed profiling case: poisson_polar_cylinder_strong_scaling_polar_tensor_mass (4 MPI ranks)\"\necho \"----------------------------------------\"\n",
+  "packaged_files": {
+    "profiling_data": "results-run03/run03.h5",
+    "additional_profiling_data": [],
+    "results": [
+      "results-run03/phi_3d.png",
+      "results-run03/phi_slices_rz.png",
+      "results-run03/phi_slices_xy.png",
+      "results-run03/phi_slices_xz.png",
+      "results-run03/phi_slices_yz.png",
+      "results-run03/rel_err_phi.npy",
+      "results-run03/rel_err_phi_axis.npy",
+      "results-run03/rel_err_rhs.npy",
+      "results-run03/resolution.npy",
+      "results-run03/rhs_3d.png",
+      "results-run03/rhs_slices_rz.png",
+      "results-run03/rhs_slices_xy.png",
+      "results-run03/rhs_slices_xz.png",
+      "results-run03/rhs_slices_yz.png",
+      "results-run03/spline_degree.npy",
+      "results-run03/variant.json"
+    ],
+    "run_directory": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T174500Z-f2a17a7e/poisson_polar_cylinder_strong_scaling_polar_tensor_mass/sim_03"
+  }
+}
