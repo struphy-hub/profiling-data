@@ -1,0 +1,1 @@
+{"splines": "polar", "precond": "StiffnessPreconditioner", "poloidal_solver": "ilu", "hole_bc": "free"}
