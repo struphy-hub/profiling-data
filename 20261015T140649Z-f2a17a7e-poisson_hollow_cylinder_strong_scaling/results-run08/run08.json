@@ -1,0 +1,320 @@
+{
+  "name": "Poisson on hollow cylinder, no preconditioner",
+  "description": "\nPoisson equation on a hollow cylinder (HollowCylinder, a1=1e-2, a2=1, Lz=4).\nThe manufactured solution is a Gaussian 0-form on the logical domain, centered at eta = (0.5, 0.5, 0.5),\nexciting the full spectrum.\nHomogeneous Dirichlet boundary conditions are set in direction eta1.\nThe linear system is solved with unpreconditioned CG.\n",
+  "model": {
+    "model": "Poisson",
+    "params": {
+      "base_units": {
+        "BaseUnits": {
+          "x": 1.0,
+          "B": 1.0,
+          "n": 1.0,
+          "kBT": null
+        }
+      },
+      "with_t_dep_source": false
+    },
+    "species": {
+      "em_fields": {
+        "class": "EMFields",
+        "charge_number": 0,
+        "mass_number": 0,
+        "alpha": null,
+        "epsilon": null,
+        "kappa": null,
+        "variables": {
+          "phi": {
+            "class": "FEECVariable",
+            "space": "H1",
+            "save_data": true,
+            "projection": "commuting",
+            "initial_conditions": {
+              "backgrounds": null,
+              "perturbations": null
+            }
+          },
+          "source": {
+            "class": "FEECVariable",
+            "space": "H1",
+            "save_data": true,
+            "projection": "commuting",
+            "initial_conditions": {
+              "backgrounds": null,
+              "perturbations": {
+                "type": "python_class",
+                "name": "GenericPerturbation",
+                "module": "struphy.initial.base",
+                "params": {
+                  "fun": {
+                    "type": "python_function",
+                    "name": "rhs_fun",
+                    "source": "def rhs_fun(e1, e2, e3):\n    return -laplacian(e1, e2, e3)\n",
+                    "source_sha256": "133458316d261afef864841a85f761e6060c3188f3a0076232578c10a6651d6c",
+                    "globals": {
+                      "laplacian": {
+                        "type": "python_function",
+                        "name": "laplacian",
+                        "source": "def laplacian(e1, e2, e3):\n    \"\"\"Physical Laplacian of the exact solution, in logical coordinates.\n\n    HollowCylinder: r = a1 + (a2 - a1) * eta1, theta = 2*pi*eta2, z = Lz * eta3, and\n    Laplace(phi) = phi_rr + phi_r / r + phi_theta,theta / r**2 + phi_zz.\n    \"\"\"\n    g, d, dd = gaussian_derivatives(e1, e2, e3)\n    da = a2 - a1\n    r = a1 + da * e1\n    return dd[0] / da**2 + d[0] / (da * r) + dd[1] / (2 * np.pi * r) ** 2 + dd[2] / Lz**2\n",
+                        "source_sha256": "73f3187d56b34652c4e09bc91d62de00b5300a91b9526826091901fca5d7eac6",
+                        "globals": {
+                          "Lz": {
+                            "type": "value",
+                            "value": 4.0
+                          },
+                          "a1": {
+                            "type": "value",
+                            "value": 0.01
+                          },
+                          "a2": {
+                            "type": "value",
+                            "value": 1.0
+                          },
+                          "gaussian_derivatives": {
+                            "type": "python_function",
+                            "name": "gaussian_derivatives",
+                            "source": "def gaussian_derivatives(e1, e2, e3):\n    \"\"\"The Gaussian and its first and second derivatives with respect to eta1, eta2, eta3.\"\"\"\n    eta = (e1, e2, e3)\n    g = np.exp(-sum((e - c) ** 2 for e, c in zip(eta, eta0)) / w**2)\n    d = [-2 * (e - c) / w**2 * g for e, c in zip(eta, eta0)]\n    dd = [(4 * (e - c) ** 2 / w**4 - 2 / w**2) * g for e, c in zip(eta, eta0)]\n    return g, d, dd\n",
+                            "source_sha256": "b453eec321fe81f458e8122e76087a6a545be0134b0be932817e83575a8719ce",
+                            "globals": {
+                              "eta0": {
+                                "type": "value",
+                                "value": [
+                                  0.5,
+                                  0.5,
+                                  0.5
+                                ]
+                              },
+                              "np": {
+                                "type": "module",
+                                "name": "numpy"
+                              },
+                              "w": {
+                                "type": "value",
+                                "value": 0.1
+                              }
+                            }
+                          },
+                          "np": {
+                            "type": "module",
+                            "name": "numpy"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "given_in_basis": "0",
+                  "comp": 0
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "propagator_options": {
+      "poisson": {
+        "stab_eps": 0.0,
+        "stab_mat": "M0",
+        "stab_average": null,
+        "diffusion_mat": "M1",
+        "x0": null,
+        "solver": "pcg",
+        "precond": null,
+        "precond_params": {},
+        "multigrid": {
+          "smoother": "chebyshev",
+          "smoother_precond": "mass",
+          "smoother_degree": 3,
+          "n_pre": 1,
+          "n_post": 1,
+          "jacobi_omega": 0.6666666666666666,
+          "chebyshev_bounds": [
+            0.1,
+            1.1
+          ],
+          "eig_iter": 15,
+          "max_levels": null,
+          "min_cells": 2,
+          "coarse_solver": "direct",
+          "coarse_tol": 1e-10,
+          "nullspace": null,
+          "matrix_free_mass": false,
+          "hiptmair": false
+        },
+        "solver_params": {
+          "tol": 1e-08,
+          "maxiter": 3000,
+          "info": true,
+          "recycle": false
+        },
+        "enforce_compatibility": true,
+        "filter_params": null
+      }
+    },
+    "initial_conditions_schema_version": 1
+  },
+  "params_path": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/Poisson/gaussian_hollow_cylinder/params_gaussian_hollow_cylinder.py",
+  "env": {
+    "out_folders": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T140649Z-f2a17a7e/poisson_hollow_cylinder_strong_scaling",
+    "sim_folder": "sim_08",
+    "sim_label": null,
+    "restart": false,
+    "max_runtime": 300,
+    "save_step": 1,
+    "save_restart": true,
+    "sort_step": 0,
+    "num_clones": 1
+  },
+  "time_opts": {
+    "dt": 0.01,
+    "Tend": 0.03,
+    "split_algo": "LieTrotter"
+  },
+  "domain": {
+    "type": "HollowCylinder",
+    "params": {
+      "a1": 0.01,
+      "a2": 1.0,
+      "Lz": 4.0,
+      "poc": 1
+    }
+  },
+  "equil": null,
+  "grid": {
+    "num_elements": [
+      64,
+      64,
+      64
+    ],
+    "mpi_dims_mask": [
+      true,
+      true,
+      true
+    ]
+  },
+  "derham_opts": {
+    "degree": [
+      1,
+      2,
+      3
+    ],
+    "bcs": [
+      [
+        "dirichlet",
+        "dirichlet"
+      ],
+      null,
+      null
+    ],
+    "nquads": null,
+    "nquads_proj": null,
+    "polar_splines": false,
+    "local_projectors": false,
+    "polar_poloidal_solver": "schur"
+  },
+  "profiling_opts": {
+    "file_path": null,
+    "label": null,
+    "use_likwid": null,
+    "perf_events": null,
+    "use_line_profiler": true,
+    "use_memray": null,
+    "memory_profile_path": null,
+    "memray_native_traces": null,
+    "memray_trace_python_allocators": null,
+    "memray_follow_fork": null,
+    "deactivate_profiling": null,
+    "use_nvtx": null,
+    "use_gpu_timing": null,
+    "gpu_timing_backend": null,
+    "deactivate_file_output": null,
+    "recursive_profile": null,
+    "aggregation_mode": null,
+    "profile_mpi_calls": null,
+    "track_threads": null,
+    "track_async": null,
+    "capture_region_source": null,
+    "metadata_detail": null,
+    "buffer_limit": null,
+    "output_mode": null,
+    "hdf5_compression": null,
+    "hdf5_compression_level": null,
+    "hdf5_chunk_size": null,
+    "memray": null,
+    "gpu": null,
+    "hdf5": null,
+    "gpu_sync_on_exit": null
+  },
+  "mpi_ranks": 128,
+  "use_mpi_comm_world": true,
+  "started_at_epoch_s": 1792073381.1469426,
+  "one_time_step": true,
+  "profiling_activated": true,
+  "backend": "numpy",
+  "slurm_script": {
+    "pragmas": {
+      "account": "FUSIO_HLST_7",
+      "job_name": "profiling_poisson_hollow_cylinder_strong_scaling_08",
+      "partition": "dcgp_fua_dbg",
+      "time": "00:15:00",
+      "error": "./%x.%j.err",
+      "output": "./%x.%j.out",
+      "mail_type": "none",
+      "cpus_per_task": 1,
+      "nodes": 1,
+      "ntasks_per_node": 128,
+      "mem": "480GB"
+    },
+    "modules": [],
+    "custom_commands": [
+      "module purge",
+      "source ./setup/modules.sh load",
+      "module list",
+      "set -e",
+      "source /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/activate",
+      "export CUNUMPY_BACKEND=numpy",
+      "echo \"----------------------------------------\"",
+      "echo \"Running profiling case: poisson_hollow_cylinder_strong_scaling (128 MPI ranks)\"",
+      "echo \"Description: Strong scaling of the Poisson model with manufactured solution on a hollow cylinder (HollowCylinder, a1=1e-2, a2=1, Lz=4), solved with unpreconditioned CG.\"",
+      "echo \"Physics problem: Occurs in many plasma applications.\"",
+      "echo \"Struphy model used: Poisson\"",
+      "echo \"cunumpy backend: numpy\"",
+      "echo \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T140649Z-f2a17a7e/poisson_hollow_cylinder_strong_scaling\"",
+      "echo \"----------------------------------------\"",
+      "mkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T140649Z-f2a17a7e/poisson_hollow_cylinder_strong_scaling/sim_08\"",
+      "cp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/Poisson/gaussian_hollow_cylinder/params_gaussian_hollow_cylinder.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T140649Z-f2a17a7e/poisson_hollow_cylinder_strong_scaling/parameters.py\"",
+      "",
+      "echo \"Running poisson_hollow_cylinder_strong_scaling with 128 MPI ranks\"",
+      "cd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T140649Z-f2a17a7e/poisson_hollow_cylinder_strong_scaling\"",
+      "STRUPHY_LOG_FILE=\"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T140649Z-f2a17a7e/poisson_hollow_cylinder_strong_scaling/sim_08/struphy.log\" srun -n 128 /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/Poisson/gaussian_hollow_cylinder/params_gaussian_hollow_cylinder.py --out-folder /pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T140649Z-f2a17a7e/poisson_hollow_cylinder_strong_scaling --sim-folder sim_08 > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T140649Z-f2a17a7e/poisson_hollow_cylinder_strong_scaling/sim_08/struphy.out\" 2>&1",
+      "",
+      "echo \"Post-processing poisson_hollow_cylinder_strong_scaling with /pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/Poisson/gaussian_hollow_cylinder/pproc_gaussian_hollow_cylinder.py\"",
+      "STRUPHY_LOG_FILE=\"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T140649Z-f2a17a7e/poisson_hollow_cylinder_strong_scaling/sim_08/struphy.log\" /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/Poisson/gaussian_hollow_cylinder/pproc_gaussian_hollow_cylinder.py \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T140649Z-f2a17a7e/poisson_hollow_cylinder_strong_scaling/sim_08\"  > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T140649Z-f2a17a7e/poisson_hollow_cylinder_strong_scaling/sim_08/pproc.out\" 2>&1",
+      "",
+      "echo \"----------------------------------------\"",
+      "echo \"Completed profiling case: poisson_hollow_cylinder_strong_scaling (128 MPI ranks)\"",
+      "echo \"----------------------------------------\""
+    ]
+  },
+  "slurm_script_str": "#!/bin/bash\n########################################################\n#            This script was generated using           #\n#             slurm-script-generator v0.3.7            #\n# https://github.com/max-models/slurm-script-generator #\n#      `pip install slurm-script-generator==0.3.7`     #\n########################################################\n\n########################################################\n# Pragmas for Job Config                               #\n#SBATCH --job-name=profiling_poisson_hollow_cylinder_strong_scaling_08 # name of job\n#SBATCH --account=FUSIO_HLST_7                         # charge job to specified account\n#SBATCH --partition=dcgp_fua_dbg                       # partition requested\n#                                                      #\n# Pragmas for Time And Priority                        #\n#SBATCH --time=00:15:00                                # time limit\n#                                                      #\n# Pragmas for Io And Directory                         #\n#SBATCH --output=./%x.%j.out                           # File to redirect output (%%x=jobname, %%j=jobid)\n#SBATCH --error=./%x.%j.err                            # File to redirect error (%%x=jobname, %%j=jobid)\n#                                                      #\n# Pragmas for Notifications                            #\n#SBATCH --mail-type=none                               # notify on state change\n#                                                      #\n# Pragmas for Core Node And Task Allocation            #\n#SBATCH --nodes=1                                      # number of nodes on which to run\n#SBATCH --ntasks-per-node=128                          # number of tasks to invoke on each node\n#SBATCH --cpus-per-task=1                              # number of cpus required per task\n#                                                      #\n# Pragmas for Memory                                   #\n#SBATCH --mem=480GB                                    # minimum amount of real memory\n########################################################\nmodule purge\nsource ./setup/modules.sh load\nmodule list\nset -e\nsource /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/activate\nexport CUNUMPY_BACKEND=numpy\necho \"----------------------------------------\"\necho \"Running profiling case: poisson_hollow_cylinder_strong_scaling (128 MPI ranks)\"\necho \"Description: Strong scaling of the Poisson model with manufactured solution on a hollow cylinder (HollowCylinder, a1=1e-2, a2=1, Lz=4), solved with unpreconditioned CG.\"\necho \"Physics problem: Occurs in many plasma applications.\"\necho \"Struphy model used: Poisson\"\necho \"cunumpy backend: numpy\"\necho \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T140649Z-f2a17a7e/poisson_hollow_cylinder_strong_scaling\"\necho \"----------------------------------------\"\nmkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T140649Z-f2a17a7e/poisson_hollow_cylinder_strong_scaling/sim_08\"\ncp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/Poisson/gaussian_hollow_cylinder/params_gaussian_hollow_cylinder.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T140649Z-f2a17a7e/poisson_hollow_cylinder_strong_scaling/parameters.py\"\n\necho \"Running poisson_hollow_cylinder_strong_scaling with 128 MPI ranks\"\ncd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T140649Z-f2a17a7e/poisson_hollow_cylinder_strong_scaling\"\nSTRUPHY_LOG_FILE=\"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T140649Z-f2a17a7e/poisson_hollow_cylinder_strong_scaling/sim_08/struphy.log\" srun -n 128 /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/Poisson/gaussian_hollow_cylinder/params_gaussian_hollow_cylinder.py --out-folder /pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T140649Z-f2a17a7e/poisson_hollow_cylinder_strong_scaling --sim-folder sim_08 > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T140649Z-f2a17a7e/poisson_hollow_cylinder_strong_scaling/sim_08/struphy.out\" 2>&1\n\necho \"Post-processing poisson_hollow_cylinder_strong_scaling with /pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/Poisson/gaussian_hollow_cylinder/pproc_gaussian_hollow_cylinder.py\"\nSTRUPHY_LOG_FILE=\"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T140649Z-f2a17a7e/poisson_hollow_cylinder_strong_scaling/sim_08/struphy.log\" /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/Poisson/gaussian_hollow_cylinder/pproc_gaussian_hollow_cylinder.py \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T140649Z-f2a17a7e/poisson_hollow_cylinder_strong_scaling/sim_08\"  > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T140649Z-f2a17a7e/poisson_hollow_cylinder_strong_scaling/sim_08/pproc.out\" 2>&1\n\necho \"----------------------------------------\"\necho \"Completed profiling case: poisson_hollow_cylinder_strong_scaling (128 MPI ranks)\"\necho \"----------------------------------------\"\n",
+  "packaged_files": {
+    "profiling_data": "results-run08/run08.h5",
+    "additional_profiling_data": [],
+    "results": [
+      "results-run08/phi_3d.png",
+      "results-run08/phi_slices_rz.png",
+      "results-run08/phi_slices_xy.png",
+      "results-run08/phi_slices_xz.png",
+      "results-run08/phi_slices_yz.png",
+      "results-run08/rel_err_phi.npy",
+      "results-run08/rel_err_rhs.npy",
+      "results-run08/resolution.npy",
+      "results-run08/rhs_3d.png",
+      "results-run08/rhs_slices_rz.png",
+      "results-run08/rhs_slices_xy.png",
+      "results-run08/rhs_slices_xz.png",
+      "results-run08/rhs_slices_yz.png",
+      "results-run08/spline_degree.npy"
+    ],
+    "run_directory": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T140649Z-f2a17a7e/poisson_hollow_cylinder_strong_scaling/sim_08"
+  }
+}
