@@ -1,0 +1,398 @@
+{
+  "name": "Vlasov-Ampere weak Landau damping",
+  "description": "\nWeak Landau damping with the VlasovAmpereOneSpecies model, the setup of the verification test in\nsrc/struphy/models/tests/verification: periodic box of length 4 pi (k = 0.5), Maxwellian electrons with a density\nperturbation of 1e-3 cos(k x), control-variate weights, cubic splines in x. The electric field decays at the\nrate -0.1533 (its energy at twice the rate). alpha = 1 and epsilon = -1 (electrons, time in units of the inverse plasma frequency, velocities in\nunits of c).\n\nRuns on the NumPy (CPU) or CuPy (GPU) backend, chosen by the environment variable CUNUMPY_BACKEND (the profiling\ndriver exports it in the job script). All timing comes from scope-profiler: the run activates\nthe profiling session of Simulation.run, and on the CuPy backend the session records CUDA-event device time per\nregion (GPUOptions.timing) and synchronizes the device at region ends, so the CPU time of a region includes its\nkernels. The post-processing writes the scope-profiler HTML report and a summary of the cost per step and marker\ninto the run's results folder.\n",
+  "model": {
+    "model": "VlasovAmpereOneSpecies",
+    "params": {
+      "base_units": {
+        "BaseUnits": {
+          "x": 1.0,
+          "B": 1.0,
+          "n": 1.0,
+          "kBT": null
+        }
+      },
+      "charge_number": 1,
+      "mass_number": 1.0,
+      "alpha": 1.0,
+      "epsilon": -1.0,
+      "with_B0": false
+    },
+    "species": {
+      "em_fields": {
+        "class": "EMFields",
+        "charge_number": 0,
+        "mass_number": 0,
+        "alpha": null,
+        "epsilon": null,
+        "kappa": null,
+        "variables": {
+          "e_field": {
+            "class": "FEECVariable",
+            "space": "Hcurl",
+            "save_data": true,
+            "projection": "commuting",
+            "initial_conditions": {
+              "backgrounds": null,
+              "perturbations": null
+            }
+          },
+          "phi": {
+            "class": "FEECVariable",
+            "space": "H1",
+            "save_data": true,
+            "projection": "commuting",
+            "initial_conditions": {
+              "backgrounds": null,
+              "perturbations": null
+            }
+          }
+        }
+      },
+      "kinetic_ions": {
+        "class": "KineticIons",
+        "charge_number": 1,
+        "mass_number": 1.0,
+        "alpha": 1.0,
+        "epsilon": -1.0,
+        "kappa": null,
+        "variables": {
+          "var": {
+            "class": "PICVariable",
+            "space": "Particles6D",
+            "save_data": false,
+            "n_as_volume_form": false,
+            "initial_conditions": {
+              "backgrounds": {
+                "type": "Maxwellian3D",
+                "params": {
+                  "n": [
+                    1.0,
+                    null
+                  ],
+                  "u1": [
+                    0.0,
+                    null
+                  ],
+                  "u2": [
+                    0.0,
+                    null
+                  ],
+                  "u3": [
+                    0.0,
+                    null
+                  ],
+                  "vth1": [
+                    1.0,
+                    null
+                  ],
+                  "vth2": [
+                    1.0,
+                    null
+                  ],
+                  "vth3": [
+                    1.0,
+                    null
+                  ],
+                  "uniform_on_disc": false
+                }
+              },
+              "perturbations": null,
+              "initial_condition": {
+                "type": "Maxwellian3D",
+                "params": {
+                  "n": [
+                    1.0,
+                    {
+                      "type": "ModesCos",
+                      "params": {
+                        "ls": [
+                          1
+                        ],
+                        "ms": null,
+                        "ns": null,
+                        "amps": [
+                          0.001
+                        ],
+                        "Lx": 1.0,
+                        "Ly": 1.0,
+                        "Lz": 1.0,
+                        "given_in_basis": null,
+                        "comp": 0,
+                        "perb_domain": [
+                          null,
+                          null,
+                          null
+                        ]
+                      }
+                    }
+                  ],
+                  "u1": [
+                    0.0,
+                    null
+                  ],
+                  "u2": [
+                    0.0,
+                    null
+                  ],
+                  "u3": [
+                    0.0,
+                    null
+                  ],
+                  "vth1": [
+                    1.0,
+                    null
+                  ],
+                  "vth2": [
+                    1.0,
+                    null
+                  ],
+                  "vth3": [
+                    1.0,
+                    null
+                  ],
+                  "uniform_on_disc": false
+                }
+              }
+            }
+          }
+        },
+        "loading_params": {
+          "Np": 5000,
+          "ppc": 1000,
+          "ppb": null,
+          "loading": "pseudo_random",
+          "seed": 1234,
+          "moments": [
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "B0": 2.0,
+          "spatial": "uniform",
+          "specific_markers": null,
+          "set_zero_velocity": [
+            false,
+            false,
+            false
+          ],
+          "n_quad": 1,
+          "dir_external": null,
+          "dir_particles": null,
+          "dir_particles_abs": null,
+          "restart_key": null
+        },
+        "weights_params": {
+          "control_variate": true,
+          "reject_weights": false,
+          "threshold": 0.0
+        },
+        "boundary_params": {
+          "bc": [
+            "periodic",
+            "periodic",
+            "periodic"
+          ],
+          "bc_refill": null,
+          "bc_sph": [
+            "periodic",
+            "periodic",
+            "periodic"
+          ],
+          "mean_velocity_index": null
+        },
+        "sorting_params": {
+          "do_sort": false,
+          "sorting_frequency": 0,
+          "boxes_per_dim": null,
+          "box_bufsize": 2.0,
+          "dims_mask": [
+            true,
+            true,
+            true
+          ]
+        },
+        "saving_params": {
+          "n_markers": 0,
+          "binning_plots": [],
+          "kernel_density_plots": []
+        },
+        "bufsize": 0.4
+      }
+    },
+    "propagator_options": {
+      "push_eta": {
+        "butcher": {
+          "algo": "rk4"
+        }
+      },
+      "coupling_va": {
+        "solver": "pcg",
+        "precond": "MassMatrixPreconditioner",
+        "solver_params": {
+          "tol": 1e-08,
+          "maxiter": 3000,
+          "info": false,
+          "recycle": true
+        }
+      }
+    },
+    "initial_conditions_schema_version": 1
+  },
+  "params_path": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/VlasovAmpereOneSpecies/weak_Landau_damping/params_weak_Landau_damping.py",
+  "env": {
+    "out_folders": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T120033Z-e1343e26/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node",
+    "sim_folder": "sim_02",
+    "sim_label": null,
+    "restart": false,
+    "max_runtime": 300,
+    "save_step": 1,
+    "save_restart": false,
+    "sort_step": 0,
+    "num_clones": 1
+  },
+  "time_opts": {
+    "dt": 0.05,
+    "Tend": 1.0,
+    "split_algo": "LieTrotter"
+  },
+  "domain": {
+    "type": "Cuboid",
+    "params": {
+      "l1": 0.0,
+      "r1": 12.566370614359172,
+      "l2": 0.0,
+      "r2": 1.0,
+      "l3": 0.0,
+      "r3": 1.0
+    }
+  },
+  "equil": null,
+  "grid": {
+    "num_elements": [
+      1024,
+      1,
+      1
+    ],
+    "mpi_dims_mask": [
+      true,
+      false,
+      false
+    ]
+  },
+  "derham_opts": {
+    "degree": [
+      3,
+      1,
+      1
+    ],
+    "bcs": [
+      null,
+      null,
+      null
+    ],
+    "nquads": null,
+    "nquads_proj": null,
+    "polar_splines": false,
+    "local_projectors": false,
+    "polar_poloidal_solver": "schur"
+  },
+  "profiling_opts": {
+    "file_path": null,
+    "label": "cupy, 4 ranks",
+    "use_likwid": null,
+    "perf_events": null,
+    "use_line_profiler": null,
+    "use_memray": null,
+    "memory_profile_path": null,
+    "memray_native_traces": null,
+    "memray_trace_python_allocators": null,
+    "memray_follow_fork": null,
+    "deactivate_profiling": null,
+    "use_nvtx": null,
+    "use_gpu_timing": true,
+    "gpu_timing_backend": "cupy",
+    "deactivate_file_output": null,
+    "recursive_profile": null,
+    "aggregation_mode": null,
+    "profile_mpi_calls": null,
+    "track_threads": null,
+    "track_async": null,
+    "capture_region_source": null,
+    "metadata_detail": null,
+    "buffer_limit": null,
+    "output_mode": null,
+    "hdf5_compression": null,
+    "hdf5_compression_level": null,
+    "hdf5_chunk_size": null,
+    "memray": null,
+    "gpu": null,
+    "hdf5": null,
+    "gpu_sync_on_exit": true
+  },
+  "mpi_ranks": 4,
+  "use_mpi_comm_world": true,
+  "started_at_epoch_s": 1792066332.581571,
+  "one_time_step": false,
+  "profiling_activated": true,
+  "backend": "cupy",
+  "slurm_script": {
+    "pragmas": {
+      "account": "FUSIO_HLST_6",
+      "job_name": "profiling_vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_02",
+      "partition": "boost_fua_dbg",
+      "time": "00:15:00",
+      "error": "./%x.%j.err",
+      "output": "./%x.%j.out",
+      "mail_type": "none",
+      "cpus_per_task": 1,
+      "nodes": 1,
+      "ntasks_per_node": 4,
+      "mem": "480GB",
+      "gres": "gpu:4,tmpfs:10g"
+    },
+    "modules": [],
+    "custom_commands": [
+      "module purge",
+      "source ./setup/modules.sh load",
+      "module list",
+      "set -e",
+      "source /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/activate",
+      "export CUNUMPY_BACKEND=cupy",
+      "echo \"----------------------------------------\"",
+      "echo \"Running profiling case: vlasov_ampere_landau_damping_cpu_node_vs_gpu_node (4 MPI ranks)\"",
+      "echo \"Description: The VlasovAmpereOneSpecies model on weak Landau damping (periodic box, k = 0.5, 1e-3 density perturbation, 1024 cells, about 1M markers) on one full CPU node (256 MPI ranks, NumPy) vs one full GPU node (4 MPI ranks on 4 GPUs, CuPy).\"",
+      "echo \"Physics problem: Landau damping of an electrostatic wave in a collisionless electron plasma.\"",
+      "echo \"Struphy model used: VlasovAmpereOneSpecies\"",
+      "echo \"cunumpy backend: cupy\"",
+      "echo \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T120033Z-e1343e26/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node\"",
+      "echo \"----------------------------------------\"",
+      "mkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T120033Z-e1343e26/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node/sim_02\"",
+      "cp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/VlasovAmpereOneSpecies/weak_Landau_damping/params_weak_Landau_damping.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T120033Z-e1343e26/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node/parameters.py\"",
+      "",
+      "echo \"Running vlasov_ampere_landau_damping_cpu_node_vs_gpu_node with 4 MPI ranks\"",
+      "cd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T120033Z-e1343e26/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node\"",
+      "STRUPHY_LOG_FILE=\"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T120033Z-e1343e26/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node/sim_02/struphy.log\" srun -n 4 /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/VlasovAmpereOneSpecies/weak_Landau_damping/params_weak_Landau_damping.py --out-folder /pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T120033Z-e1343e26/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node --sim-folder sim_02 --setup profiling --save-results > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T120033Z-e1343e26/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node/sim_02/struphy.out\" 2>&1",
+      "",
+      "echo \"Post-processing vlasov_ampere_landau_damping_cpu_node_vs_gpu_node with /pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/VlasovAmpereOneSpecies/weak_Landau_damping/pproc_weak_Landau_damping.py\"",
+      "STRUPHY_LOG_FILE=\"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T120033Z-e1343e26/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node/sim_02/struphy.log\" /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/VlasovAmpereOneSpecies/weak_Landau_damping/pproc_weak_Landau_damping.py \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T120033Z-e1343e26/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node/sim_02\" --setup profiling --save-results > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T120033Z-e1343e26/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node/sim_02/pproc.out\" 2>&1",
+      "",
+      "echo \"----------------------------------------\"",
+      "echo \"Completed profiling case: vlasov_ampere_landau_damping_cpu_node_vs_gpu_node (4 MPI ranks)\"",
+      "echo \"----------------------------------------\""
+    ]
+  },
+  "slurm_script_str": "#!/bin/bash\n########################################################\n#            This script was generated using           #\n#             slurm-script-generator v0.3.7            #\n# https://github.com/max-models/slurm-script-generator #\n#      `pip install slurm-script-generator==0.3.7`     #\n########################################################\n\n########################################################\n# Pragmas for Job Config                               #\n#SBATCH --job-name=profiling_vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_02 # name of job\n#SBATCH --account=FUSIO_HLST_6                         # charge job to specified account\n#SBATCH --partition=boost_fua_dbg                      # partition requested\n#                                                      #\n# Pragmas for Time And Priority                        #\n#SBATCH --time=00:15:00                                # time limit\n#                                                      #\n# Pragmas for Io And Directory                         #\n#SBATCH --output=./%x.%j.out                           # File to redirect output (%%x=jobname, %%j=jobid)\n#SBATCH --error=./%x.%j.err                            # File to redirect error (%%x=jobname, %%j=jobid)\n#                                                      #\n# Pragmas for Notifications                            #\n#SBATCH --mail-type=none                               # notify on state change\n#                                                      #\n# Pragmas for Core Node And Task Allocation            #\n#SBATCH --nodes=1                                      # number of nodes on which to run\n#SBATCH --ntasks-per-node=4                            # number of tasks to invoke on each node\n#SBATCH --cpus-per-task=1                              # number of cpus required per task\n#                                                      #\n# Pragmas for Memory                                   #\n#SBATCH --mem=480GB                                    # minimum amount of real memory\n#                                                      #\n# Pragmas for Generic Resources And Licenses           #\n#SBATCH --gres=gpu:4,tmpfs:10g                         # required generic resources\n########################################################\nmodule purge\nsource ./setup/modules.sh load\nmodule list\nset -e\nsource /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/activate\nexport CUNUMPY_BACKEND=cupy\necho \"----------------------------------------\"\necho \"Running profiling case: vlasov_ampere_landau_damping_cpu_node_vs_gpu_node (4 MPI ranks)\"\necho \"Description: The VlasovAmpereOneSpecies model on weak Landau damping (periodic box, k = 0.5, 1e-3 density perturbation, 1024 cells, about 1M markers) on one full CPU node (256 MPI ranks, NumPy) vs one full GPU node (4 MPI ranks on 4 GPUs, CuPy).\"\necho \"Physics problem: Landau damping of an electrostatic wave in a collisionless electron plasma.\"\necho \"Struphy model used: VlasovAmpereOneSpecies\"\necho \"cunumpy backend: cupy\"\necho \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T120033Z-e1343e26/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node\"\necho \"----------------------------------------\"\nmkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T120033Z-e1343e26/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node/sim_02\"\ncp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/VlasovAmpereOneSpecies/weak_Landau_damping/params_weak_Landau_damping.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T120033Z-e1343e26/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node/parameters.py\"\n\necho \"Running vlasov_ampere_landau_damping_cpu_node_vs_gpu_node with 4 MPI ranks\"\ncd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T120033Z-e1343e26/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node\"\nSTRUPHY_LOG_FILE=\"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T120033Z-e1343e26/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node/sim_02/struphy.log\" srun -n 4 /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/VlasovAmpereOneSpecies/weak_Landau_damping/params_weak_Landau_damping.py --out-folder /pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T120033Z-e1343e26/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node --sim-folder sim_02 --setup profiling --save-results > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T120033Z-e1343e26/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node/sim_02/struphy.out\" 2>&1\n\necho \"Post-processing vlasov_ampere_landau_damping_cpu_node_vs_gpu_node with /pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/VlasovAmpereOneSpecies/weak_Landau_damping/pproc_weak_Landau_damping.py\"\nSTRUPHY_LOG_FILE=\"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T120033Z-e1343e26/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node/sim_02/struphy.log\" /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/VlasovAmpereOneSpecies/weak_Landau_damping/pproc_weak_Landau_damping.py \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T120033Z-e1343e26/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node/sim_02\" --setup profiling --save-results > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T120033Z-e1343e26/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node/sim_02/pproc.out\" 2>&1\n\necho \"----------------------------------------\"\necho \"Completed profiling case: vlasov_ampere_landau_damping_cpu_node_vs_gpu_node (4 MPI ranks)\"\necho \"----------------------------------------\"\n",
+  "packaged_files": {
+    "profiling_data": "results-run02/run02.h5",
+    "additional_profiling_data": [],
+    "results": [
+      "results-run02/report.html",
+      "results-run02/summary.json"
+    ],
+    "run_directory": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261015T120033Z-e1343e26/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node/sim_02"
+  }
+}
