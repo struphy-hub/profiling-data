@@ -8,6 +8,8 @@ import re
 import shutil
 from pathlib import Path
 
+from analysis import write_analysis
+
 from scope_profiler import (
     ProfilingResults,
     export_flamegraph_svg,
@@ -599,6 +601,11 @@ def main() -> int:
             )
 
             run_outputs = {"id": run_id}
+            run_outputs["analysis"] = write_analysis(
+                [get_reader(Path(str(entry["file_path"])), reader_cache)],
+                run_output_dir,
+                output_dir,
+            )
             output_files = {
                 "durations": "durations_data.json",
                 "speedup": "speedup_data.json",
@@ -643,6 +650,13 @@ def main() -> int:
             ] = f"cases/{case_dir.name}/weak_scaling_efficiency_data.json"
         else:
             case_summary["plot_data"].pop("weak_scaling_efficiency", None)
+
+        case_summary["analysis"] = write_analysis(
+            [get_reader(path, reader_cache) for path in h5_files],
+            case_output_dir,
+            output_dir,
+            case_files=case_stats["files"],
+        )
 
     print(f"Selected {total_files} files from {len(case_dirs)} case folders.")
     if args.dry_run:

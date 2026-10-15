@@ -41,6 +41,20 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       </table>
     </div>
   </section>
+
+  <section class="card" style="margin-top: 1rem;">
+    <h2>Scope-profiler reports</h2>
+    <p>
+      The report generated with <code>scope-profiler report files*.h5</code> already
+      provides a useful profiling overview. This website now reuses its interactive charts:
+      timing comparisons, scaling views, timelines, duration distributions, and rank diagnostics,
+      with shared region, top-region, and nesting-depth filters. Available charts depend on the measurements recorded in each run.
+    </p>
+    <p>
+      See the <a href="https://max-models.github.io/scope-profiler/cli.html">scope-profiler CLI documentation</a>
+      to generate a report from your own profiling files.
+    </p>
+  </section>
 </BaseLayout>
 
 <script>

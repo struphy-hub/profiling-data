@@ -14,13 +14,13 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       <div class="compare-picker">
         <label class="compare-picker-label" for="case-a-select">Case A</label>
         <select id="case-a-select" class="metric-select compare-select"></select>
-        <select id="run-a-select" class="metric-select compare-select"></select>
+        <select aria-label="Run A" id="run-a-select" class="metric-select compare-select"></select>
       </div>
       <button id="compare-swap" class="rank-btn compare-swap" type="button" title="Swap A and B">⇄ Swap</button>
       <div class="compare-picker">
         <label class="compare-picker-label" for="case-b-select">Case B</label>
         <select id="case-b-select" class="metric-select compare-select"></select>
-        <select id="run-b-select" class="metric-select compare-select"></select>
+        <select aria-label="Run B" id="run-b-select" class="metric-select compare-select"></select>
       </div>
     </div>
   </section>
@@ -41,35 +41,11 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     </div>
   </section>
 
-  <section class="grid" style="margin-top: 1rem;">
-    <article class="card figure-tile">
-      <div class="figure-tile-header">
-        <h3 style="margin-top: 0;">Region timings</h3>
-        <select id="compare-metric-select" class="metric-select">
-          <option value="total" selected>Total</option>
-          <option value="avg">Average</option>
-          <option value="min">Min</option>
-          <option value="max">Max</option>
-          <option value="first">First call</option>
-          <option value="last">Last call</option>
-        </select>
-        <input
-          id="compare-region-filter"
-          class="region-filter"
-          type="search"
-          title="Comma-separated, case-insensitive substring match. Prefix a term with ^ to anchor it to the start of the region name."
-          placeholder="Filter regions, e.g. prop:, setup: total"
-          aria-label="Filter compared regions"
-          autocomplete="off"
-        />
-      </div>
-      <div id="compare-plot" class="plot-container"></div>
-    </article>
-  </section>
+  <section id="compare-analysis" class="analysis-viewer" aria-label="Comparison analysis" style="margin-top: 1rem;"></section>
 
   <section class="card" style="margin-top: 1rem;">
     <h2 style="margin-top: 0;">Region-by-region delta</h2>
-    <p class="muted" style="margin-top: 0;">Positive delta/change means Case B is slower than Case A for that region.</p>
+    <p class="muted" style="margin-top: 0;">Positive delta/change means candidate B is slower than baseline A. The timing metric and region filters above apply to both charts and this table. Missing measurements and percentages with a zero baseline are shown as —.</p>
     <div class="table-wrap">
       <table>
         <thead>
@@ -88,9 +64,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 </BaseLayout>
 
 <script>
-  import Plotly from "plotly.js-dist-min";
-  import { renderFigure, DEFAULT_REGION_FILTER } from "../lib/charts.js";
-  import { applyRegionTableFilter } from "../lib/regionTable.js";
+  import { AnalysisViewer, fetchAnalysisJson, mergeRegions, metricLabels, metricValue } from "../lib/analysis.js";
   import { groupKeyForCase, groupLabelForCase } from "../lib/cases.js";
 
   const rawBaseUrl = import.meta.env.BASE_URL;
@@ -104,10 +78,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   const runASelect = document.getElementById("run-a-select");
   const runBSelect = document.getElementById("run-b-select");
   const swapButton = document.getElementById("compare-swap");
-  const metricSelect = document.getElementById("compare-metric-select");
-  const regionFilterInput = document.getElementById("compare-region-filter");
-  regionFilterInput.value = DEFAULT_REGION_FILTER;
-  const comparePlot = document.getElementById("compare-plot");
   const metadataBody = document.getElementById("compare-metadata-body");
   const metaHeadA = document.getElementById("compare-meta-head-a");
   const metaHeadB = document.getElementById("compare-meta-head-b");
@@ -222,71 +192,65 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       .join("");
   };
 
+  const analysis = new AnalysisViewer(document.getElementById("compare-analysis"), baseUrl, (selection) => {
+    const [fileA, fileB] = selection.files;
+    tableHeadA.textContent = `A ${metricLabels[selection.metric].toLowerCase()} (s)`;
+    tableHeadB.textContent = `B ${metricLabels[selection.metric].toLowerCase()} (s)`;
+    tableBody.innerHTML = selection.rows
+      .filter(({ name }) => fileA?.region_statistics?.[name] || fileB?.region_statistics?.[name])
+      .map(({ name }) => {
+        const a = metricValue(fileA?.region_statistics?.[name], selection.metric);
+        const b = metricValue(fileB?.region_statistics?.[name], selection.metric);
+        const hasBoth = Number.isFinite(a) && Number.isFinite(b);
+        const delta = hasBoth ? b - a : null;
+        const pct = hasBoth && a !== 0 ? delta / a * 100 : null;
+        const cls = hasBoth ? delta > 0 ? "compare-slower" : delta < 0 ? "compare-faster" : "" : "";
+        return `<tr data-region="${esc(name)}"><td>${esc(name)}</td><td>${Number.isFinite(a) ? fmt(a) : "—"}</td><td>${Number.isFinite(b) ? fmt(b) : "—"}</td><td class="${cls}">${hasBoth ? `${delta >= 0 ? "+" : ""}${fmt(delta)}` : "—"}</td><td class="${cls}">${pct !== null ? `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%` : "—"}</td></tr>`;
+      }).join("") || '<tr><td colspan="5" class="empty-state">No recorded regions match these filters.</td></tr>';
+  });
+  let comparisonRequest = 0;
   const renderComparison = async () => {
+    const request = ++comparisonRequest;
     const entryA = selectedCase(caseASelect);
     const entryB = selectedCase(caseBSelect);
     if (!entryA || !entryB) return;
-
     const fileA = selectedRun(runASelect, entryA.id);
     const fileB = selectedRun(runBSelect, entryB.id);
-
     renderMetadata(entryA, entryB);
-
-    const labelA = `${groupLabelForCase(entryA)} (${fileA?.label ?? "-"})`;
-    const labelB = `${groupLabelForCase(entryB)} (${fileB?.label ?? "-"})`;
-    tableHeadA.textContent = `${groupLabelForCase(entryA)} avg (s)`;
-    tableHeadB.textContent = `${groupLabelForCase(entryB)} avg (s)`;
-
-    const statsA = fileA?.region_statistics ?? {};
-    const statsB = fileB?.region_statistics ?? {};
-    const regions = [...new Set([...Object.keys(statsA), ...Object.keys(statsB)])].sort();
-
-    const metric = metricSelect.value;
-
-    if (!regions.length) {
-      comparePlot.innerHTML = "<p class='muted'>No overlapping region data to compare.</p>";
-    } else {
-      // The chart takes the same shape scope-profiler writes for a whole
-      // run -- a `files` array of region_statistics -- so the two runs go in
-      // as they came out of region_statistics.json, relabelled with the case
-      // name the page shows. It draws only the regions both runs recorded;
-      // the table below still lists the union of the two.
-      await renderFigure(
-        Plotly,
-        comparePlot,
-        "comparison",
-        {
-          files: [
-            { ...fileA, label: labelA },
-            { ...fileB, label: labelB },
-          ],
-        },
-        { metric, regionFilter: regionFilterInput.value },
-      );
+    analysis.setLoading();
+    tableBody.innerHTML = '<tr><td colspan="5" class="muted">Loading selected runs…</td></tr>';
+    try {
+      const [manifestA, manifestB, caseManifest] = await Promise.all([
+        fetchAnalysisJson(baseUrl, fileA?.run_outputs?.analysis),
+        fetchAnalysisJson(baseUrl, fileB?.run_outputs?.analysis),
+        entryA.id === entryB.id && entryA.analysis ? fetchAnalysisJson(baseUrl, entryA.analysis) : null,
+      ]);
+      if (request !== comparisonRequest) return;
+      const compared = [
+        { ...manifestA.files[0], label: `A · ${groupLabelForCase(entryA)} · ${fileA.label}` },
+        { ...manifestB.files[0], label: `B · ${groupLabelForCase(entryB)} · ${fileB.label}` },
+      ];
+      const payload = { plot: "region_statistics", files: compared };
+      const charts = [
+        { id: "compare-timings", title: "Region timings", description: "Selected runs, across all recorded ranks. Change the metric above or switch between side-by-side, percentage and absolute views.", kind: "comparison", payload, open: true },
+        { id: "compare-percent", title: "Timing change", description: "Signed change from baseline A to candidate B. Positive values mean B is slower; missing measurements and a zero baseline have no percentage.", kind: "comparison", payload, options: { comparison: "percent" }, open: true },
+      ];
+      if (caseManifest) {
+        for (const chart of caseManifest.charts ?? []) {
+          if (["speedup", "scaling_efficiency", "weak_scaling_efficiency", "weak_scaling"].includes(chart.kind)) {
+            charts.push({ ...chart, id: `case-${chart.id}`, title: `${chart.title} · all runs in this case`, open: false });
+          }
+        }
+      }
+      await analysis.setManifest({ files: compared, regions: mergeRegions([manifestA, manifestB]), charts, unavailable: [], summary: [
+        { ...manifestA.summary?.[0], label: compared[0].label },
+        { ...manifestB.summary?.[0], label: compared[1].label },
+      ] });
+    } catch (error) {
+      if (request !== comparisonRequest) return;
+      analysis.setError(error);
+      tableBody.innerHTML = '<tr><td colspan="5">Comparison data could not be loaded.</td></tr>';
     }
-
-    tableBody.innerHTML = regions
-      .map((region) => {
-        const a = statsA[region]?.average_duration_seconds;
-        const b = statsB[region]?.average_duration_seconds;
-        const hasBoth = typeof a === "number" && typeof b === "number";
-        const delta = hasBoth ? b - a : null;
-        const pct = hasBoth && a !== 0 ? (delta / a) * 100 : null;
-        const deltaClass = hasBoth ? (delta > 0 ? "compare-slower" : delta < 0 ? "compare-faster" : "") : "";
-        return `
-          <tr data-region="${esc(region)}">
-            <td>${esc(region)}</td>
-            <td>${fmt(a)}</td>
-            <td>${fmt(b)}</td>
-            <td class="${deltaClass}">${hasBoth ? `${delta >= 0 ? "+" : ""}${fmt(delta)}` : "-"}</td>
-            <td class="${deltaClass}">${hasBoth && pct !== null ? `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%` : "-"}</td>
-          </tr>
-        `;
-      })
-      .join("");
-
-    // One box drives both the chart and the delta table on this page.
-    applyRegionTableFilter(regionFilterInput, tableBody, 5);
   };
 
   const updateUrl = () => {
@@ -367,13 +331,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       runBSelect.addEventListener("change", () => {
         renderComparison();
         updateUrl();
-      });
-      metricSelect.addEventListener("change", renderComparison);
-      // Typing should feel live without re-plotting on every keystroke.
-      let filterTimer = null;
-      regionFilterInput.addEventListener("input", () => {
-        window.clearTimeout(filterTimer);
-        filterTimer = window.setTimeout(renderComparison, 200);
       });
       swapButton.addEventListener("click", () => {
         const aCase = caseASelect.value;

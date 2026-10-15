@@ -11,6 +11,10 @@ browser code that renders it. Both halves are therefore always the same
 commit -- before this, the Python side tracked the `devel` branch and the
 browser side an npm release, so the two could drift apart between builds.
 
+The current pin is scope-profiler 0.7.4, commit
+[`910cf78`](https://github.com/max-models/scope-profiler/commit/910cf78adcefe451c2a7288c5e98d212c348f183)
+from `devel` (updated 2026-10-15), including `@scope-profiler/plotly` 0.4.0.
+
 Clone with it:
 
 ```bash
@@ -27,6 +31,47 @@ git -C vendor/scope-profiler checkout <sha-or-branch>
 git add vendor/scope-profiler        # records the new commit
 (cd docs && npm install)             # refresh the lockfile if the JS changed
 ```
+
+## Scope-profiler reports
+
+The standalone report is already a useful profiling overview:
+
+```bash
+scope-profiler report files*.h5
+```
+
+Its interactive charts and shared filtering controls are now integrated into
+the case, run, and comparison pages. The website uses scope-profiler's public
+Python exporters and Plotly builders, with a shared analysis viewer in
+`docs/src/lib/analysis.js`; navigation, simulation parameters, and galleries
+remain specific to this repository. Consult the
+[CLI documentation](https://max-models.github.io/scope-profiler/cli.html)
+when generating reports or adapting their features for the dashboard.
+
+The shared toolbar filters native charts and timing tables by region name,
+top regions by total time, and nesting depth. It also selects the timing
+metric. Charts load when expanded and support light/dark themes and full screen.
+
+- Case pages show grouped durations, signed changes for two-run cases, and
+  speedup with selectable MPI rank, node, thread, or core axes where recorded
+  counts differ. Strong-scaling efficiency requires a fixed grid; weak-scaling
+  efficiency requires fixed grid cells per rank. Efficiency is omitted when
+  runs use different compute backends, such as NumPy versus CuPy.
+- Run pages add stacked own/child duration bars, timeline, flame chart,
+  duration timeseries and distributions, rank imbalance, and an exclusive-time
+  rank heatmap. Available LIKWID metrics are also exported.
+- Compare pages let any two runs be compared side by side or by absolute or
+  percentage change. The delta table uses the selected metric; missing data
+  and percentages with a zero baseline stay unavailable.
+
+`scripts/analysis.py` writes an `analysis.json` manifest per case and run,
+alongside lazily loaded chart payloads. Statistics, duration charts, and rank
+diagnostics use **all recorded ranks**. Call timelines, flame views, timeseries,
+and distributions use **rank 0**, as their titles indicate. The standalone
+SVG flame graph and speedscope viewer retain their own controls.
+
+Verify the exporter with `python -m unittest discover -s scripts -p 'test_*.py'`,
+then generate figures and build the docs as described below.
 
 ## Docs build and publish
 
@@ -54,7 +99,7 @@ Each profiling directory is processed independently, so plots are generated per-
 
 Each run page shows a flame graph.
 
-All run-level figures — durations, gantt, flame and the flame graph — are generated for **rank 0 only** for now.
+The SVG flame graph and `.prof` download are generated for **rank 0**.
 
 - `scope_profiler.export_prof()` writes `profile_rank0.prof`.
 - `scope_profiler.export_flamegraph_svg()` writes `flamegraph_rank0.svg`. It renders the same reconstructed call tree through [flameprof](https://pypi.org/project/flameprof/) (part of the `pproc` extra), and carries a `viewBox` rather than flameprof's fixed 1200px width, so the page can scale it to the card.
