@@ -1,0 +1,55 @@
+{
+  "mpi_ranks": 1,
+  "backend": "cupy",
+  "slurm_script": {
+    "pragmas": {
+      "account": "FUSIO_HLST_6",
+      "job_name": "profiling_poisson_cube_gpu_scaling_256_01",
+      "partition": "boost_fua_dbg",
+      "time": "00:15:00",
+      "error": "./%x.%j.err",
+      "output": "./%x.%j.out",
+      "mail_type": "none",
+      "cpus_per_task": 1,
+      "nodes": 1,
+      "ntasks_per_node": 1,
+      "mem": "480GB",
+      "gres": "gpu:4,tmpfs:10g"
+    },
+    "modules": [],
+    "custom_commands": [
+      "module purge",
+      "source ./setup/modules.sh load",
+      "module list",
+      "set -e",
+      "source /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/activate",
+      "export CUNUMPY_BACKEND=cupy",
+      "export OMP_NUM_THREADS=1",
+      "echo \"----------------------------------------\"",
+      "echo \"Running profiling case: poisson_cube_gpu_scaling_256 (1 MPI ranks)\"",
+      "echo \"Description: The Poisson model with manufactured solution on a 3D cube (Cuboid, 256^3 cells, degree (1, 2, 3)), 5 solves with unpreconditioned CG ('pcg'), on 1, 2 and 4 H100 GPUs of a booster node (CuPy, one MPI rank per GPU).\"",
+      "echo \"Physics problem: Occurs in many plasma applications.\"",
+      "echo \"Struphy model used: Poisson\"",
+      "echo \"cunumpy backend: cupy\"",
+      "echo \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T133406Z-843a82cd/poisson_cube_gpu_scaling_256\"",
+      "echo \"----------------------------------------\"",
+      "mkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T133406Z-843a82cd/poisson_cube_gpu_scaling_256/sim_01\"",
+      "cp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/Poisson/gaussian_cube/params_gaussian_cube.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T133406Z-843a82cd/poisson_cube_gpu_scaling_256/parameters.py\"",
+      "",
+      "echo \"Running poisson_cube_gpu_scaling_256 with 1 MPI ranks\"",
+      "cd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T133406Z-843a82cd/poisson_cube_gpu_scaling_256\"",
+      "STRUPHY_LOG_FILE=\"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T133406Z-843a82cd/poisson_cube_gpu_scaling_256/sim_01/struphy.log\" srun -n 1 /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/Poisson/gaussian_cube/params_gaussian_cube.py --out-folder /pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T133406Z-843a82cd/poisson_cube_gpu_scaling_256 --sim-folder sim_01 --num-elements 256 256 256 --steps 5 --solver pcg --gpu-timing --no-output > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T133406Z-843a82cd/poisson_cube_gpu_scaling_256/sim_01/struphy.out\" 2>&1",
+      "",
+      "echo \"----------------------------------------\"",
+      "echo \"Completed profiling case: poisson_cube_gpu_scaling_256 (1 MPI ranks)\"",
+      "echo \"----------------------------------------\""
+    ]
+  },
+  "slurm_script_str": "#!/bin/bash\n########################################################\n#            This script was generated using           #\n#             slurm-script-generator v0.3.7            #\n# https://github.com/max-models/slurm-script-generator #\n#      `pip install slurm-script-generator==0.3.7`     #\n########################################################\n\n########################################################\n# Pragmas for Job Config                               #\n#SBATCH --job-name=profiling_poisson_cube_gpu_scaling_256_01 # name of job\n#SBATCH --account=FUSIO_HLST_6                         # charge job to specified account\n#SBATCH --partition=boost_fua_dbg                      # partition requested\n#                                                      #\n# Pragmas for Time And Priority                        #\n#SBATCH --time=00:15:00                                # time limit\n#                                                      #\n# Pragmas for Io And Directory                         #\n#SBATCH --output=./%x.%j.out                           # File to redirect output (%%x=jobname, %%j=jobid)\n#SBATCH --error=./%x.%j.err                            # File to redirect error (%%x=jobname, %%j=jobid)\n#                                                      #\n# Pragmas for Notifications                            #\n#SBATCH --mail-type=none                               # notify on state change\n#                                                      #\n# Pragmas for Core Node And Task Allocation            #\n#SBATCH --nodes=1                                      # number of nodes on which to run\n#SBATCH --ntasks-per-node=1                            # number of tasks to invoke on each node\n#SBATCH --cpus-per-task=1                              # number of cpus required per task\n#                                                      #\n# Pragmas for Memory                                   #\n#SBATCH --mem=480GB                                    # minimum amount of real memory\n#                                                      #\n# Pragmas for Generic Resources And Licenses           #\n#SBATCH --gres=gpu:4,tmpfs:10g                         # required generic resources\n########################################################\nmodule purge\nsource ./setup/modules.sh load\nmodule list\nset -e\nsource /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/activate\nexport CUNUMPY_BACKEND=cupy\nexport OMP_NUM_THREADS=1\necho \"----------------------------------------\"\necho \"Running profiling case: poisson_cube_gpu_scaling_256 (1 MPI ranks)\"\necho \"Description: The Poisson model with manufactured solution on a 3D cube (Cuboid, 256^3 cells, degree (1, 2, 3)), 5 solves with unpreconditioned CG ('pcg'), on 1, 2 and 4 H100 GPUs of a booster node (CuPy, one MPI rank per GPU).\"\necho \"Physics problem: Occurs in many plasma applications.\"\necho \"Struphy model used: Poisson\"\necho \"cunumpy backend: cupy\"\necho \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T133406Z-843a82cd/poisson_cube_gpu_scaling_256\"\necho \"----------------------------------------\"\nmkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T133406Z-843a82cd/poisson_cube_gpu_scaling_256/sim_01\"\ncp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/Poisson/gaussian_cube/params_gaussian_cube.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T133406Z-843a82cd/poisson_cube_gpu_scaling_256/parameters.py\"\n\necho \"Running poisson_cube_gpu_scaling_256 with 1 MPI ranks\"\ncd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T133406Z-843a82cd/poisson_cube_gpu_scaling_256\"\nSTRUPHY_LOG_FILE=\"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T133406Z-843a82cd/poisson_cube_gpu_scaling_256/sim_01/struphy.log\" srun -n 1 /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/Poisson/gaussian_cube/params_gaussian_cube.py --out-folder /pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T133406Z-843a82cd/poisson_cube_gpu_scaling_256 --sim-folder sim_01 --num-elements 256 256 256 --steps 5 --solver pcg --gpu-timing --no-output > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T133406Z-843a82cd/poisson_cube_gpu_scaling_256/sim_01/struphy.out\" 2>&1\n\necho \"----------------------------------------\"\necho \"Completed profiling case: poisson_cube_gpu_scaling_256 (1 MPI ranks)\"\necho \"----------------------------------------\"\n",
+  "packaged_files": {
+    "profiling_data": "results-run01/run01.h5",
+    "additional_profiling_data": [],
+    "results": [],
+    "run_directory": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T133406Z-843a82cd/poisson_cube_gpu_scaling_256/sim_01"
+  }
+}
