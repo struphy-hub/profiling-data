@@ -1,0 +1,58 @@
+{
+  "mpi_ranks": 4,
+  "backend": "cupy",
+  "slurm_script": {
+    "pragmas": {
+      "account": "FUSIO_HLST_6",
+      "job_name": "profiling_vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000_02",
+      "partition": "boost_fua_dbg",
+      "time": "00:15:00",
+      "error": "./%x.%j.err",
+      "output": "./%x.%j.out",
+      "mail_type": "none",
+      "cpus_per_task": 1,
+      "nodes": 1,
+      "ntasks_per_node": 4,
+      "mem": "480GB",
+      "gres": "gpu:4,tmpfs:10g"
+    },
+    "modules": [],
+    "custom_commands": [
+      "module purge",
+      "source ./setup/modules.sh load",
+      "module list",
+      "set -e",
+      "source /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/activate",
+      "export CUNUMPY_BACKEND=cupy",
+      "export OMP_NUM_THREADS=1",
+      "echo \"----------------------------------------\"",
+      "echo \"Running profiling case: vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000 (4 MPI ranks)\"",
+      "echo \"Description: The VlasovAmpereOneSpecies model on weak Landau damping (periodic box, k = 0.5, 1e-3 density perturbation, 1024 cells, 131.1M markers, 20 steps) on one full CPU node (256 MPI ranks x 1 thread, NumPy) vs one full GPU node (4 MPI ranks on 4 H100s, CuPy).\"",
+      "echo \"Physics problem: Landau damping of an electrostatic wave in a collisionless electron plasma.\"",
+      "echo \"Struphy model used: VlasovAmpereOneSpecies\"",
+      "echo \"cunumpy backend: cupy\"",
+      "echo \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T151342Z-843a82cd/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000\"",
+      "echo \"----------------------------------------\"",
+      "mkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T151342Z-843a82cd/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000/sim_02\"",
+      "cp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/VlasovAmpereOneSpecies/weak_Landau_damping/params_weak_Landau_damping.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T151342Z-843a82cd/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000/parameters.py\"",
+      "",
+      "echo \"Running vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000 with 4 MPI ranks\"",
+      "cd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T151342Z-843a82cd/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000\"",
+      "STRUPHY_LOG_FILE=\"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T151342Z-843a82cd/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000/sim_02/struphy.log\" srun -n 4 /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/VlasovAmpereOneSpecies/weak_Landau_damping/params_weak_Landau_damping.py --out-folder /pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T151342Z-843a82cd/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000 --sim-folder sim_02 --setup profiling --save-results --ppc 128000 > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T151342Z-843a82cd/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000/sim_02/struphy.out\" 2>&1",
+      "",
+      "echo \"Post-processing vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000 with /pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/VlasovAmpereOneSpecies/weak_Landau_damping/pproc_weak_Landau_damping.py\"",
+      "STRUPHY_LOG_FILE=\"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T151342Z-843a82cd/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000/sim_02/struphy.log\" /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/VlasovAmpereOneSpecies/weak_Landau_damping/pproc_weak_Landau_damping.py \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T151342Z-843a82cd/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000/sim_02\" --setup profiling --save-results --ppc 128000 > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T151342Z-843a82cd/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000/sim_02/pproc.out\" 2>&1",
+      "",
+      "echo \"----------------------------------------\"",
+      "echo \"Completed profiling case: vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000 (4 MPI ranks)\"",
+      "echo \"----------------------------------------\""
+    ]
+  },
+  "slurm_script_str": "#!/bin/bash\n########################################################\n#            This script was generated using           #\n#             slurm-script-generator v0.3.7            #\n# https://github.com/max-models/slurm-script-generator #\n#      `pip install slurm-script-generator==0.3.7`     #\n########################################################\n\n########################################################\n# Pragmas for Job Config                               #\n#SBATCH --job-name=profiling_vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000_02 # name of job\n#SBATCH --account=FUSIO_HLST_6                         # charge job to specified account\n#SBATCH --partition=boost_fua_dbg                      # partition requested\n#                                                      #\n# Pragmas for Time And Priority                        #\n#SBATCH --time=00:15:00                                # time limit\n#                                                      #\n# Pragmas for Io And Directory                         #\n#SBATCH --output=./%x.%j.out                           # File to redirect output (%%x=jobname, %%j=jobid)\n#SBATCH --error=./%x.%j.err                            # File to redirect error (%%x=jobname, %%j=jobid)\n#                                                      #\n# Pragmas for Notifications                            #\n#SBATCH --mail-type=none                               # notify on state change\n#                                                      #\n# Pragmas for Core Node And Task Allocation            #\n#SBATCH --nodes=1                                      # number of nodes on which to run\n#SBATCH --ntasks-per-node=4                            # number of tasks to invoke on each node\n#SBATCH --cpus-per-task=1                              # number of cpus required per task\n#                                                      #\n# Pragmas for Memory                                   #\n#SBATCH --mem=480GB                                    # minimum amount of real memory\n#                                                      #\n# Pragmas for Generic Resources And Licenses           #\n#SBATCH --gres=gpu:4,tmpfs:10g                         # required generic resources\n########################################################\nmodule purge\nsource ./setup/modules.sh load\nmodule list\nset -e\nsource /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/activate\nexport CUNUMPY_BACKEND=cupy\nexport OMP_NUM_THREADS=1\necho \"----------------------------------------\"\necho \"Running profiling case: vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000 (4 MPI ranks)\"\necho \"Description: The VlasovAmpereOneSpecies model on weak Landau damping (periodic box, k = 0.5, 1e-3 density perturbation, 1024 cells, 131.1M markers, 20 steps) on one full CPU node (256 MPI ranks x 1 thread, NumPy) vs one full GPU node (4 MPI ranks on 4 H100s, CuPy).\"\necho \"Physics problem: Landau damping of an electrostatic wave in a collisionless electron plasma.\"\necho \"Struphy model used: VlasovAmpereOneSpecies\"\necho \"cunumpy backend: cupy\"\necho \"Case directory: /pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T151342Z-843a82cd/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000\"\necho \"----------------------------------------\"\nmkdir -p \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T151342Z-843a82cd/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000/sim_02\"\ncp \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/VlasovAmpereOneSpecies/weak_Landau_damping/params_weak_Landau_damping.py\" \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T151342Z-843a82cd/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000/parameters.py\"\n\necho \"Running vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000 with 4 MPI ranks\"\ncd \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T151342Z-843a82cd/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000\"\nSTRUPHY_LOG_FILE=\"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T151342Z-843a82cd/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000/sim_02/struphy.log\" srun -n 4 /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/VlasovAmpereOneSpecies/weak_Landau_damping/params_weak_Landau_damping.py --out-folder /pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T151342Z-843a82cd/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000 --sim-folder sim_02 --setup profiling --save-results --ppc 128000 > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T151342Z-843a82cd/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000/sim_02/struphy.out\" 2>&1\n\necho \"Post-processing vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000 with /pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/VlasovAmpereOneSpecies/weak_Landau_damping/pproc_weak_Landau_damping.py\"\nSTRUPHY_LOG_FILE=\"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T151342Z-843a82cd/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000/sim_02/struphy.log\" /pitagora/home/userexternal/mlindqvi/git_repos/struphy/.venv/bin/python /pitagora/home/userexternal/mlindqvi/git_repos/struphy/examples/VlasovAmpereOneSpecies/weak_Landau_damping/pproc_weak_Landau_damping.py \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T151342Z-843a82cd/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000/sim_02\" --setup profiling --save-results --ppc 128000 > \"/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T151342Z-843a82cd/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000/sim_02/pproc.out\" 2>&1\n\necho \"----------------------------------------\"\necho \"Completed profiling case: vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000 (4 MPI ranks)\"\necho \"----------------------------------------\"\n",
+  "packaged_files": {
+    "profiling_data": "results-run02/run02.h5",
+    "additional_profiling_data": [],
+    "results": [],
+    "run_directory": "/pitagora/home/userexternal/mlindqvi/git_repos/struphy/_profiling_jobs/20261016T151342Z-843a82cd/vlasov_ampere_landau_damping_cpu_node_vs_gpu_node_ppc128000/sim_02"
+  }
+}
