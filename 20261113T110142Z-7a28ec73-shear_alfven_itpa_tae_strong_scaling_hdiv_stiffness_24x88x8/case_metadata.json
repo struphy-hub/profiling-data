@@ -1,0 +1,38 @@
+{
+  "general_information": {
+    "time_date_utc": "2026-11-13T11:01:42.600256+00:00",
+    "datetime_token": "20261113T110142Z",
+    "test_case_identifier": "shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_24x88x8",
+    "test_case_name": "ShearAlfven ITPA TAE strong scaling, B in H(div), Kronecker preconditioner, 24 x 88 x 8",
+    "test_case_description": "Strong scaling on one node of the ShearAlfven model on the ITPA TAE benchmark (HollowTorus with tor_period 6 and a hole of radius 0.01, AdhocTorus, 24 x 88 x 8 elements, cubic splines, dt = 0.2, 50 steps): magnetic field in H(div), implicit solve for the velocity (exactly energy conserving), PCG preconditioned by the Kronecker (fast diagonalization) preconditioner of the Schur operator with the E x B auxiliary space correction (StiffnessPreconditioner).",
+    "physics_problem": "Toroidal Alfven eigenmode (TAE) in a large-aspect-ratio tokamak (ITPA benchmark).",
+    "struphy_model_used": "ShearAlfven",
+    "simulation_name": "shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_24x88x8",
+    "simulation_description": "",
+    "results_root": "/ptmp/spossann/struphy_profiling/20261113T110142Z-7a28ec73"
+  },
+  "hardware_information": {
+    "cluster_name": "raven",
+    "node_hostnames": [
+      "raven01"
+    ]
+  },
+  "software_information": {
+    "struphy_commit": "7a28ec7313553bbf5fdfbaf83d0ea5a2b56e934e",
+    "pyccel_language": "fortran",
+    "pyccel_compiler_family": "GNU",
+    "compiler_options": {
+      "compiler_config": null,
+      "openmp": false,
+      "verbose": false,
+      "debug": false,
+      "time_execution": false,
+      "yes": false
+    },
+    "parameter_file": "/raven/u/spossann/struphy/examples/ShearAlfven/itpa_tae_benchmark/params_ShearAlfven.py",
+    "parameter_file_source": "/raven/u/spossann/struphy/examples/ShearAlfven/itpa_tae_benchmark/params_ShearAlfven.py",
+    "python_environment_pip_freeze": "aiohappyeyeballs==2.7.1\naiohttp==3.14.5\naiosignal==1.4.0\nanyio==4.16.0\nargcomplete==3.7.0\nargon2-cffi==25.1.0\nargon2-cffi-bindings==26.2.0\nArpeggio==2.0.3\narray-api-compat==1.16.0\narrow==1.4.0\nasttokens==3.0.2\nasync-lru==2.4.0\nattrs==26.1.0\nbabel==2.18.0\nbeautifulsoup4==4.15.0\nbleach==6.4.0\ncertifi==2026.10.23\ncffi==2.1.1\ncfgv==3.5.0\ncharset-normalizer==3.5.2\nchoreographer==1.4.0\ncomm==0.2.3\ncontourpy==1.4.0\ncoverage==7.17.3\ncunumpy==0.7.0\ncycler==0.12.1\ncyclopts==5.4.2\ndebugpy==1.8.22\ndefusedxml==0.7.1\ndistlib==0.4.4\ndocstring_parser==0.18.0\nexecuting==2.3.0\nfastjsonschema==2.22.3\nfeectools==0.10.0\nfilelock==4.2.10\nflameprof==0.4\nflatbuffers==25.12.19\nflexcache==0.3\nflexparser==0.4\nfonttools==4.68.0\nfqdn==1.6.0\nfrozenlist==1.8.0\nh11==0.16.0\nh5netcdf==1.8.1\nh5py==3.16.0\nhttpcore==1.0.9\nhttpx==0.28.1\nidentify==2.6.20\nidna==3.20\nimmutabledict==4.3.1\niniconfig==2.3.1\nipykernel==7.4.0\nipython==9.18.1\nipython_pygments_lexers==1.1.1\nipywidgets==8.1.8\nisoduration==20.11.0\njedi==0.20.1\nJinja2==3.1.6\njson5==0.17.3\njsonpickle==4.1.4\njsonpointer==3.12\njsonschema==4.26.0\njsonschema-specifications==2025.9.1\njupyter-events==0.12.1\njupyter-lsp==2.3.1\njupyter_builder==1.3.0\njupyter_client==8.10.0\njupyter_core==5.9.1\njupyter_server==2.21.1\njupyter_server_terminals==0.5.4\njupyterlab==4.6.6\njupyterlab_pygments==0.3.0\njupyterlab_server==2.28.1\njupyterlab_widgets==3.0.17\nkaleido==1.5.1\nkiwisolver==1.5.1\nlark==1.3.1\nline_profiler==5.0.2\nlinkify-it-py==2.2.0\nlogistro==2.0.1\nmarkdown-it-py==4.3.0\nMarkupSafe==3.0.4\nmatplotlib==3.11.0\nmatplotlib-inline==0.2.2\nmaxplotlibx==0.1.9\nmaybempi==0.1.2\nmdit-py-plugins==0.7.0\nmdurl==0.1.2\nmeson==1.12.1\nmistune==3.4.0\nmore-itertools==11.2.1\nmpi4py==4.1.1\nmpmath==1.3.0\nmsgpack==1.2.4\nmultidict==7.2.1\nnarwhals==2.28.0\nnbclient==0.11.0\nnbconvert==7.17.2\nnbformat==5.11.1\nnbstripout==0.9.1\nnest-asyncio2==1.7.2\nnetworkx==3.7\nninja==1.13.2\nnodeenv==1.12.0\nnotebook==7.6.5\nnotebook_shim==0.2.4\nnumpy==2.5.0\nonnxruntime==1.31.1\npackaging==26.3\npandas==3.1.1\npandocfilters==1.5.1\nparso==0.8.7\npexpect==4.9.0\npillow==13.0.0\nPint==0.26.2\nplasma-plots==0.2.5\nplatformdirs==4.14.5\nplotext==6.1.0\nplotly==7.1.0\npluggy==1.7.0\npooch==1.9.0\npre_commit==4.7.0\nprometheus_client==0.26.0\nprompt_toolkit==3.0.53\npropcache==0.5.4\nprotobuf==7.36.2\npsutil==7.2.2\nptyprocess==0.7.0\npure_eval==0.2.4\npyarrow==26.0.1\npyccel==2.2.3\npycparser==3.12\npyevtk==1.7.0\nPygments==2.21.0\npymupdf==2.1\npymupdf4llm==2.1\npymupdf_layout==2.1\npyparsing==3.3.3\npytest==9.1.0\npytest-mpi==0.6\npytest-testmon==2.2.0\npython-dateutil==4.0.0\npython-discovery==1.9.5\npython-json-logger==4.2.0\npyvis==0.3.2\npyvista==0.49.0\npyvista-validation==0.2.2\nPyYAML==6.0.3\npyzmq==27.3.0\nreferencing==0.37.0\nrequests==2.34.2\nrfc3339-validator==0.1.4\nrfc3986-validator==0.1.1\nrfc3987-syntax==1.1.0\nrich==15.0.0\nrich-rst==2.2.0\nrpds-py==2026.9.1\nruff==0.16.10\nscipy==1.18.0\nscooby==0.12.1\nscope-profiler==0.7.3\nSend2Trash==2.2.0\nsimplejson==4.3.0\nsix==1.17.0\nslurm-script-generator==0.4.0\nsnakeviz==2.2.2\nsoupsieve==4.1\nstack-data==0.6.3\nstruphy @ file:///raven/u/spossann/struphy\nsympy==1.14.0\ntabulate==0.10.0\ntblib==3.2.2\ntermcolor==3.3.0\nterminado==0.18.1\ntextual==8.2.8\ntextX==4.4.0\ntikzfigure==0.5.0\ntinycss2==1.5.1\ntomli_w==1.2.0\ntornado==6.6.1\ntqdm==4.70.0\ntraitlets==5.16.1\ntrame==4.0.0\ntrame-client==4.1.4\ntrame-common==1.2.9\ntrame-server==4.1.1\ntrame-vtk==2.8.13\ntrame-vuetify==3.3.0\ntyping_extensions==4.16.0\ntzdata==2026.6\nuri-template==1.3.0\nurllib3==2.8.0\nvirtualenv==21.15.6\nvtk==9.7.0\nwcwidth==0.9.4\nwebcolors==25.10.0\nwebencodings==0.6.1\nwebsocket-client==1.9.2\nwidgetsnbextension==4.0.16\nwslink==2.6.0\nxarray==2026.9.0\nyarl==1.25.1"
+  },
+  "scheduler": "slurm",
+  "runs": []
+}
