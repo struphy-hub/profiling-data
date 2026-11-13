@@ -347,6 +347,6 @@
       "results-run05/report.html",
       "results-run05/summary.json"
     ],
-    "run_directory": "/ptmp/spossann/struphy_profiling/20261113T154030Z-f087ad6b/shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_24x88x8/sim_05"
+    "run_directory": "/raven/ptmp/spossann/struphy_profiling/20261113T154030Z-f087ad6b/shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_24x88x8/sim_05"
   }
 }
