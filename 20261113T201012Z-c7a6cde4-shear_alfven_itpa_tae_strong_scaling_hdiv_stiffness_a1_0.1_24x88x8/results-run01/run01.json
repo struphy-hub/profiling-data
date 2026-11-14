@@ -1,0 +1,354 @@
+{
+  "name": "ITPA TAE benchmark (ShearAlfven, b_space=Hdiv)",
+  "description": "\nToroidal Alfven eigenmode (TAE) with the ShearAlfven model: the shear Alfven part of linear ideal MHD around a\nstatic (zero-flow) equilibrium, without pressure and density perturbations (no coupling to the magnetosonic waves;\ncompare with the LinearMHD version of this benchmark). No energetic particles: the TAE is excited by the initial\ncondition, not driven. By default (--b-space Hcurl), the magnetic field is in H(curl) and the implicit step\nsolves a curl-curl system for it, preconditioned by Hiptmair-Xu. This time step is not exactly energy conserving\nand damps the wave numerically, the more the larger the time step (the damping also decreases with the resolution\nalong the background field): at t = 300, about 74%, 56% and 28% of the initial energy are left with dt = 0.1,\n0.2 (the default) and 0.5. The frequency hardly depends on the time step (0.0838 and 0.0835 at r = 0.5 for\ndt = 0.1 and 0.5, up to t = 300). (These numbers and those below were measured with a hole of radius --a1 0.1.)\n--b-space Hcurl --projected is the exactly energy conserving version (mass matrix preconditioner, much slower).\n\nWith --b-space Hdiv (magnetic field in H(div), implicit solve for the velocity, exactly energy conserving), the\ninduction equation uses the commuting projection Pi^1[B0 x u] of the Lorentz drift, whose interpolation error in\nthe poloidal direction shifts the parallel wave number k_par ~ m b^2 + n b^3 (contravariant components). Near the\ngap, n q - m nearly cancels, so that a small error in the poloidal part gives a large error in the frequency: on\nthe default grid (4.4 elements per wavelength of the m = 10 harmonic) the effective poloidal mode number is about\n2-3% too small (9.72 - 9.79 instead of 10, from the measured continuum frequencies), the continuum is shifted and there is no TAE at all (omega about 0.13 at\nr = 0.5, for dt = 0.1 and 0.5 alike). Hdiv needs about 8 elements per poloidal wavelength, e.g.\n--num-elements 24 88 8 (omega = 0.0835, i.e. 4.07e5 rad/s); 32 x 64 x 8 is not enough, and more elements along\neta3 do not help. The H(curl) version has no such error (weak products with mass matrices).\nWith --polar (Hdiv only), C1 polar splines on the full torus without hole (IGAPolarTorus) replace the\ntensor-product splines on the HollowTorus; the number of elements along eta2 must be a multiple of 3 (e.g.\n--num-elements 24 90 8). The Kronecker preconditioner is then its 2D x 1D polar version (no E x B correction needed);\nthe mass matrix preconditioner is PolarMassMatrixPreconditioner.\n\nPhysics. Shear Alfven waves propagate along the magnetic field with the local frequency\n    omega_A(r) = |k_par(r)| v_A(r),   v_A(r) = B(r) / sqrt(mu0 rho(r)),\nwhere, for a mode with poloidal mode number m and toroidal mode number n in a torus of major radius R with safety\nfactor q(r), the parallel wave number is\n    k_par(r) = (n q(r) - m) / (q(r) R).\nThe frequencies of two counter-propagating modes with the same n and poloidal mode numbers m and m + 1 cross where\nk_par,m = -k_par,m+1, i.e. at the radius r_c with\n    q(r_c) = (2m + 1) / (2n).\nToroidicity couples the two harmonics and opens a gap in the shear Alfven continuum at this crossing, in which the\ntoroidal Alfven eigenmode (TAE) exists with the frequency\n    omega_TAE = n / (2m + 1) * v_A(r_c) / R.\nIn Struphy units, v_A = v' v_unit and R = R' x_unit, so omega_TAE = n / (2m + 1) * v'(r_c) / R' * v_unit / x_unit,\nwith the velocity unit v_unit (the Alfven velocity of the base units, set by the model) and the length unit x_unit\n(base units).\n\nSetup (ITPA TAE benchmark). Large-aspect-ratio tokamak with circular flux surfaces (AdhocTorus): major radius\nR0 = 10, minor radius a = 1, toroidal field B0 = 3, safety factor q(r) = 1.71 + 0.16 r^2/a^2, hydrogen\nbulk with the flat number density 2e19 m^-3 (n = 1 in the density unit, base units n = 0.2) and on-axis beta 0.0018,\nas in the ITPA benchmark (Koenies et al. 2018). Only the toroidal mode number n = 6 is computed, on a sixth\nof the torus (HollowTorus with tor_period = 6 and a hole of radius 0.01, --a1): the logical mode number -1 along eta3 is\nthe physical n = 6. The velocity is initialized with the m = 10 and m = 11 harmonics, localized around r = 0.5\n(given as 2-form components).\n\nExpected result. With n = 6 and m = 10 the gap is at q(r_c) = 21/12 = 1.75, i.e. r_c = 0.5, where n = 1 and\n|B| = 3.0 (flux-surface average), so v_A(r_c) = 3.0 v_unit and\n    omega_TAE = 6/21 * 3.0/10 = 0.086 v_unit / x_unit,\na period of about 73 time units. With the base units x_unit = 1 m, B = 1 T, n = 2e19 m^-3 and the hydrogen bulk,\nv_unit = 4.88e6 m/s, so omega_TAE = 4.2e5 rad/s (67 kHz). The ITPA benchmark reports the ideal MHD frequencies\n4.01e5 rad/s (CAS3D) and 4.13e5 rad/s (GYGLES). The run up to t = 500 covers about 6.8 periods; the pproc script\nasserts the measured frequency within 10% of omega_TAE and of the benchmark value 4.07e5 rad/s, and shows the\nenergies, the components of the fields and the radial profiles of the (m, n) harmonics. With the defaults, the\n2500 time steps take about 45 min on 2 MPI ranks and give omega = 0.0862 (4.20e5 rad/s, with --a1 0.1); the radial velocity of\nthe m = 10 harmonic oscillates with the same frequency over r = 0.5 - 0.6 (a global mode, not the continuum).\n\nReferences:\n- W. W. Heidbrink, \"Basic physics of Alfven instabilities in toroidal plasmas\", Phys. Plasmas 15, 055501 (2008).\n- C. Z. Cheng, L. Chen and M. S. Chance, \"High-n ideal and resistive shear Alfven waves in tokamaks\",\n  Ann. Phys. 161, 21 (1985).\n- A. Koenies et al., \"Benchmark of gyrokinetic, kinetic MHD and gyrofluid codes for the linear calculation of fast\n  particle driven TAE dynamics\", Nucl. Fusion 58, 126027 (2018).\n",
+  "model": {
+    "model": "ShearAlfven",
+    "params": {
+      "base_units": {
+        "BaseUnits": {
+          "x": 1.0,
+          "B": 1.0,
+          "n": 0.2,
+          "kBT": null
+        }
+      },
+      "mass_number": 1.0,
+      "b_space": "Hdiv",
+      "projected": false
+    },
+    "species": {
+      "em_fields": {
+        "class": "EMFields",
+        "charge_number": 0,
+        "mass_number": 0,
+        "alpha": null,
+        "epsilon": null,
+        "lam": null,
+        "kappa": null,
+        "variables": {
+          "b_field": {
+            "class": "FEECVariable",
+            "space": "Hdiv",
+            "save_data": true,
+            "projection": "commuting",
+            "initial_conditions": {
+              "backgrounds": null,
+              "perturbations": null
+            }
+          }
+        }
+      },
+      "mhd": {
+        "class": "MHD",
+        "charge_number": 1,
+        "mass_number": 1.0,
+        "alpha": null,
+        "epsilon": null,
+        "lam": null,
+        "kappa": null,
+        "variables": {
+          "velocity": {
+            "class": "FEECVariable",
+            "space": "Hdiv",
+            "save_data": true,
+            "projection": "commuting",
+            "initial_conditions": {
+              "backgrounds": null,
+              "perturbations": [
+                {
+                  "type": "TorusModesSin",
+                  "params": {
+                    "ms": [
+                      10,
+                      11
+                    ],
+                    "ns": [
+                      -1,
+                      -1
+                    ],
+                    "amps": [
+                      0.001,
+                      0.001
+                    ],
+                    "pfuns": [
+                      "exp",
+                      "exp"
+                    ],
+                    "pfun_params": [
+                      [
+                        0.4444444444444445,
+                        0.1
+                      ],
+                      [
+                        0.4444444444444445,
+                        0.1
+                      ]
+                    ],
+                    "given_in_basis": "2",
+                    "comp": 0
+                  }
+                },
+                {
+                  "type": "TorusModesCos",
+                  "params": {
+                    "ms": [
+                      10,
+                      11
+                    ],
+                    "ns": [
+                      -1,
+                      -1
+                    ],
+                    "amps": [
+                      1.5915494309189534e-05,
+                      1.4468631190172306e-05
+                    ],
+                    "pfuns": [
+                      "d_exp",
+                      "d_exp"
+                    ],
+                    "pfun_params": [
+                      [
+                        0.4444444444444445,
+                        0.1
+                      ],
+                      [
+                        0.4444444444444445,
+                        0.1
+                      ]
+                    ],
+                    "given_in_basis": "2",
+                    "comp": 1
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "propagator_options": {
+      "shear_alf": {
+        "u_space": "Hdiv",
+        "algo": "implicit",
+        "solver": "pcg",
+        "precond": "StiffnessPreconditioner",
+        "exb_correction": true,
+        "multigrid": null,
+        "solver_params": {
+          "tol": 1e-08,
+          "maxiter": 3000,
+          "info": true,
+          "recycle": true
+        },
+        "butcher": null
+      }
+    },
+    "initial_conditions_schema_version": 1
+  },
+  "params_path": "/viper/u1/spossann/struphy/examples/ShearAlfven/itpa_tae_benchmark/params_ShearAlfven.py",
+  "env": {
+    "out_folders": "/ptmp/spossann/struphy_profiling/20261113T201012Z-c7a6cde4/shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8",
+    "sim_folder": "sim_01",
+    "sim_label": null,
+    "restart": false,
+    "max_runtime": 470,
+    "save_step": 5,
+    "save_restart": false,
+    "sort_step": 0,
+    "num_clones": 1
+  },
+  "time_opts": {
+    "dt": 0.2,
+    "Tend": 10.0,
+    "split_algo": "LieTrotter"
+  },
+  "domain": {
+    "type": "HollowTorus",
+    "params": {
+      "a1": 0.1,
+      "a2": 1.0,
+      "R0": 10.0,
+      "sfl": false,
+      "pol_period": 1,
+      "tor_period": 6
+    }
+  },
+  "equil": {
+    "type": "AdhocTorus",
+    "params": {
+      "a": 1.0,
+      "R0": 10.0,
+      "B0": 3.0,
+      "q_kind": 0,
+      "q0": 1.71,
+      "q1": 1.87,
+      "l": 0.0,
+      "n1": 0.0,
+      "n2": 0.0,
+      "na": 1.0,
+      "p_kind": 1,
+      "p0": 1.0,
+      "p1": 0.95,
+      "p2": 0.05,
+      "beta": 0.0018,
+      "psi_k": 3,
+      "psi_nel": 50
+    }
+  },
+  "grid": {
+    "num_elements": [
+      24,
+      88,
+      8
+    ],
+    "mpi_dims_mask": [
+      true,
+      true,
+      true
+    ]
+  },
+  "derham_opts": {
+    "degree": [
+      3,
+      3,
+      3
+    ],
+    "bcs": [
+      [
+        "dirichlet",
+        "dirichlet"
+      ],
+      null,
+      null
+    ],
+    "nquads": null,
+    "nquads_proj": null,
+    "polar_splines": false,
+    "local_projectors": false,
+    "polar_poloidal_solver": "schur"
+  },
+  "profiling_opts": {
+    "file_path": null,
+    "label": "4 ranks",
+    "use_likwid": null,
+    "perf_events": null,
+    "use_line_profiler": false,
+    "use_memray": null,
+    "memory_profile_path": null,
+    "memray_native_traces": null,
+    "memray_trace_python_allocators": null,
+    "memray_follow_fork": null,
+    "deactivate_profiling": null,
+    "use_nvtx": null,
+    "use_gpu_timing": null,
+    "gpu_timing_backend": null,
+    "deactivate_file_output": null,
+    "recursive_profile": null,
+    "aggregation_mode": null,
+    "profile_mpi_calls": null,
+    "track_threads": null,
+    "track_async": null,
+    "capture_region_source": null,
+    "metadata_detail": null,
+    "buffer_limit": null,
+    "output_mode": null,
+    "hdf5_compression": null,
+    "hdf5_compression_level": null,
+    "hdf5_chunk_size": null,
+    "memray": null,
+    "gpu": null,
+    "hdf5": null,
+    "gpu_sync_on_exit": null
+  },
+  "mpi_ranks": 4,
+  "use_mpi_comm_world": true,
+  "command_line": [
+    "/viper/u1/spossann/struphy/examples/ShearAlfven/itpa_tae_benchmark/params_ShearAlfven.py",
+    "--out-folder",
+    "/ptmp/spossann/struphy_profiling/20261113T201012Z-c7a6cde4/shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8",
+    "--sim-folder",
+    "sim_01",
+    "--setup",
+    "profiling",
+    "--save-results",
+    "--profiling-steps",
+    "50",
+    "--num-elements",
+    "24",
+    "88",
+    "8",
+    "--b-space",
+    "Hdiv",
+    "--precond",
+    "StiffnessPreconditioner",
+    "--a1",
+    "0.1"
+  ],
+  "struphy": {
+    "version": "3.6.1",
+    "git_commit": null,
+    "git_dirty": null,
+    "git_branch": null,
+    "feectools_version": "0.10.0",
+    "feectools_git_commit": null
+  },
+  "started_at_epoch_s": 1794614059.9165404,
+  "one_time_step": false,
+  "profiling_activated": true,
+  "backend": "numpy",
+  "node_hours": 0.018333333333333333,
+  "slurm_script": {
+    "pragmas": {
+      "job_name": "profiling_shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8_01",
+      "time": "00:15:00",
+      "error": "/ptmp/spossann/struphy_profiling/%x.%j.err",
+      "output": "/ptmp/spossann/struphy_profiling/%x.%j.out",
+      "mail_type": "none",
+      "cpus_per_task": 1,
+      "nodes": 1,
+      "ntasks_per_node": 4,
+      "mem": "64000"
+    },
+    "modules": [],
+    "custom_commands": [
+      "module purge",
+      "source \"/viper/u1/spossann/struphy/setup/modules.sh\" load",
+      "module list",
+      "set -e",
+      "source /viper/u1/spossann/env/bin/activate",
+      "export CUNUMPY_BACKEND=numpy",
+      "echo \"----------------------------------------\"",
+      "echo \"Running profiling case: shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8 (4 MPI ranks)\"",
+      "echo \"Description: Strong scaling on one node of the ShearAlfven model on the ITPA TAE benchmark (HollowTorus with tor_period 6 and a hole of radius 0.1, AdhocTorus, 24 x 88 x 8 elements, cubic splines, dt = 0.2, 50 steps): magnetic field in H(div), implicit solve for the velocity (exactly energy conserving), PCG preconditioned by the Kronecker (fast diagonalization) preconditioner of the Schur operator with the E x B auxiliary space correction (StiffnessPreconditioner).\"",
+      "echo \"Physics problem: Toroidal Alfven eigenmode (TAE) in a large-aspect-ratio tokamak (ITPA benchmark).\"",
+      "echo \"Struphy model used: ShearAlfven\"",
+      "echo \"cunumpy backend: numpy\"",
+      "echo \"Case directory: /ptmp/spossann/struphy_profiling/20261113T201012Z-c7a6cde4/shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8\"",
+      "echo \"----------------------------------------\"",
+      "mkdir -p \"/ptmp/spossann/struphy_profiling/20261113T201012Z-c7a6cde4/shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8/sim_01\"",
+      "cp \"/viper/u1/spossann/struphy/examples/ShearAlfven/itpa_tae_benchmark/params_ShearAlfven.py\" \"/ptmp/spossann/struphy_profiling/20261113T201012Z-c7a6cde4/shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8/parameters.py\"",
+      "",
+      "echo \"Running shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8 with 4 MPI ranks\"",
+      "cd \"/ptmp/spossann/struphy_profiling/20261113T201012Z-c7a6cde4/shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8\"",
+      "STRUPHY_LOG_FILE=\"/ptmp/spossann/struphy_profiling/20261113T201012Z-c7a6cde4/shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8/sim_01/struphy.log\" srun -n 4 /viper/u1/spossann/env/bin/python /viper/u1/spossann/struphy/examples/ShearAlfven/itpa_tae_benchmark/params_ShearAlfven.py --out-folder /ptmp/spossann/struphy_profiling/20261113T201012Z-c7a6cde4/shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8 --sim-folder sim_01 --setup profiling --save-results --profiling-steps 50 --num-elements 24 88 8 --b-space Hdiv --precond StiffnessPreconditioner --a1 0.1 > \"/ptmp/spossann/struphy_profiling/20261113T201012Z-c7a6cde4/shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8/sim_01/struphy.out\" 2>&1",
+      "",
+      "echo \"Post-processing shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8 with /viper/u1/spossann/struphy/examples/ShearAlfven/itpa_tae_benchmark/pproc_ShearAlfven.py\"",
+      "STRUPHY_LOG_FILE=\"/ptmp/spossann/struphy_profiling/20261113T201012Z-c7a6cde4/shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8/sim_01/struphy.log\" /viper/u1/spossann/env/bin/python /viper/u1/spossann/struphy/examples/ShearAlfven/itpa_tae_benchmark/pproc_ShearAlfven.py \"/ptmp/spossann/struphy_profiling/20261113T201012Z-c7a6cde4/shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8/sim_01\" --setup profiling --save-results --profiling-steps 50 --num-elements 24 88 8 --b-space Hdiv --precond StiffnessPreconditioner --a1 0.1 > \"/ptmp/spossann/struphy_profiling/20261113T201012Z-c7a6cde4/shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8/sim_01/pproc.out\" 2>&1",
+      "",
+      "echo \"----------------------------------------\"",
+      "echo \"Completed profiling case: shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8 (4 MPI ranks)\"",
+      "echo \"----------------------------------------\""
+    ]
+  },
+  "slurm_script_str": "#!/bin/bash\n########################################################\n#            This script was generated using           #\n#             slurm-script-generator v0.4.0            #\n# https://github.com/max-models/slurm-script-generator #\n#      `pip install slurm-script-generator==0.4.0`     #\n########################################################\n\n########################################################\n# Pragmas for Job Config                               #\n#SBATCH --job-name=profiling_shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8_01 # name of job\n#                                                      #\n# Pragmas for Time And Priority                        #\n#SBATCH --time=00:15:00                                # time limit\n#                                                      #\n# Pragmas for Io And Directory                         #\n#SBATCH --output=/ptmp/spossann/struphy_profiling/%x.%j.out # File to redirect output (%%x=jobname, %%j=jobid)\n#SBATCH --error=/ptmp/spossann/struphy_profiling/%x.%j.err # File to redirect error (%%x=jobname, %%j=jobid)\n#                                                      #\n# Pragmas for Notifications                            #\n#SBATCH --mail-type=none                               # notify on state change\n#                                                      #\n# Pragmas for Core Node And Task Allocation            #\n#SBATCH --nodes=1                                      # number of nodes on which to run\n#SBATCH --ntasks-per-node=4                            # number of tasks to invoke on each node\n#SBATCH --cpus-per-task=1                              # number of cpus required per task\n#                                                      #\n# Pragmas for Memory                                   #\n#SBATCH --mem=64000                                    # minimum amount of real memory\n########################################################\nmodule purge\nsource \"/viper/u1/spossann/struphy/setup/modules.sh\" load\nmodule list\nset -e\nsource /viper/u1/spossann/env/bin/activate\nexport CUNUMPY_BACKEND=numpy\necho \"----------------------------------------\"\necho \"Running profiling case: shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8 (4 MPI ranks)\"\necho \"Description: Strong scaling on one node of the ShearAlfven model on the ITPA TAE benchmark (HollowTorus with tor_period 6 and a hole of radius 0.1, AdhocTorus, 24 x 88 x 8 elements, cubic splines, dt = 0.2, 50 steps): magnetic field in H(div), implicit solve for the velocity (exactly energy conserving), PCG preconditioned by the Kronecker (fast diagonalization) preconditioner of the Schur operator with the E x B auxiliary space correction (StiffnessPreconditioner).\"\necho \"Physics problem: Toroidal Alfven eigenmode (TAE) in a large-aspect-ratio tokamak (ITPA benchmark).\"\necho \"Struphy model used: ShearAlfven\"\necho \"cunumpy backend: numpy\"\necho \"Case directory: /ptmp/spossann/struphy_profiling/20261113T201012Z-c7a6cde4/shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8\"\necho \"----------------------------------------\"\nmkdir -p \"/ptmp/spossann/struphy_profiling/20261113T201012Z-c7a6cde4/shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8/sim_01\"\ncp \"/viper/u1/spossann/struphy/examples/ShearAlfven/itpa_tae_benchmark/params_ShearAlfven.py\" \"/ptmp/spossann/struphy_profiling/20261113T201012Z-c7a6cde4/shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8/parameters.py\"\n\necho \"Running shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8 with 4 MPI ranks\"\ncd \"/ptmp/spossann/struphy_profiling/20261113T201012Z-c7a6cde4/shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8\"\nSTRUPHY_LOG_FILE=\"/ptmp/spossann/struphy_profiling/20261113T201012Z-c7a6cde4/shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8/sim_01/struphy.log\" srun -n 4 /viper/u1/spossann/env/bin/python /viper/u1/spossann/struphy/examples/ShearAlfven/itpa_tae_benchmark/params_ShearAlfven.py --out-folder /ptmp/spossann/struphy_profiling/20261113T201012Z-c7a6cde4/shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8 --sim-folder sim_01 --setup profiling --save-results --profiling-steps 50 --num-elements 24 88 8 --b-space Hdiv --precond StiffnessPreconditioner --a1 0.1 > \"/ptmp/spossann/struphy_profiling/20261113T201012Z-c7a6cde4/shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8/sim_01/struphy.out\" 2>&1\n\necho \"Post-processing shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8 with /viper/u1/spossann/struphy/examples/ShearAlfven/itpa_tae_benchmark/pproc_ShearAlfven.py\"\nSTRUPHY_LOG_FILE=\"/ptmp/spossann/struphy_profiling/20261113T201012Z-c7a6cde4/shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8/sim_01/struphy.log\" /viper/u1/spossann/env/bin/python /viper/u1/spossann/struphy/examples/ShearAlfven/itpa_tae_benchmark/pproc_ShearAlfven.py \"/ptmp/spossann/struphy_profiling/20261113T201012Z-c7a6cde4/shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8/sim_01\" --setup profiling --save-results --profiling-steps 50 --num-elements 24 88 8 --b-space Hdiv --precond StiffnessPreconditioner --a1 0.1 > \"/ptmp/spossann/struphy_profiling/20261113T201012Z-c7a6cde4/shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8/sim_01/pproc.out\" 2>&1\n\necho \"----------------------------------------\"\necho \"Completed profiling case: shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8 (4 MPI ranks)\"\necho \"----------------------------------------\"\n",
+  "packaged_files": {
+    "profiling_data": "results-run01/run01.h5",
+    "additional_profiling_data": [],
+    "results": [
+      "results-run01/report.html",
+      "results-run01/summary.json"
+    ],
+    "run_directory": "/viper/ptmp1/spossann/struphy_profiling/20261113T201012Z-c7a6cde4/shear_alfven_itpa_tae_strong_scaling_hdiv_stiffness_a1_0.1_24x88x8/sim_01"
+  }
+}
