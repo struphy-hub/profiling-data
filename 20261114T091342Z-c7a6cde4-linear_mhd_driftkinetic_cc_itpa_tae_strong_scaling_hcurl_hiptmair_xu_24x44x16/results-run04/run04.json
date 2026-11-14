@@ -1,0 +1,765 @@
+{
+  "name": "ITPA TAE benchmark driven by energetic ions (LinearMHDDriftkineticCC, shift=B0, b_space=Hcurl, filter fourier)",
+  "description": "\nToroidal Alfven eigenmode (TAE) of the ITPA benchmark (Koenies et al. 2018), driven unstable by energetic ions:\nlinear ideal MHD coupled to drift-kinetic energetic deuterons (current coupling, delta-f) with the model\nLinearMHDDriftkineticCC. The MHD part is the ITPA TAE of examples/LinearMHD/itpa_tae_benchmark (same equilibrium,\nunits and seed); here the energetic ions are the source of free energy: their radial density gradient at the gap\ndrives the TAE, whose amplitude grows exponentially.\n\nPhysics. The TAE (see the LinearMHD ITPA example) has the frequency\n    omega_TAE = n / (2m + 1) * v_A(r_c) / R0\nin the gap of the shear Alfven continuum at q(r_c) = (2m + 1) / (2n), here n = 6, m = 10, r_c = 0.5. Energetic ions\nwith parallel speed v_par interact resonantly with the wave when their transit frequency matches; in the benchmark,\nthe resonances at v_par = v_A/3 and v_A/5 dominate the energy transfer. The wave extracts energy from the radial\ngradient of the energetic-ion density if the diamagnetic frequency exceeds the mode frequency, and loses energy to\nLandau damping by the velocity gradient (and to continuum damping).\n\nSetup (ITPA TAE benchmark, Koenies et al. 2018). Large-aspect-ratio tokamak with circular flux surfaces (AdhocTorus):\nR0 = 10 m, a = 1 m, B0 = 3 T, q(r) = 1.71 + 0.16 r^2/a^2, hydrogen bulk with the flat density 2e19 m^-3 and on-axis\nbeta 0.0018 (units x = 1 m, B = 1 T, n = 2e19 m^-3, so v_unit = 4.88e6 m/s and t_unit = 0.205 us). Only n = 6 is\ncomputed, on a sixth of the torus (HollowTorus with tor_period = 6 and a hole of radius 0.1; the logical\nmode number -1 along eta3 is the physical n = 6), grid [24, 44, 16] with spline degrees [3, 3, 3], time\nstep 0.25 up to t = 700.0. The compressional MHD is included, with the background current,\nbackground pressure and sound steps of LinearMHD or, with --magnetosonic-cross-b0, with MagnetosonicCrossB0, which\nwrites the current force and the pressure work through B0 x like the shear Alfven step:\nFalse.\nThe magnetic field is in Hcurl (--b-space). With H(curl), the shear Alfven step is the curl-curl\nstep coupled to the magnetization of the energetic ions (ShearAlfvenCurlCurlCurrentCoupling5D: weak products of the\nLorentz force, no basis projection) and the couplings and guiding-center pushers use the 1-form field (issue #889);\n44 poloidal elements (about 4 per wavelength of the m = 10 harmonic), as in the ShearAlfven and LinearMHD versions\nof this benchmark, which give the benchmark frequency with them (PR #887); the H(curl) setup of this example has not\nyet been validated by a full run (issue #889). With H(div) (default, the more robust choice), the shear Alfven step\nuses the commuting projection Pi^1[(B0 + b) x u] of the Lorentz drift. Its poloidal interpolation error makes the\neffective poloidal mode number about 2-3% too small with 44 elements, which shifts the continuum near the gap (where\nn q - m nearly cancels) so much that there is no TAE (PR #887): hence 96 poloidal elements with H(div). Boundary\nconditions at the walls: b.n = 0 and u.n = 0 imposed strongly with H(div); free boundary conditions with H(curl)\n(Dirichlet would force the tangential magnetic field to zero), where u.n = 0 holds only weakly, through the weak\ninduction equation of the shear Alfven step.\nEnergetic deuterons with the temperature T_h = 400.0 keV (thermal speed sqrt(T_h/m_D) = 0.897 v_unit,\nabout 0.3 v_A at 400 keV, gyro-radius about 3 cm in 3 T; the normalized cyclotron period epsilon follows from the\nunits), represented by 1000000 markers with delta-f weights (control variate). The density profile is\n    n_h = n0 c3 exp(-(c2/c1) tanh((r_c - c0) / c2)),\n    r_c = sign(s) sqrt(|s|), s = (psi_c - psi_axis) / (psi_edge - psi_axis),\n    n0 = 1.44131e17 m^-3, (c0, c1, c2, c3) = (0.47685, 0.20088, 0.1315, 0.51475),\n(times --nh-scale = 1.0). The equilibrium is the canonical Maxwellian with shift=\"B0\" (see\nCanonicalMaxwellian2D). This shift is not a constant of motion for a part of the trapped particles,\nso this distribution is not an exact equilibrium and drives delta-f in the steep gradient without any wave.\nThe coefficients are fitted at 400 keV, so that the density in the radius of the position matches the benchmark profile\n    n_h(s) = n0 c3 exp(-(c2/c1) tanh((sqrt(s) - c0) / c2)), c0 = 0.49123, c1 = 0.298228, c2 = 0.198739, c3 = 0.521298:\nfor another temperature, refit them. The benchmark used a distribution of the flux label of the position; with a\ndistribution of the canonical toroidal momentum its growth rate is about a factor of two smaller (NOVA-K, Sec. 4.4.1\nof the paper). The guiding-center pushers use discrete_gradient_2nd_order for the drifts (--drift-algo) and\ndiscrete_gradient_2nd_order for the parallel motion (--parallel-algo), the current coupling is explicit, markers leaving the\nplasma are removed (--marker-bc remove) or refilled on the same field line (--marker-bc refill): refill.\nFilter of the accumulated moments: fourier.\n\nCost. With 1e5 markers on 4 MPI ranks (dt = 0.25, measured with the earlier Itoh-Abe parallel pusher and a Lie\nsplitting of the pushers; the present default pushers cost about the same per step), a time step took about 16 s\nwith --b-space Hdiv\n(24 x 96 x 16) and about 19 s with --b-space Hcurl (24 x 44 x 16; about 8 s of it for the mass matrices of the total\nfield in the shear Alfven step, nonlinear=True by default; about 11 s with nonlinear=False). The marker noise of\nthe magnetization makes the curl-curl solve of the H(curl) step need about 60-70 Hiptmair-Xu iterations instead of\nabout 10 without energetic\nions (the H(div) solve: about 25), and the number grows with dt (about 300 at dt = 1). The guiding-center pushers and\nthe current coupling scale with the number of markers per rank (on 24 x 88 x 8 with 1e6 markers, dt = 1 and RK4 for\nthe parallel motion, a time step took about 26-30 s with H(div)): the run is meant for a cluster with many more ranks.\nThe TAE is seeded by a small m = 10, 11 velocity perturbation localized at the gap (as in the LinearMHD example).\n\nExpected result. After the initial transient, the TAE (the (m, n) = (10, 6) and (11, 6) harmonics of the radial\nvelocity at r_c) oscillates with omega close to omega_TAE = 0.086 (4.2e5 rad/s; the benchmark codes give\n4.0e5-4.3e5 rad/s) and grows exponentially. Without the Fourier filter, the marker noise in the other toroidal\nharmonics (n = 0, 12, ...) is not removed and contaminates the energies. The pproc script measures omega (asserted\nwithin 10% of omega_TAE and of the ideal MHD frequency 4.07e5 rad/s of the benchmark) and the growth rate gamma from\nthe MHD kinetic energy (asserted positive with a filter), and plots the energies (MHD, magnetic, energetic ions),\nthe fields and the radial profiles of the (m, n) harmonics; with --compare it overlays two runs.\n\nReferences:\n- A. Koenies et al., \"Benchmark of gyrokinetic, kinetic MHD and gyrofluid codes for the linear calculation of fast\n  particle driven TAE dynamics\", Nucl. Fusion 58, 126027 (2018).\n- W. W. Heidbrink, \"Basic physics of Alfven instabilities in toroidal plasmas\", Phys. Plasmas 15, 055501 (2008).\n- B. K. Na, S. Possanner, X. Wang, \"Structure-preserving discretization of MHD-driftkinetic current coupling\"\n  (the discretization of LinearMHDDriftkineticCC).\n",
+  "model": {
+    "model": "LinearMHDDriftkineticCC",
+    "params": {
+      "base_units": {
+        "BaseUnits": {
+          "x": 1.0,
+          "B": 1.0,
+          "n": 0.2,
+          "kBT": null
+        }
+      },
+      "mhd_mass_number": 1.0,
+      "hot_charge_number": 1,
+      "hot_mass_number": 2.0,
+      "hot_epsilon": null,
+      "b_space": "Hcurl",
+      "projected": false,
+      "magnetosonic_cross_b0": false,
+      "energy_budget": false
+    },
+    "species": {
+      "em_fields": {
+        "class": "EMFields",
+        "charge_number": 0,
+        "mass_number": 0,
+        "alpha": null,
+        "epsilon": null,
+        "lam": null,
+        "kappa": null,
+        "variables": {
+          "b_field": {
+            "class": "FEECVariable",
+            "space": "Hcurl",
+            "save_data": true,
+            "projection": "commuting",
+            "initial_conditions": {
+              "backgrounds": null,
+              "perturbations": null
+            }
+          }
+        }
+      },
+      "mhd": {
+        "class": "MHD",
+        "charge_number": 1,
+        "mass_number": 1.0,
+        "alpha": null,
+        "epsilon": null,
+        "lam": null,
+        "kappa": null,
+        "variables": {
+          "density": {
+            "class": "FEECVariable",
+            "space": "L2",
+            "save_data": true,
+            "projection": "commuting",
+            "initial_conditions": {
+              "backgrounds": null,
+              "perturbations": null
+            }
+          },
+          "velocity": {
+            "class": "FEECVariable",
+            "space": "Hdiv",
+            "save_data": true,
+            "projection": "commuting",
+            "initial_conditions": {
+              "backgrounds": null,
+              "perturbations": [
+                {
+                  "type": "TorusModesSin",
+                  "params": {
+                    "ms": [
+                      10,
+                      11
+                    ],
+                    "ns": [
+                      -1,
+                      -1
+                    ],
+                    "amps": [
+                      0.001,
+                      0.001
+                    ],
+                    "pfuns": [
+                      "exp",
+                      "exp"
+                    ],
+                    "pfun_params": [
+                      [
+                        0.4444444444444445,
+                        0.1
+                      ],
+                      [
+                        0.4444444444444445,
+                        0.1
+                      ]
+                    ],
+                    "given_in_basis": "2",
+                    "comp": 0
+                  }
+                },
+                {
+                  "type": "TorusModesCos",
+                  "params": {
+                    "ms": [
+                      10,
+                      11
+                    ],
+                    "ns": [
+                      -1,
+                      -1
+                    ],
+                    "amps": [
+                      1.5915494309189534e-05,
+                      1.4468631190172306e-05
+                    ],
+                    "pfuns": [
+                      "d_exp",
+                      "d_exp"
+                    ],
+                    "pfun_params": [
+                      [
+                        0.4444444444444445,
+                        0.1
+                      ],
+                      [
+                        0.4444444444444445,
+                        0.1
+                      ]
+                    ],
+                    "given_in_basis": "2",
+                    "comp": 1
+                  }
+                }
+              ]
+            }
+          },
+          "pressure": {
+            "class": "FEECVariable",
+            "space": "L2",
+            "save_data": true,
+            "projection": "commuting",
+            "initial_conditions": {
+              "backgrounds": null,
+              "perturbations": null
+            }
+          }
+        }
+      },
+      "energetic_ions": {
+        "class": "EnergeticIons",
+        "charge_number": 1,
+        "mass_number": 2.0,
+        "alpha": null,
+        "epsilon": null,
+        "lam": null,
+        "kappa": null,
+        "variables": {
+          "var": {
+            "class": "PICVariable",
+            "space": "Particles5D",
+            "save_data": true,
+            "n_as_volume_form": false,
+            "initial_conditions": {
+              "backgrounds": {
+                "type": "CanonicalMaxwellian2D",
+                "params": {
+                  "n": [
+                    {
+                      "type": "python_function",
+                      "name": "n_hot",
+                      "source": "def n_hot(psi_c):\n    \"\"\"Energetic-ion density as a function of the shifted canonical toroidal momentum.\"\"\"\n    s = (psi_c - psi_axis) / (psi_edge - psi_axis)\n    return args.nh_scale * itpa_density(xp.sign(s) * xp.sqrt(xp.abs(s)))\n",
+                      "source_sha256": "1886f742fee135e77faad77f1618685a67ec5c592f94ac69a60a99c4c3bc7171",
+                      "globals": {
+                        "psi_axis": {
+                          "type": "value",
+                          "value": -32.73693521669383
+                        },
+                        "psi_edge": {
+                          "type": "value",
+                          "value": -31.89631234165831
+                        },
+                        "xp": {
+                          "type": "module",
+                          "name": "cunumpy"
+                        }
+                      }
+                    },
+                    null
+                  ],
+                  "volume_form": true,
+                  "uniform_on_disc": false,
+                  "vth": [
+                    0.8974083882708186,
+                    null
+                  ],
+                  "equil": {
+                    "type": "AdhocTorus",
+                    "params": {
+                      "a": 1.0,
+                      "R0": 10.0,
+                      "B0": 3.0,
+                      "q_kind": 0,
+                      "q0": 1.71,
+                      "q1": 1.87,
+                      "l": 0.0,
+                      "n1": 0.0,
+                      "n2": 0.0,
+                      "na": 1.0,
+                      "p_kind": 1,
+                      "p0": 1.0,
+                      "p1": 0.95,
+                      "p2": 0.05,
+                      "beta": 0.0018,
+                      "psi_k": 3,
+                      "psi_nel": 50
+                    }
+                  },
+                  "epsilon": 0.10183535095524397,
+                  "cache_size": null,
+                  "shift": "B0"
+                }
+              },
+              "perturbations": null,
+              "initial_condition": {
+                "type": "CanonicalMaxwellian2D",
+                "params": {
+                  "n": [
+                    {
+                      "type": "python_function",
+                      "name": "n_hot",
+                      "source": "def n_hot(psi_c):\n    \"\"\"Energetic-ion density as a function of the shifted canonical toroidal momentum.\"\"\"\n    s = (psi_c - psi_axis) / (psi_edge - psi_axis)\n    return args.nh_scale * itpa_density(xp.sign(s) * xp.sqrt(xp.abs(s)))\n",
+                      "source_sha256": "1886f742fee135e77faad77f1618685a67ec5c592f94ac69a60a99c4c3bc7171",
+                      "globals": {
+                        "psi_axis": {
+                          "type": "value",
+                          "value": -32.73693521669383
+                        },
+                        "psi_edge": {
+                          "type": "value",
+                          "value": -31.89631234165831
+                        },
+                        "xp": {
+                          "type": "module",
+                          "name": "cunumpy"
+                        }
+                      }
+                    },
+                    null
+                  ],
+                  "volume_form": true,
+                  "uniform_on_disc": false,
+                  "vth": [
+                    0.8974083882708186,
+                    null
+                  ],
+                  "equil": {
+                    "type": "AdhocTorus",
+                    "params": {
+                      "a": 1.0,
+                      "R0": 10.0,
+                      "B0": 3.0,
+                      "q_kind": 0,
+                      "q0": 1.71,
+                      "q1": 1.87,
+                      "l": 0.0,
+                      "n1": 0.0,
+                      "n2": 0.0,
+                      "na": 1.0,
+                      "p_kind": 1,
+                      "p0": 1.0,
+                      "p1": 0.95,
+                      "p2": 0.05,
+                      "beta": 0.0018,
+                      "psi_k": 3,
+                      "psi_nel": 50
+                    }
+                  },
+                  "epsilon": 0.10183535095524397,
+                  "cache_size": null,
+                  "shift": "B0"
+                }
+              }
+            }
+          }
+        },
+        "loading_params": {
+          "Np": 1000000,
+          "ppc": null,
+          "ppb": null,
+          "loading": "pseudo_random",
+          "seed": 1234,
+          "moments": [
+            0.0,
+            0.0,
+            0.8974083882708186,
+            0.8974083882708186
+          ],
+          "B0": "equil",
+          "spatial": "uniform",
+          "specific_markers": null,
+          "set_zero_velocity": [
+            false,
+            false,
+            false
+          ],
+          "n_quad": 1,
+          "dir_external": null,
+          "dir_particles": null,
+          "dir_particles_abs": null,
+          "restart_key": null
+        },
+        "weights_params": {
+          "control_variate": true,
+          "reject_weights": false,
+          "threshold": 0.0
+        },
+        "boundary_params": {
+          "bc": [
+            "refill",
+            "periodic",
+            "periodic"
+          ],
+          "bc_refill": null,
+          "bc_sph": [
+            "periodic",
+            "periodic",
+            "periodic"
+          ],
+          "mean_velocity_index": null
+        },
+        "sorting_params": {
+          "do_sort": true,
+          "sorting_frequency": 10,
+          "boxes_per_dim": null,
+          "box_bufsize": 2.0,
+          "dims_mask": [
+            true,
+            true,
+            true
+          ]
+        },
+        "saving_params": {
+          "n_markers": 0,
+          "binning_plots": [
+            {
+              "slice": "e1",
+              "n_bins": [
+                64
+              ],
+              "ranges": [
+                [
+                  0.0,
+                  1.0
+                ]
+              ],
+              "divide_by_jac": true,
+              "output_quantity": "density"
+            },
+            {
+              "slice": "e1_v1",
+              "n_bins": [
+                64,
+                64
+              ],
+              "ranges": [
+                [
+                  0.0,
+                  1.0
+                ],
+                [
+                  -4.487041941354093,
+                  4.487041941354093
+                ]
+              ],
+              "divide_by_jac": true,
+              "output_quantity": "density"
+            }
+          ],
+          "kernel_density_plots": []
+        },
+        "bufsize": 2.0
+      }
+    },
+    "propagator_options": {
+      "push_bxe": {
+        "evaluate_e_field": false,
+        "algo": "discrete_gradient_2nd_order",
+        "butcher": null,
+        "maxiter": 20,
+        "tol": 1e-07,
+        "mpi_sort": "each",
+        "filter_params": {
+          "use_filter": "fourier_in_tor",
+          "modes": [
+            1
+          ],
+          "repeat": 1,
+          "alpha": 0.5
+        }
+      },
+      "push_parallel": {
+        "evaluate_e_field": false,
+        "algo": "discrete_gradient_2nd_order",
+        "butcher": null,
+        "maxiter": 20,
+        "tol": 1e-07,
+        "mpi_sort": "each",
+        "filter_params": {
+          "use_filter": "fourier_in_tor",
+          "modes": [
+            1
+          ],
+          "repeat": 1,
+          "alpha": 0.5
+        }
+      },
+      "shear_alf": {
+        "algo": "implicit",
+        "solver": "pcg",
+        "precond": "auto",
+        "aux_correction": false,
+        "hx_aux_weight": 1.0,
+        "solver_params": {
+          "tol": 1e-08,
+          "maxiter": 3000,
+          "info": true,
+          "recycle": true
+        },
+        "solver_M2n": "pcg",
+        "precond_M2n": "MassMatrixPreconditioner",
+        "solver_params_M2n": {
+          "tol": 1e-14,
+          "maxiter": 3000,
+          "info": false,
+          "recycle": true
+        },
+        "butcher": null,
+        "ep_scale": null,
+        "filter_params": {
+          "use_filter": "fourier_in_tor",
+          "modes": [
+            1
+          ],
+          "repeat": 1,
+          "alpha": 0.5
+        },
+        "nonlinear": true,
+        "solver_params_M1": {
+          "tol": 1e-14,
+          "maxiter": 3000,
+          "info": false,
+          "recycle": true
+        }
+      },
+      "bg_current": {
+        "solver": "pcg",
+        "precond": "MassMatrixPreconditioner",
+        "solver_params": {
+          "tol": 1e-08,
+          "maxiter": 3000,
+          "info": true,
+          "recycle": true
+        }
+      },
+      "bg_pressure": {},
+      "sound": {
+        "solver": "pcg",
+        "precond": "StiffnessPreconditioner",
+        "kernel_correction": "auto",
+        "solver_params": {
+          "tol": 1e-08,
+          "maxiter": 3000,
+          "info": true,
+          "recycle": true
+        },
+        "solver_M3": "pcg",
+        "precond_M3": "MassMatrixPreconditioner",
+        "solver_params_M3": {
+          "tol": 1e-14,
+          "maxiter": 3000,
+          "info": false,
+          "recycle": true
+        }
+      },
+      "cc5d_density": {
+        "ep_scale": null,
+        "u_space": "Hdiv",
+        "solver": "pbicgstab",
+        "precond": "MassMatrixPreconditioner",
+        "solver_params": {
+          "tol": 1e-08,
+          "maxiter": 3000,
+          "info": true,
+          "recycle": true
+        },
+        "filter_params": {
+          "use_filter": null,
+          "modes": [
+            1
+          ],
+          "repeat": 1,
+          "alpha": 0.5
+        },
+        "matrix_free": true
+      },
+      "cc5d_gradb": {
+        "ep_scale": null,
+        "algo": "explicit",
+        "butcher": {
+          "algo": "rk4"
+        },
+        "u_space": "Hdiv",
+        "solver": "pcg",
+        "precond": "MassMatrixPreconditioner",
+        "solver_params": {
+          "tol": 1e-08,
+          "maxiter": 3000,
+          "info": true,
+          "recycle": true
+        },
+        "filter_params": {
+          "use_filter": "fourier_in_tor",
+          "modes": [
+            1
+          ],
+          "repeat": 1,
+          "alpha": 0.5
+        },
+        "dg_solver_params": null
+      },
+      "cc5d_curlb": {
+        "ep_scale": null,
+        "u_space": "Hdiv",
+        "solver": "pcg",
+        "precond": "MassMatrixPreconditioner",
+        "solver_params": {
+          "tol": 1e-08,
+          "maxiter": 3000,
+          "info": true,
+          "recycle": true
+        },
+        "filter_params": {
+          "use_filter": "fourier_in_tor",
+          "modes": [
+            1
+          ],
+          "repeat": 1,
+          "alpha": 0.5
+        },
+        "matrix_free": true
+      }
+    },
+    "initial_conditions_schema_version": 1
+  },
+  "params_path": "/viper/u1/spossann/struphy/examples/LinearMHDDriftkineticCC/itpa_tae_benchmark/params_itpa_tae_B0.py",
+  "env": {
+    "out_folders": "/ptmp/spossann/struphy_profiling/20261114T091342Z-c7a6cde4/linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16",
+    "sim_folder": "sim_04",
+    "sim_label": null,
+    "restart": false,
+    "max_runtime": 1440,
+    "save_step": 4,
+    "save_restart": false,
+    "sort_step": 0,
+    "num_clones": 4
+  },
+  "time_opts": {
+    "dt": 0.25,
+    "Tend": 12.5,
+    "split_algo": "LieTrotter"
+  },
+  "domain": {
+    "type": "HollowTorus",
+    "params": {
+      "a1": 0.1,
+      "a2": 1.0,
+      "R0": 10.0,
+      "sfl": false,
+      "pol_period": 1,
+      "tor_period": 6
+    }
+  },
+  "equil": {
+    "type": "AdhocTorus",
+    "params": {
+      "a": 1.0,
+      "R0": 10.0,
+      "B0": 3.0,
+      "q_kind": 0,
+      "q0": 1.71,
+      "q1": 1.87,
+      "l": 0.0,
+      "n1": 0.0,
+      "n2": 0.0,
+      "na": 1.0,
+      "p_kind": 1,
+      "p0": 1.0,
+      "p1": 0.95,
+      "p2": 0.05,
+      "beta": 0.0018,
+      "psi_k": 3,
+      "psi_nel": 50
+    }
+  },
+  "grid": {
+    "num_elements": [
+      24,
+      44,
+      16
+    ],
+    "mpi_dims_mask": [
+      true,
+      true,
+      false
+    ]
+  },
+  "derham_opts": {
+    "degree": [
+      3,
+      3,
+      3
+    ],
+    "bcs": [
+      [
+        "free",
+        "free"
+      ],
+      null,
+      null
+    ],
+    "nquads": null,
+    "nquads_proj": null,
+    "polar_splines": false,
+    "local_projectors": false,
+    "polar_poloidal_solver": "schur"
+  },
+  "profiling_opts": {
+    "file_path": null,
+    "label": "288 ranks (4 clones)",
+    "use_likwid": null,
+    "perf_events": null,
+    "use_line_profiler": false,
+    "use_memray": null,
+    "memory_profile_path": null,
+    "memray_native_traces": null,
+    "memray_trace_python_allocators": null,
+    "memray_follow_fork": null,
+    "deactivate_profiling": null,
+    "use_nvtx": null,
+    "use_gpu_timing": null,
+    "gpu_timing_backend": null,
+    "deactivate_file_output": null,
+    "recursive_profile": null,
+    "aggregation_mode": null,
+    "profile_mpi_calls": null,
+    "track_threads": null,
+    "track_async": null,
+    "capture_region_source": null,
+    "metadata_detail": null,
+    "buffer_limit": null,
+    "output_mode": null,
+    "hdf5_compression": null,
+    "hdf5_compression_level": null,
+    "hdf5_chunk_size": null,
+    "memray": null,
+    "gpu": null,
+    "hdf5": null,
+    "gpu_sync_on_exit": null
+  },
+  "mpi_ranks": 288,
+  "use_mpi_comm_world": true,
+  "command_line": [
+    "/viper/u1/spossann/struphy/examples/LinearMHDDriftkineticCC/itpa_tae_benchmark/params_itpa_tae_B0.py",
+    "--out-folder",
+    "/ptmp/spossann/struphy_profiling/20261114T091342Z-c7a6cde4/linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16",
+    "--sim-folder",
+    "sim_04",
+    "--setup",
+    "profiling",
+    "--save-results",
+    "--profiling-steps",
+    "50",
+    "--num-elements",
+    "24",
+    "44",
+    "16",
+    "--Np",
+    "1000000",
+    "--b-space",
+    "Hcurl",
+    "--num-clones",
+    "4"
+  ],
+  "struphy": {
+    "version": "3.6.1",
+    "git_commit": null,
+    "git_dirty": null,
+    "git_branch": null,
+    "feectools_version": "0.10.0",
+    "feectools_git_commit": null
+  },
+  "started_at_epoch_s": 1794648727.041401,
+  "one_time_step": false,
+  "profiling_activated": true,
+  "backend": "numpy",
+  "node_hours": 0.24333333333333335,
+  "slurm_script": {
+    "pragmas": {
+      "job_name": "profiling_linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16_04",
+      "time": "01:00:00",
+      "error": "/ptmp/spossann/struphy_profiling/%x.%j.err",
+      "output": "/ptmp/spossann/struphy_profiling/%x.%j.out",
+      "mail_type": "none",
+      "cpus_per_task": 1,
+      "nodes": 4,
+      "ntasks_per_node": 72,
+      "mem": "480000"
+    },
+    "modules": [],
+    "custom_commands": [
+      "module purge",
+      "source \"/viper/u1/spossann/struphy/setup/modules.sh\" load",
+      "module list",
+      "set -e",
+      "source /viper/u1/spossann/env/bin/activate",
+      "export CUNUMPY_BACKEND=numpy",
+      "echo \"----------------------------------------\"",
+      "echo \"Running profiling case: linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16 (288 MPI ranks)\"",
+      "echo \"Description: Strong scaling (36 and 72 MPI ranks on one node, 144 and 288 on 2 and 4 nodes with one clone per node) of the LinearMHDDriftkineticCC model on the ITPA TAE benchmark driven by energetic ions (HollowTorus with tor_period 6 and a hole of radius 0.1, AdhocTorus, 24 x 44 x 16 elements, cubic splines, dt = 0.25, 50 steps, 1e+06 drift-kinetic deuterons of 400 keV with delta-f weights, canonical Maxwellian with shift B0, toroidal Fourier filter n = 6, second-order discrete-gradient guiding-center pushers): magnetic field in H(curl) (1-form current couplings and guiding-center pushers), curl-curl shear Alfven step with PCG preconditioned by Hiptmair-Xu.\"",
+      "echo \"Physics problem: Toroidal Alfven eigenmode (TAE) driven by energetic ions in a large-aspect-ratio tokamak (ITPA benchmark).\"",
+      "echo \"Struphy model used: LinearMHDDriftkineticCC\"",
+      "echo \"cunumpy backend: numpy\"",
+      "echo \"Case directory: /ptmp/spossann/struphy_profiling/20261114T091342Z-c7a6cde4/linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16\"",
+      "echo \"----------------------------------------\"",
+      "mkdir -p \"/ptmp/spossann/struphy_profiling/20261114T091342Z-c7a6cde4/linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16/sim_04\"",
+      "cp \"/viper/u1/spossann/struphy/examples/LinearMHDDriftkineticCC/itpa_tae_benchmark/params_itpa_tae_B0.py\" \"/ptmp/spossann/struphy_profiling/20261114T091342Z-c7a6cde4/linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16/parameters.py\"",
+      "",
+      "echo \"Running linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16 with 288 MPI ranks\"",
+      "cd \"/ptmp/spossann/struphy_profiling/20261114T091342Z-c7a6cde4/linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16\"",
+      "STRUPHY_LOG_FILE=\"/ptmp/spossann/struphy_profiling/20261114T091342Z-c7a6cde4/linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16/sim_04/struphy.log\" srun -n 288 /viper/u1/spossann/env/bin/python /viper/u1/spossann/struphy/examples/LinearMHDDriftkineticCC/itpa_tae_benchmark/params_itpa_tae_B0.py --out-folder /ptmp/spossann/struphy_profiling/20261114T091342Z-c7a6cde4/linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16 --sim-folder sim_04 --setup profiling --save-results --profiling-steps 50 --num-elements 24 44 16 --Np 1000000 --b-space Hcurl --num-clones 4 > \"/ptmp/spossann/struphy_profiling/20261114T091342Z-c7a6cde4/linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16/sim_04/struphy.out\" 2>&1",
+      "",
+      "echo \"Post-processing linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16 with /viper/u1/spossann/struphy/examples/LinearMHDDriftkineticCC/itpa_tae_benchmark/pproc_itpa_tae_B0.py\"",
+      "STRUPHY_LOG_FILE=\"/ptmp/spossann/struphy_profiling/20261114T091342Z-c7a6cde4/linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16/sim_04/struphy.log\" /viper/u1/spossann/env/bin/python /viper/u1/spossann/struphy/examples/LinearMHDDriftkineticCC/itpa_tae_benchmark/pproc_itpa_tae_B0.py \"/ptmp/spossann/struphy_profiling/20261114T091342Z-c7a6cde4/linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16/sim_04\" --setup profiling --save-results --profiling-steps 50 --num-elements 24 44 16 --Np 1000000 --b-space Hcurl --num-clones 4 > \"/ptmp/spossann/struphy_profiling/20261114T091342Z-c7a6cde4/linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16/sim_04/pproc.out\" 2>&1",
+      "",
+      "echo \"----------------------------------------\"",
+      "echo \"Completed profiling case: linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16 (288 MPI ranks)\"",
+      "echo \"----------------------------------------\""
+    ]
+  },
+  "slurm_script_str": "#!/bin/bash\n########################################################\n#            This script was generated using           #\n#             slurm-script-generator v0.4.0            #\n# https://github.com/max-models/slurm-script-generator #\n#      `pip install slurm-script-generator==0.4.0`     #\n########################################################\n\n########################################################\n# Pragmas for Job Config                               #\n#SBATCH --job-name=profiling_linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16_04 # name of job\n#                                                      #\n# Pragmas for Time And Priority                        #\n#SBATCH --time=01:00:00                                # time limit\n#                                                      #\n# Pragmas for Io And Directory                         #\n#SBATCH --output=/ptmp/spossann/struphy_profiling/%x.%j.out # File to redirect output (%%x=jobname, %%j=jobid)\n#SBATCH --error=/ptmp/spossann/struphy_profiling/%x.%j.err # File to redirect error (%%x=jobname, %%j=jobid)\n#                                                      #\n# Pragmas for Notifications                            #\n#SBATCH --mail-type=none                               # notify on state change\n#                                                      #\n# Pragmas for Core Node And Task Allocation            #\n#SBATCH --nodes=4                                      # number of nodes on which to run\n#SBATCH --ntasks-per-node=72                           # number of tasks to invoke on each node\n#SBATCH --cpus-per-task=1                              # number of cpus required per task\n#                                                      #\n# Pragmas for Memory                                   #\n#SBATCH --mem=480000                                   # minimum amount of real memory\n########################################################\nmodule purge\nsource \"/viper/u1/spossann/struphy/setup/modules.sh\" load\nmodule list\nset -e\nsource /viper/u1/spossann/env/bin/activate\nexport CUNUMPY_BACKEND=numpy\necho \"----------------------------------------\"\necho \"Running profiling case: linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16 (288 MPI ranks)\"\necho \"Description: Strong scaling (36 and 72 MPI ranks on one node, 144 and 288 on 2 and 4 nodes with one clone per node) of the LinearMHDDriftkineticCC model on the ITPA TAE benchmark driven by energetic ions (HollowTorus with tor_period 6 and a hole of radius 0.1, AdhocTorus, 24 x 44 x 16 elements, cubic splines, dt = 0.25, 50 steps, 1e+06 drift-kinetic deuterons of 400 keV with delta-f weights, canonical Maxwellian with shift B0, toroidal Fourier filter n = 6, second-order discrete-gradient guiding-center pushers): magnetic field in H(curl) (1-form current couplings and guiding-center pushers), curl-curl shear Alfven step with PCG preconditioned by Hiptmair-Xu.\"\necho \"Physics problem: Toroidal Alfven eigenmode (TAE) driven by energetic ions in a large-aspect-ratio tokamak (ITPA benchmark).\"\necho \"Struphy model used: LinearMHDDriftkineticCC\"\necho \"cunumpy backend: numpy\"\necho \"Case directory: /ptmp/spossann/struphy_profiling/20261114T091342Z-c7a6cde4/linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16\"\necho \"----------------------------------------\"\nmkdir -p \"/ptmp/spossann/struphy_profiling/20261114T091342Z-c7a6cde4/linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16/sim_04\"\ncp \"/viper/u1/spossann/struphy/examples/LinearMHDDriftkineticCC/itpa_tae_benchmark/params_itpa_tae_B0.py\" \"/ptmp/spossann/struphy_profiling/20261114T091342Z-c7a6cde4/linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16/parameters.py\"\n\necho \"Running linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16 with 288 MPI ranks\"\ncd \"/ptmp/spossann/struphy_profiling/20261114T091342Z-c7a6cde4/linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16\"\nSTRUPHY_LOG_FILE=\"/ptmp/spossann/struphy_profiling/20261114T091342Z-c7a6cde4/linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16/sim_04/struphy.log\" srun -n 288 /viper/u1/spossann/env/bin/python /viper/u1/spossann/struphy/examples/LinearMHDDriftkineticCC/itpa_tae_benchmark/params_itpa_tae_B0.py --out-folder /ptmp/spossann/struphy_profiling/20261114T091342Z-c7a6cde4/linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16 --sim-folder sim_04 --setup profiling --save-results --profiling-steps 50 --num-elements 24 44 16 --Np 1000000 --b-space Hcurl --num-clones 4 > \"/ptmp/spossann/struphy_profiling/20261114T091342Z-c7a6cde4/linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16/sim_04/struphy.out\" 2>&1\n\necho \"Post-processing linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16 with /viper/u1/spossann/struphy/examples/LinearMHDDriftkineticCC/itpa_tae_benchmark/pproc_itpa_tae_B0.py\"\nSTRUPHY_LOG_FILE=\"/ptmp/spossann/struphy_profiling/20261114T091342Z-c7a6cde4/linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16/sim_04/struphy.log\" /viper/u1/spossann/env/bin/python /viper/u1/spossann/struphy/examples/LinearMHDDriftkineticCC/itpa_tae_benchmark/pproc_itpa_tae_B0.py \"/ptmp/spossann/struphy_profiling/20261114T091342Z-c7a6cde4/linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16/sim_04\" --setup profiling --save-results --profiling-steps 50 --num-elements 24 44 16 --Np 1000000 --b-space Hcurl --num-clones 4 > \"/ptmp/spossann/struphy_profiling/20261114T091342Z-c7a6cde4/linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16/sim_04/pproc.out\" 2>&1\n\necho \"----------------------------------------\"\necho \"Completed profiling case: linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16 (288 MPI ranks)\"\necho \"----------------------------------------\"\n",
+  "packaged_files": {
+    "profiling_data": "results-run04/run04.h5",
+    "additional_profiling_data": [],
+    "results": [
+      "results-run04/report.html",
+      "results-run04/summary.json"
+    ],
+    "run_directory": "/ptmp/spossann/struphy_profiling/20261114T091342Z-c7a6cde4/linear_mhd_driftkinetic_cc_itpa_tae_strong_scaling_hcurl_hiptmair_xu_24x44x16/sim_04"
+  }
+}
